@@ -1,4 +1,5 @@
 use node_client::*;
+use node_client::models::*;
 
 use dotenv::dotenv;
 use std::env;
@@ -11,7 +12,7 @@ async fn get_state_root() {
         endpoint: env::var("ENDPOINT_URL").unwrap()
     };
 
-    let res = client.get_state_root("head").await.unwrap();
+    let res = client.get_state_root(Stateidentifier::Head).await.unwrap();
     let json = res.json::<ResponseData<Root>>().await.unwrap();
 
     assert!(json.data.root.starts_with("0x"))

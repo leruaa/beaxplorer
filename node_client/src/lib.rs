@@ -1,6 +1,7 @@
 use reqwest::Result;
 use reqwest::Response;
-use serde::Deserialize;
+
+pub mod models;
 
 pub struct NodeClient
 {
@@ -9,19 +10,8 @@ pub struct NodeClient
 
 impl NodeClient
 {
-    pub async fn get_state_root(&self, state_id: &str) -> Result<Response>
+    pub async fn get_state_root(&self, state_id: models::Stateidentifier) -> Result<Response>
     {
-        reqwest::get(format!("{}/eth/v1/beacon/states/{}/root", self.endpoint, state_id)).await
+        reqwest::get(format!("{}/eth/v1/beacon/states/{}/root", self.endpoint, state_id.to_string())).await
     }
-}
-
-#[derive(Deserialize)]
-pub struct ResponseData<T>
-{
-    pub data: T
-}
-
-#[derive(Deserialize)]
-pub struct Root {
-    pub root: String
 }
