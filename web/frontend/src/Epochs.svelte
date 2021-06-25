@@ -1,3 +1,3 @@
-<script lang="typescript">
+<script>
 </script>
 <h1>Epochs</h1>
