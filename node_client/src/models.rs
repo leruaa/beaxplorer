@@ -1,23 +1,25 @@
 use std::fmt;
 use serde::Deserialize;
 
-pub enum Stateidentifier
+pub enum Identifier
 {
     Head,
     Genesis,
     Finalized,
     Justified,
-    Slot(String),
+    Slot(u64),
+    Root(String),
 }
 
-impl fmt::Display for Stateidentifier {
+impl fmt::Display for Identifier {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Stateidentifier::Head => write!(f, "head"),
-            Stateidentifier::Genesis => write!(f, "genesis"),
-            Stateidentifier::Finalized => write!(f, "finalized"),
-            Stateidentifier::Justified => write!(f, "justified"),
-            Stateidentifier::Slot(s) => write!(f, "{}", s),
+            Identifier::Head => write!(f, "head"),
+            Identifier::Genesis => write!(f, "genesis"),
+            Identifier::Finalized => write!(f, "finalized"),
+            Identifier::Justified => write!(f, "justified"),
+            Identifier::Slot(slot) => write!(f, "{}", slot),
+            Identifier::Root(root) => write!(f, "{}", root),
         }
     }
 }
