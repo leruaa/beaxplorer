@@ -14,5 +14,5 @@ async fn get_state_root() {
 
     let root = client.get_state_root(Identifier::Head).await.unwrap();
 
-    assert!(root.starts_with("0x"))
+    assert!(root.to_string().starts_with("0x"))
 }

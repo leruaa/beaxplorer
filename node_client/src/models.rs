@@ -1,5 +1,4 @@
 use std::fmt;
-use serde::Deserialize;
 
 pub enum Identifier
 {
@@ -22,15 +21,4 @@ impl fmt::Display for Identifier {
             Identifier::Root(root) => write!(f, "{}", root),
         }
     }
-}
-
-#[derive(Deserialize)]
-pub struct ResponseData<T>
-{
-    pub data: T
-}
-
-#[derive(Deserialize)]
-pub struct Root {
-    pub root: String
 }
