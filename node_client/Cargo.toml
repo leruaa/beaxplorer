@@ -11,6 +11,7 @@ tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 reqwest = { version = "0.11", features = ["json"] }
 dotenv = "0.15.0"
+enr = { version = "=0.5.0", features = ["ed25519", "k256"] }
 
 eth2 = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 types = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
@@ -23,6 +24,3 @@ eth2_ssz = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 eth2_ssz_derive = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 eth2_ssz_types = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 eth2_hashing = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
-
-[patch.'https://github.com/sigp/discv5']
-discv5 = { path = "../../discv5", features = ["libp2p"] }
