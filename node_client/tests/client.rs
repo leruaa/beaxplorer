@@ -1,5 +1,5 @@
+use eth2::types::StateId;
 use node_client::*;
-use node_client::models::*;
 
 use dotenv::dotenv;
 use std::env;
@@ -12,7 +12,7 @@ async fn get_state_root() {
         endpoint: env::var("ENDPOINT_URL").unwrap()
     };
 
-    let root = client.get_state_root(Identifier::Head).await.unwrap();
+    let root = client.get_state_root(StateId::Head).await.unwrap();
 
     assert!(root.to_string().starts_with("0x"))
 }
