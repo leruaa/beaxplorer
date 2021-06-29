@@ -4,8 +4,8 @@ use eth2::types::GenericResponse;
 use eth2::types::RootData;
 use eth2::types::StateId;
 use reqwest::Result;
+use types::EthSpec;
 use types::Hash256;
-use types::MainnetEthSpec;
 use types::SignedBeaconBlock;
 
 pub mod config;
@@ -25,10 +25,10 @@ impl NodeClient
         Ok(json.data.root)
     }
 
-    pub async fn get_block(&self, block_id: BlockId) -> Result<SignedBeaconBlock<MainnetEthSpec>>
+    pub async fn get_block<E: EthSpec>(&self, block_id: BlockId) -> Result<SignedBeaconBlock<E>>
     {
         let res = reqwest::get(format!("{}/eth/v1/beacon/blocks/{}", self.endpoint, block_id.to_string())).await?;
-        let json = res.json::<GenericResponse<SignedBeaconBlock<MainnetEthSpec>>>().await?;
+        let json = res.json::<GenericResponse<SignedBeaconBlock<E>>>().await?;
 
         Ok(json.data)
     }
