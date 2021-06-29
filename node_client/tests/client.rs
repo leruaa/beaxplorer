@@ -17,6 +17,17 @@ async fn get_state_root() {
 }
 
 #[tokio::test]
+async fn get_state_finality_checkpoints() {
+    dotenv().ok();
+
+    let client = get_client();
+
+    let checkpoints = client.get_state_finality_checkpoints(StateId::Head).await;
+
+    assert!(checkpoints.is_ok())
+}
+
+#[tokio::test]
 async fn get_block() {
     dotenv().ok();
 
