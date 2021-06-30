@@ -1,12 +1,8 @@
-use ::types::Epoch;
+use dotenv::dotenv;
 
 pub mod types;
-
+pub mod epoch_retriever;
 
 fn main() {
-    import_epoch(Epoch::new(10))
-}
-
-fn import_epoch(epoch: Epoch) {
-    println!("{:?}", epoch)
+    dotenv().ok();
 }

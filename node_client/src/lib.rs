@@ -17,6 +17,12 @@ pub struct NodeClient {
 
 impl NodeClient {
 
+    pub fn new(endpoint: String) -> Self {
+        NodeClient {
+            endpoint
+        }
+    }
+
     pub async fn get_state_root(&self, state_id: StateId) -> Result<Hash256> {
         let res = reqwest::get(format!("{}/eth/v1/beacon/states/{}/root", self.endpoint, state_id.to_string())).await?;
         let json = res.json::<GenericResponse<RootData>>().await?;

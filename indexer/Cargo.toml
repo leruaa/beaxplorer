@@ -7,7 +7,11 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+tokio = { version = "1", features = ["full"] }
+dotenv = "0.15.0"
+
 node_client = { path = "../node_client" }
+eth2 = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 types = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 
 [patch]

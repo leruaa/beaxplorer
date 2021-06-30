@@ -1,1 +1,1 @@
-pub mod epoch_container;
+pub mod consolidated_epoch;

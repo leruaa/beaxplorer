@@ -1,2 +1,2 @@
 
-const SLOTS_PER_EPOCHS: u8 =  32;
+pub const SLOTS_PER_EPOCHS: u64 =  32;
