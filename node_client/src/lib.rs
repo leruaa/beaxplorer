@@ -4,6 +4,7 @@ use eth2::types::FinalityCheckpointsData;
 use eth2::types::GenericResponse;
 use eth2::types::RootData;
 use eth2::types::StateId;
+use eth2::types::ValidatorData;
 use reqwest::Result;
 use types::EthSpec;
 use types::Hash256;
@@ -28,6 +29,13 @@ impl NodeClient {
         let json = res.json::<GenericResponse<RootData>>().await?;
 
         Ok(json.data.root)
+    }
+
+    pub async fn get_validators_from_state(&self, state_id: StateId) -> Result<Vec<ValidatorData>> {
+        let res = reqwest::get(format!("{}/eth/v1/beacon/states/{}/validators", self.endpoint, state_id.to_string())).await?;
+        let json = res.json::<GenericResponse<Vec<ValidatorData>>>().await?;
+
+        Ok(json.data)
     }
 
     pub async fn get_state_finality_checkpoints(&self, state_id: StateId) -> Result<FinalityCheckpointsData> {

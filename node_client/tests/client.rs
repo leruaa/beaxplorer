@@ -2,7 +2,7 @@ use eth2::types::{BlockId, StateId};
 use node_client::*;
 
 use dotenv::dotenv;
-use types::MainnetEthSpec;
+use types::{MainnetEthSpec};
 use std::env;
 
 #[tokio::test]
@@ -14,6 +14,17 @@ async fn get_state_root() {
     let root = client.get_state_root(StateId::Head).await.unwrap();
 
     assert!(root.to_string().starts_with("0x"))
+}
+
+#[tokio::test]
+async fn get_validators_from_state() {
+    dotenv().ok();
+
+    let client = get_client();
+
+    let validators = client.get_validators_from_state(StateId::Head).await.unwrap();
+
+    assert!(validators.len() > 0)
 }
 
 #[tokio::test]
