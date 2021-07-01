@@ -1930,7 +1930,6 @@ version = "0.1.0"
 dependencies = [
  "dotenv",
  "eth2",
- "node_client",
  "sensitive_url",
  "tokio",
  "types",
@@ -2530,19 +2529,6 @@ dependencies = [
  "cfg-if 0.1.10",
  "libc",
  "void",
-]
-
-[[package]]
-name = "node_client"
-version = "0.1.0"
-dependencies = [
- "dotenv",
- "enr",
- "eth2",
- "reqwest",
- "serde",
- "tokio",
- "types",
 ]
 
 [[package]]

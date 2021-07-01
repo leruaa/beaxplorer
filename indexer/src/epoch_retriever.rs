@@ -1,5 +1,4 @@
 use eth2::{BeaconNodeHttpClient, types::{BlockId, StateId}};
-use node_client::config::SLOTS_PER_EPOCHS;
 use sensitive_url::SensitiveUrl;
 use types::{Epoch, EthSpec};
 use std::env;
@@ -24,7 +23,7 @@ impl EpochRetriever {
     pub async fn get_consolidated_epoch<E: EthSpec>(&self, epoch: Epoch) -> Result<ConsolidatedEpoch<E>, ()> {
         let mut consolidated_epoch = ConsolidatedEpoch::<E>::new(epoch);
 
-        for slot in epoch.slot_iter(SLOTS_PER_EPOCHS) {
+        for slot in epoch.slot_iter(E::slots_per_epoch()) {
             let response = self.client.get_beacon_blocks::<E>(BlockId::Slot(slot)).await;
             if let Ok(response) = response {
                 if let Some(response) = response {
@@ -33,7 +32,7 @@ impl EpochRetriever {
             }
         }
 
-        let response = self.client.get_beacon_states_validators(StateId::Slot(epoch.start_slot(SLOTS_PER_EPOCHS)), None, None).await;
+        let response = self.client.get_beacon_states_validators(StateId::Slot(epoch.start_slot(E::slots_per_epoch())), None, None).await;
     
         if let Ok(response) = response {
             if let Some(response) = response {

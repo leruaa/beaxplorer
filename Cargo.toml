@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "node_client",
     "indexer",
 ]
 
