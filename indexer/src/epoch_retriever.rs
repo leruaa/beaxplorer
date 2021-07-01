@@ -1,5 +1,6 @@
-use eth2::types::{BlockId, StateId};
-use node_client::{NodeClient, config::SLOTS_PER_EPOCHS};
+use eth2::{BeaconNodeHttpClient, types::{BlockId, StateId}};
+use node_client::config::SLOTS_PER_EPOCHS;
+use sensitive_url::SensitiveUrl;
 use types::{Epoch, EthSpec};
 use std::env;
 
@@ -7,15 +8,16 @@ use crate::types::consolidated_epoch::ConsolidatedEpoch;
 
 
 pub struct EpochRetriever {
-    client: NodeClient,
+    client: BeaconNodeHttpClient,
 }
 
 impl EpochRetriever {
     pub fn new() -> Self {
         let endpoint = env::var("ENDPOINT_URL").unwrap();
+        let url = SensitiveUrl::parse(&endpoint).unwrap();
 
         EpochRetriever {
-            client: NodeClient::new(endpoint)
+            client: BeaconNodeHttpClient::new(url)
         }
     }
 
@@ -23,14 +25,22 @@ impl EpochRetriever {
         let mut consolidated_epoch = ConsolidatedEpoch::<E>::new(epoch);
 
         for slot in epoch.slot_iter(SLOTS_PER_EPOCHS) {
-            let block = self.client.get_block(BlockId::Slot(slot)).await;
-            consolidated_epoch.blocks.push(block.unwrap().message);
+            let response = self.client.get_beacon_blocks::<E>(BlockId::Slot(slot)).await;
+            if let Ok(response) = response {
+                if let Some(response) = response {
+                    consolidated_epoch.blocks.push(response.data.message);
+                }
+            }
         }
 
-        let validators_data = self.client.get_validators_from_state(StateId::Slot(epoch.start_slot(SLOTS_PER_EPOCHS))).await;
+        let response = self.client.get_beacon_states_validators(StateId::Slot(epoch.start_slot(SLOTS_PER_EPOCHS)), None, None).await;
     
-        for validator_data in validators_data.unwrap() {
-            consolidated_epoch.validators.push(validator_data.validator);
+        if let Ok(response) = response {
+            if let Some(response) = response {
+                for validator_data in response.data {
+                    consolidated_epoch.validators.push(validator_data.validator);
+                }
+            }
         }
 
         Ok(consolidated_epoch)

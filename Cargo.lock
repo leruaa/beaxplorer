@@ -1931,6 +1931,7 @@ dependencies = [
  "dotenv",
  "eth2",
  "node_client",
+ "sensitive_url",
  "tokio",
  "types",
 ]
