@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "indexer",
+    "db",
 ]
 
 [patch]
