@@ -1,6 +1,6 @@
 
 use indexer::epoch_retriever::EpochRetriever;
-use types::{Epoch, MainnetEthSpec};
+use types::{Epoch, EthSpec, MainnetEthSpec};
 
 use dotenv::dotenv;
 
@@ -13,5 +13,6 @@ async fn get_consolidated_epoch() {
     let consolidated_epoch = epoch_retriever.get_consolidated_epoch::<MainnetEthSpec>(Epoch::new(45000)).await.unwrap();
 
     assert!(consolidated_epoch.epoch.as_u64() == 45000);
+    assert!(consolidated_epoch.blocks.len() == MainnetEthSpec::slots_per_epoch() as usize);
     assert!(consolidated_epoch.validators.len() > 0);
 }

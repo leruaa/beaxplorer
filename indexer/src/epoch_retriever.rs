@@ -3,7 +3,7 @@ use sensitive_url::SensitiveUrl;
 use types::{Epoch, EthSpec};
 use std::env;
 
-use crate::types::consolidated_epoch::ConsolidatedEpoch;
+use crate::types::{consolidated_block::{ConsolidatedBlock, Status}, consolidated_epoch::ConsolidatedEpoch};
 
 
 pub struct EpochRetriever {
@@ -22,12 +22,29 @@ impl EpochRetriever {
 
     pub async fn get_consolidated_epoch<E: EthSpec>(&self, epoch: Epoch) -> Result<ConsolidatedEpoch<E>, ()> {
         let mut consolidated_epoch = ConsolidatedEpoch::<E>::new(epoch);
+        let mut missed_blocks = Vec::new();
 
         for slot in epoch.slot_iter(E::slots_per_epoch()) {
             let response = self.client.get_beacon_blocks::<E>(BlockId::Slot(slot)).await;
             if let Ok(response) = response {
                 if let Some(response) = response {
-                    consolidated_epoch.blocks.push(response.data.message);
+                    consolidated_epoch.blocks.insert(slot, ConsolidatedBlock::new(Some(response.data.message.clone()), Status::Proposed, response.data.message.proposer_index));
+                }
+                else {
+                    missed_blocks.push(slot);
+                }
+            }
+        }
+
+        if missed_blocks.len() > 0
+        {
+            let proposer_duties = self.client.get_validator_duties_proposer(epoch).await;
+
+            if let Ok(proposer_duties) = proposer_duties {
+                for proposer in proposer_duties.data {
+                    if missed_blocks.contains(&proposer.slot) {
+                        consolidated_epoch.blocks.insert(proposer.slot, ConsolidatedBlock::new(None, Status::Missed, proposer.validator_index));
+                    }
                 }
             }
         }
