@@ -1,15 +1,15 @@
-use types::{BeaconBlock, EthSpec};
+use lighthouse_types::{BeaconBlock, EthSpec};
 
 
 #[derive(Debug)]
 pub struct ConsolidatedBlock<E: EthSpec> {
     pub block: Option<BeaconBlock<E>>,
-    pub status: Status,
+    pub status: BlockStatus,
     pub proposer: u64,
 }
 
 #[derive(Debug)]
-pub enum Status {
+pub enum BlockStatus {
     Scheduled = 0,
     Proposed = 1,
     Missed = 2,
@@ -18,7 +18,7 @@ pub enum Status {
 
 impl<E: EthSpec> ConsolidatedBlock<E> {
 
-    pub fn new(block: Option<BeaconBlock<E>>, status: Status, proposer: u64) -> Self {
+    pub fn new(block: Option<BeaconBlock<E>>, status: BlockStatus, proposer: u64) -> Self {
         ConsolidatedBlock {
             block,
             status,

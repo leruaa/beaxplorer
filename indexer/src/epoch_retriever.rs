@@ -1,9 +1,8 @@
 use eth2::{BeaconNodeHttpClient, types::{BlockId, StateId}};
 use sensitive_url::SensitiveUrl;
-use types::{Epoch, EthSpec};
+use lighthouse_types::{Epoch, EthSpec};
+use types::{consolidated_block::{BlockStatus, ConsolidatedBlock}, consolidated_epoch::ConsolidatedEpoch};
 use std::env;
-
-use crate::types::{consolidated_block::{ConsolidatedBlock, Status}, consolidated_epoch::ConsolidatedEpoch};
 
 
 pub struct EpochRetriever {
@@ -28,7 +27,7 @@ impl EpochRetriever {
             let response = self.client.get_beacon_blocks::<E>(BlockId::Slot(slot)).await;
             if let Ok(response) = response {
                 if let Some(response) = response {
-                    consolidated_epoch.blocks.insert(slot, ConsolidatedBlock::new(Some(response.data.message.clone()), Status::Proposed, response.data.message.proposer_index));
+                    consolidated_epoch.blocks.insert(slot, ConsolidatedBlock::new(Some(response.data.message.clone()), BlockStatus::Proposed, response.data.message.proposer_index));
                 }
                 else {
                     missed_blocks.push(slot);
@@ -43,7 +42,7 @@ impl EpochRetriever {
             if let Ok(proposer_duties) = proposer_duties {
                 for proposer in proposer_duties.data {
                     if missed_blocks.contains(&proposer.slot) {
-                        consolidated_epoch.blocks.insert(proposer.slot, ConsolidatedBlock::new(None, Status::Missed, proposer.validator_index));
+                        consolidated_epoch.blocks.insert(proposer.slot, ConsolidatedBlock::new(None, BlockStatus::Missed, proposer.validator_index));
                     }
                 }
             }

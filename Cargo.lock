@@ -18,7 +18,7 @@ dependencies = [
  "serde_derive",
  "serde_yaml",
  "slog",
- "types",
+ "types 0.2.0",
  "validator_dir",
  "zeroize",
 ]
@@ -600,7 +600,7 @@ dependencies = [
  "eth2_network_config",
  "eth2_ssz",
  "hex",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -804,8 +804,11 @@ checksum = "3ee2393c4a91429dffb4bedf19f4d6abf27d8a732c8ce4980305d782e5426d57"
 name = "db"
 version = "0.1.0"
 dependencies = [
+ "bls",
  "diesel",
  "dotenv",
+ "types 0.1.0",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -820,7 +823,7 @@ dependencies = [
  "serde_json",
  "sha2 0.9.5",
  "tree_hash",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -1091,7 +1094,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_utils",
- "types",
+ "types 0.2.0",
  "zeroize",
 ]
 
@@ -1102,7 +1105,7 @@ source = "git+https://github.com/sigp/lighthouse?branch=stable#3b600acdc5bf97263
 dependencies = [
  "serde",
  "serde_derive",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -1203,7 +1206,7 @@ dependencies = [
  "tokio",
  "tokio-io-timeout",
  "tokio-util",
- "types",
+ "types 0.2.0",
  "unsigned-varint 0.6.0",
  "void",
 ]
@@ -1218,7 +1221,7 @@ dependencies = [
  "eth2_ssz",
  "serde",
  "serde_yaml",
- "types",
+ "types 0.2.0",
  "zip",
 ]
 
@@ -1963,7 +1966,8 @@ dependencies = [
  "eth2",
  "sensitive_url",
  "tokio",
- "types",
+ "types 0.1.0",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -3114,7 +3118,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_yaml",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -4292,6 +4296,14 @@ checksum = "879f6906492a7cd215bfa4cf595b600146ccfac0c79bcbd1f3000162af5e8b06"
 
 [[package]]
 name = "types"
+version = "0.1.0"
+dependencies = [
+ "eth2",
+ "types 0.2.0",
+]
+
+[[package]]
+name = "types"
 version = "0.2.0"
 source = "git+https://github.com/sigp/lighthouse?branch=stable#3b600acdc5bf9726367c18277a22486573b8b457"
 dependencies = [
@@ -4469,7 +4481,7 @@ dependencies = [
  "rayon",
  "slog",
  "tree_hash",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
