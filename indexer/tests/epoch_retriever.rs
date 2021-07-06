@@ -1,6 +1,6 @@
 
 use indexer::epoch_retriever::EpochRetriever;
-use lighthouse_types::{Epoch, EthSpec, MainnetEthSpec};
+use types::{Epoch, EthSpec, MainnetEthSpec};
 
 use dotenv::dotenv;
 

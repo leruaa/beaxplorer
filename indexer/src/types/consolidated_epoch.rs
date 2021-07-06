@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use lighthouse_types::{Epoch, EthSpec, Slot, Validator};
+use types::{Epoch, EthSpec, Slot, Validator};
 
 use super::consolidated_block::ConsolidatedBlock;
 

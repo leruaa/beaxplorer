@@ -1,9 +1,9 @@
 use eth2::{BeaconNodeHttpClient, types::{BlockId, StateId}};
 use sensitive_url::SensitiveUrl;
-use lighthouse_types::{Epoch, EthSpec};
-use types::{consolidated_block::{BlockStatus, ConsolidatedBlock}, consolidated_epoch::ConsolidatedEpoch};
+use types::{Epoch, EthSpec};
 use std::env;
 
+use crate::types::{consolidated_block::{BlockStatus, ConsolidatedBlock}, consolidated_epoch::ConsolidatedEpoch};
 
 pub struct EpochRetriever {
     client: BeaconNodeHttpClient,

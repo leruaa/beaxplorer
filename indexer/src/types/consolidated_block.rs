@@ -1,4 +1,4 @@
-use lighthouse_types::{BeaconBlock, EthSpec};
+use types::{BeaconBlock, EthSpec};
 
 
 #[derive(Debug)]
