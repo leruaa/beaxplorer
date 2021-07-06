@@ -9,6 +9,8 @@ edition = "2018"
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 dotenv = "0.15.0"
+thiserror = "1.0.26"
+db = { path = "../db" }
 
 eth2 = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 types = { git = "https://github.com/sigp/lighthouse", branch = "stable" }

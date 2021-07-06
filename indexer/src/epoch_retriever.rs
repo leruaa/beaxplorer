@@ -1,6 +1,6 @@
 use eth2::{BeaconNodeHttpClient, types::{BlockId, StateId}};
 use sensitive_url::SensitiveUrl;
-use types::{Epoch, EthSpec};
+use types::{Epoch, EthSpec, Signature};
 use std::env;
 
 use crate::types::{consolidated_block::{BlockStatus, ConsolidatedBlock}, consolidated_epoch::ConsolidatedEpoch};
@@ -24,10 +24,15 @@ impl EpochRetriever {
         let mut missed_blocks = Vec::new();
 
         for slot in epoch.slot_iter(E::slots_per_epoch()) {
-            let response = self.client.get_beacon_blocks::<E>(BlockId::Slot(slot)).await;
-            if let Ok(response) = response {
-                if let Some(response) = response {
-                    consolidated_epoch.blocks.insert(slot, ConsolidatedBlock::new(Some(response.data.message.clone()), BlockStatus::Proposed, response.data.message.proposer_index));
+            let block_response = self.client.get_beacon_blocks::<E>(BlockId::Slot(slot)).await;
+            if let Ok(block_response) = block_response {
+                if let Some(block_response) = block_response {
+                    let block_root_response = self.client.get_beacon_blocks_root(BlockId::Slot(slot)).await;
+                    if let Ok(block_root_response) = block_root_response {
+                        if let Some(block_root_response) = block_root_response {
+                            consolidated_epoch.blocks.insert(slot, ConsolidatedBlock::new(epoch, slot, Some(block_response.data.message.clone()), block_root_response.data.root, block_response.data.signature, BlockStatus::Proposed, block_response.data.message.proposer_index));
+                        }
+                    }
                 }
                 else {
                     missed_blocks.push(slot);
@@ -42,7 +47,12 @@ impl EpochRetriever {
             if let Ok(proposer_duties) = proposer_duties {
                 for proposer in proposer_duties.data {
                     if missed_blocks.contains(&proposer.slot) {
-                        consolidated_epoch.blocks.insert(proposer.slot, ConsolidatedBlock::new(None, BlockStatus::Missed, proposer.validator_index));
+                        let block_root_response = self.client.get_beacon_blocks_root(BlockId::Slot(proposer.slot)).await;
+                        if let Ok(block_root_response) = block_root_response {
+                            if let Some(block_root_response) = block_root_response {
+                                consolidated_epoch.blocks.insert(proposer.slot, ConsolidatedBlock::new(epoch, proposer.slot, None, block_root_response.data.root,Signature::empty(), BlockStatus::Missed,  proposer.validator_index));
+                            }
+                        }
                     }
                 }
             }
