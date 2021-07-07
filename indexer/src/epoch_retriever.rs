@@ -3,7 +3,7 @@ use sensitive_url::SensitiveUrl;
 use types::{Epoch, EthSpec, Signature};
 use std::env;
 
-use crate::types::{consolidated_block::{BlockStatus, ConsolidatedBlock}, consolidated_epoch::ConsolidatedEpoch};
+use crate::{errors::IndexerError, types::{consolidated_block::{BlockStatus, ConsolidatedBlock}, consolidated_epoch::ConsolidatedEpoch}};
 
 pub struct EpochRetriever {
     client: BeaconNodeHttpClient,
@@ -19,7 +19,7 @@ impl EpochRetriever {
         }
     }
 
-    pub async fn get_consolidated_epoch<E: EthSpec>(&self, epoch: Epoch) -> Result<ConsolidatedEpoch<E>, ()> {
+    pub async fn get_consolidated_epoch<E: EthSpec>(&self, epoch: Epoch) -> Result<ConsolidatedEpoch<E>, IndexerError> {
         let mut consolidated_epoch = ConsolidatedEpoch::<E>::new(epoch);
         let mut missed_blocks = Vec::new();
 

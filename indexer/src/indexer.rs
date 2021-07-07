@@ -13,7 +13,9 @@ impl Indexer {
         }
     }
 
-    pub fn index(&self) {
-        let consolidated_epoch = &self.epoch_retriever.get_consolidated_epoch::<MainnetEthSpec>(Epoch::new(40000));
+    pub async fn index(&self) {
+        let consolidated_epoch = self.epoch_retriever.get_consolidated_epoch::<MainnetEthSpec>(Epoch::new(40000)).await;
+
+
     }
 }

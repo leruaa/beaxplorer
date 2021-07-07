@@ -9,6 +9,4 @@ edition = "2018"
 [dependencies]
 diesel = { version = "1.4.7", features = ["postgres"] }
 dotenv = "0.15.0"
-
-types = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
-bls = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
+thiserror = "1.0.26"
