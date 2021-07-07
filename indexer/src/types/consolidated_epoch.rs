@@ -1,6 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, convert::TryInto};
 
+use db::models::EpochModel;
 use types::{Epoch, EthSpec, Slot, Validator};
+
+use crate::errors::IndexerError;
 
 use super::consolidated_block::ConsolidatedBlock;
 
@@ -18,5 +21,33 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
             blocks: HashMap::new(),
             validators: Vec::new(),
         }
+    }
+}
+
+impl<E: EthSpec> From<ConsolidatedEpoch<E>> for Result<EpochModel, IndexerError> {
+    fn from(consolidated_epoch: ConsolidatedEpoch<E>) -> Self {
+        let epoch_as_i64 = consolidated_epoch.epoch
+            .as_u64()
+            .try_into()
+            .map_err(|source| IndexerError::EpochCastingFailed { source } )?;
+
+        let epoch = EpochModel {
+            epoch: epoch_as_i64,
+            blocks_count: consolidated_epoch.blocks.len() as i32,
+            proposer_slashings_count: 0,
+            attester_slashings_count: 0,
+            attestations_count: 0,
+            deposits_count: 0,
+            voluntary_exits_count: 0,
+            validators_count: consolidated_epoch.validators.len() as i32,
+            average_validator_balance: 0,
+            total_validator_balance: 0,
+            finalized: Some(true),
+            eligible_ether: None,
+            global_participation_rate: None,
+            voted_ether: None
+        };
+
+        Ok(epoch)
     }
 }

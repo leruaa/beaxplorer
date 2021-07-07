@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use db::models::{blocks::Block};
+use db::models::BlockModel;
 use types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 
 use crate::errors::IndexerError;
@@ -46,7 +46,7 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
     }
 }
 
-impl<E: EthSpec> From<ConsolidatedBlock<E>> for Result<Block, IndexerError> {
+impl<E: EthSpec> From<ConsolidatedBlock<E>> for Result<BlockModel, IndexerError> {
     fn from(consolidated_block: ConsolidatedBlock<E>) -> Self {
         let epoch_as_i64 = consolidated_block.epoch
             .as_u64()
@@ -67,7 +67,7 @@ impl<E: EthSpec> From<ConsolidatedBlock<E>> for Result<Block, IndexerError> {
                     .try_into()
                     .map_err(|source| IndexerError::SlotCastingFailed { source } )?;
 
-                Block {
+                BlockModel {
                     epoch: epoch_as_i64,
                     slot: slot_as_i64,
                     block_root: consolidated_block.block_root.as_bytes().to_vec(),
@@ -89,7 +89,7 @@ impl<E: EthSpec> From<ConsolidatedBlock<E>> for Result<Block, IndexerError> {
                     status: consolidated_block.status.to_string()
                 }
             },
-            None => Block {
+            None => BlockModel {
                 epoch: epoch_as_i64,
                 slot: slot_as_i64,
                 block_root: consolidated_block.block_root.as_bytes().to_vec(),
