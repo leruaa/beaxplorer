@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 
 use db::models::BlockModel;
 use types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
@@ -46,8 +46,10 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
     }
 }
 
-impl<E: EthSpec> From<ConsolidatedBlock<E>> for Result<BlockModel, IndexerError> {
-    fn from(consolidated_block: ConsolidatedBlock<E>) -> Self {
+impl<E: EthSpec> TryFrom<ConsolidatedBlock<E>> for BlockModel {
+    type Error = IndexerError;
+
+    fn try_from(consolidated_block: ConsolidatedBlock<E>) -> Result<Self, Self::Error>  {
         let epoch_as_i64 = consolidated_block.epoch
             .as_u64()
             .try_into()

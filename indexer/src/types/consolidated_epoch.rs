@@ -1,4 +1,4 @@
-use std::{collections::HashMap, convert::TryInto};
+use std::{collections::HashMap, convert::{TryFrom, TryInto}};
 
 use db::models::EpochModel;
 use types::{Epoch, EthSpec, Slot, Validator};
@@ -24,8 +24,9 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
     }
 }
 
-impl<E: EthSpec> From<ConsolidatedEpoch<E>> for Result<EpochModel, IndexerError> {
-    fn from(consolidated_epoch: ConsolidatedEpoch<E>) -> Self {
+impl<E: EthSpec> TryFrom<ConsolidatedEpoch<E>> for EpochModel {
+    type Error = IndexerError;
+    fn try_from(consolidated_epoch: ConsolidatedEpoch<E>) -> Result<Self, Self::Error> {
         let epoch_as_i64 = consolidated_epoch.epoch
             .as_u64()
             .try_into()
