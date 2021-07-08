@@ -1,4 +1,4 @@
-use std::{collections::HashMap, convert::{TryFrom, TryInto}};
+use std::{collections::HashMap, convert::{TryInto}};
 
 use db::models::EpochModel;
 use types::{Epoch, EthSpec, Slot, Validator};
@@ -22,25 +22,22 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
             validators: Vec::new(),
         }
     }
-}
 
-impl<E: EthSpec> TryFrom<ConsolidatedEpoch<E>> for EpochModel {
-    type Error = IndexerError;
-    fn try_from(consolidated_epoch: ConsolidatedEpoch<E>) -> Result<Self, Self::Error> {
-        let epoch_as_i64 = consolidated_epoch.epoch
+    pub fn as_model(&self) -> Result<EpochModel, IndexerError> {
+        let epoch_as_i64 = self.epoch
             .as_u64()
             .try_into()
             .map_err(|source| IndexerError::EpochCastingFailed { source } )?;
 
         let epoch = EpochModel {
             epoch: epoch_as_i64,
-            blocks_count: consolidated_epoch.blocks.len() as i32,
+            blocks_count: self.blocks.len() as i32,
             proposer_slashings_count: 0,
             attester_slashings_count: 0,
             attestations_count: 0,
             deposits_count: 0,
             voluntary_exits_count: 0,
-            validators_count: consolidated_epoch.validators.len() as i32,
+            validators_count: self.validators.len() as i32,
             average_validator_balance: 0,
             total_validator_balance: 0,
             finalized: Some(true),

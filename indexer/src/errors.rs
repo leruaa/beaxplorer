@@ -8,5 +8,8 @@ pub enum IndexerError {
     EpochCastingFailed { source: TryFromIntError },
 
     #[error("Slot cast error")]
-    SlotCastingFailed { source: TryFromIntError }
+    SlotCastingFailed { source: TryFromIntError },
+
+    #[error(transparent)]
+    QueryError(#[from] db::DieselError),
 }

@@ -3,6 +3,7 @@ extern crate diesel;
 
 pub mod models;
 pub mod schema;
-pub mod db_connection;
-pub mod errors;
-pub mod as_insertable;
+
+pub use diesel::prelude::*;
+pub use diesel::insert_into;
+pub use diesel::result::Error as DieselError;
