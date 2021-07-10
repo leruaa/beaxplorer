@@ -1,4 +1,4 @@
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 
 use db::models::BlockModel;
 use types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
@@ -44,26 +44,22 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
             proposer,
         }
     }
-}
 
-impl<E: EthSpec> TryFrom<ConsolidatedBlock<E>> for BlockModel {
-    type Error = IndexerError;
-
-    fn try_from(consolidated_block: ConsolidatedBlock<E>) -> Result<Self, Self::Error>  {
-        let epoch_as_i64 = consolidated_block.epoch
+    pub fn as_model(&self) -> Result<BlockModel, IndexerError> {
+        let epoch_as_i64 = self.epoch
             .as_u64()
             .try_into()
             .map_err(|source| IndexerError::EpochCastingFailed { source } )?;
-        let slot_as_i64 = consolidated_block.slot
+        let slot_as_i64 = self.slot
             .as_u64()
             .try_into()
             .map_err(|source| IndexerError::SlotCastingFailed { source } )?;    
             
-        let proposer_as_i32 = consolidated_block.proposer
+        let proposer_as_i32 = self.proposer
             .try_into()
             .map_err(|source| IndexerError::SlotCastingFailed { source } )?;
 
-        let block = match consolidated_block.block {
+        let block = match self.block.clone() {
             Some(block) => {
                 let eth1data_deposit_count_as_i32 = block.body.eth1_data.deposit_count
                     .try_into()
@@ -72,11 +68,11 @@ impl<E: EthSpec> TryFrom<ConsolidatedBlock<E>> for BlockModel {
                 BlockModel {
                     epoch: epoch_as_i64,
                     slot: slot_as_i64,
-                    block_root: consolidated_block.block_root.as_bytes().to_vec(),
+                    block_root: self.block_root.as_bytes().to_vec(),
                     parent_root: block.parent_root.as_bytes().to_vec(),
                     state_root: block.state_root.as_bytes().to_vec(),
                     randao_reveal: Some(block.body.randao_reveal.to_string().as_bytes().to_vec()),
-                    signature: consolidated_block.signature.to_string().as_bytes().to_vec(),
+                    signature: self.signature.to_string().as_bytes().to_vec(),
                     graffiti: Some(block.body.graffiti.to_string().as_bytes().to_vec()),
                     graffiti_text: Some(block.body.graffiti.to_string()),
                     eth1data_deposit_root: Some(block.body.eth1_data.deposit_root.as_bytes().to_vec()),
@@ -88,13 +84,13 @@ impl<E: EthSpec> TryFrom<ConsolidatedBlock<E>> for BlockModel {
                     deposits_count: block.body.deposits.len() as i32,
                     voluntary_exits_count: block.body.voluntary_exits.len() as i32,
                     proposer: proposer_as_i32,
-                    status: consolidated_block.status.to_string()
+                    status: self.status.to_string()
                 }
             },
             None => BlockModel {
                 epoch: epoch_as_i64,
                 slot: slot_as_i64,
-                block_root: consolidated_block.block_root.as_bytes().to_vec(),
+                block_root: self.block_root.as_bytes().to_vec(),
                 parent_root: vec![],
                 state_root: vec![],
                 randao_reveal: None,
@@ -110,7 +106,7 @@ impl<E: EthSpec> TryFrom<ConsolidatedBlock<E>> for BlockModel {
                 deposits_count: 0,
                 voluntary_exits_count: 0,
                 proposer: proposer_as_i32,
-                status: consolidated_block.status.to_string()
+                status: self.status.to_string()
             }
         };
 
