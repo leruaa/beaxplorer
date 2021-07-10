@@ -30,7 +30,7 @@ impl EpochRetriever {
                     let block_root_response = self.client.get_beacon_blocks_root(BlockId::Slot(slot)).await;
                     if let Ok(block_root_response) = block_root_response {
                         if let Some(block_root_response) = block_root_response {
-                            consolidated_epoch.blocks.insert(slot, ConsolidatedBlock::new(epoch, slot, Some(block_response.data.message.clone()), block_root_response.data.root, block_response.data.signature, BlockStatus::Proposed, block_response.data.message.proposer_index));
+                            consolidated_epoch.blocks.push(ConsolidatedBlock::new(epoch, slot, Some(block_response.data.message.clone()), block_root_response.data.root, block_response.data.signature, BlockStatus::Proposed, block_response.data.message.proposer_index));
                         }
                     }
                 }
@@ -50,7 +50,7 @@ impl EpochRetriever {
                         let block_root_response = self.client.get_beacon_blocks_root(BlockId::Slot(proposer.slot)).await;
                         if let Ok(block_root_response) = block_root_response {
                             if let Some(block_root_response) = block_root_response {
-                                consolidated_epoch.blocks.insert(proposer.slot, ConsolidatedBlock::new(epoch, proposer.slot, None, block_root_response.data.root,Signature::empty(), BlockStatus::Missed,  proposer.validator_index));
+                                consolidated_epoch.blocks.push(ConsolidatedBlock::new(epoch, proposer.slot, None, block_root_response.data.root,Signature::empty(), BlockStatus::Missed,  proposer.validator_index));
                             }
                         }
                     }

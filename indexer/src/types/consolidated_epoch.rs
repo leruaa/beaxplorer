@@ -1,7 +1,7 @@
-use std::{collections::HashMap, convert::{TryInto}};
+use std::convert::{TryInto};
 
 use db::models::EpochModel;
-use types::{Epoch, EthSpec, Slot, Validator};
+use types::{Epoch, EthSpec,  Validator};
 
 use crate::errors::IndexerError;
 
@@ -10,7 +10,7 @@ use super::consolidated_block::ConsolidatedBlock;
 #[derive(Debug)]
 pub struct ConsolidatedEpoch<E: EthSpec> {
     pub epoch: Epoch,
-    pub blocks: HashMap<Slot, ConsolidatedBlock<E>>,
+    pub blocks: Vec<ConsolidatedBlock<E>>,
     pub validators: Vec<Validator>,
 }
 
@@ -18,7 +18,7 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
     pub fn new(epoch: Epoch) -> Self {
         ConsolidatedEpoch {
             epoch,
-            blocks: HashMap::new(),
+            blocks: Vec::new(),
             validators: Vec::new(),
         }
     }
