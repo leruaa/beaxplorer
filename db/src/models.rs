@@ -1,7 +1,8 @@
 use crate::schema::blocks;
 use crate::schema::epochs;
+use serde::Serialize;
 
-#[derive(Queryable, Insertable)]
+#[derive(Queryable, Insertable, Serialize)]
 #[table_name = "blocks"]
 pub struct BlockModel {
     pub epoch: i64,
@@ -25,7 +26,7 @@ pub struct BlockModel {
     pub status: String,
 }
 
-#[derive(Queryable, Insertable)]
+#[derive(Queryable, Insertable, Serialize)]
 #[table_name = "epochs"]
 pub struct EpochModel {
     pub epoch: i64,
