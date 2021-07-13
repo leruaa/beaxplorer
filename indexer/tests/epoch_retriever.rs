@@ -1,4 +1,6 @@
 
+use std::env;
+
 use indexer::epoch_retriever::EpochRetriever;
 use types::{Epoch, EthSpec, MainnetEthSpec};
 
@@ -7,8 +9,9 @@ use dotenv::dotenv;
 #[tokio::test]
 async fn get_consolidated_epoch() {
     dotenv().ok();
-
-    let epoch_retriever = EpochRetriever::new();
+    
+    let endpoint = env::var("ENDPOINT_URL").unwrap();
+    let epoch_retriever = EpochRetriever::new(endpoint);
 
     let consolidated_epoch = epoch_retriever.get_consolidated_epoch::<MainnetEthSpec>(Epoch::new(45000)).await.unwrap();
 

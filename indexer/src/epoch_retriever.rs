@@ -1,7 +1,6 @@
 use eth2::{BeaconNodeHttpClient, types::{BlockId, StateId}};
 use sensitive_url::SensitiveUrl;
 use types::{Epoch, EthSpec, Signature};
-use std::env;
 
 use crate::{errors::IndexerError, types::{consolidated_block::{BlockStatus, ConsolidatedBlock}, consolidated_epoch::ConsolidatedEpoch}};
 
@@ -10,9 +9,8 @@ pub struct EpochRetriever {
 }
 
 impl EpochRetriever {
-    pub fn new() -> Self {
-        let endpoint = env::var("ENDPOINT_URL").unwrap();
-        let url = SensitiveUrl::parse(&endpoint).unwrap();
+    pub fn new(endpoint_url: String) -> Self {
+        let url = SensitiveUrl::parse(&endpoint_url).unwrap();
 
         EpochRetriever {
             client: BeaconNodeHttpClient::new(url)
