@@ -1,12 +1,12 @@
-#[macro_use] extern crate rocket;
+#![feature(proc_macro_hygiene, decl_macro)]
 
-use std::usize;
+#[macro_use] extern crate rocket;
 
 use db::models::EpochModel;
 use db::RunQueryDsl;
+use rocket::fs::{FileServer, relative};
 use serde::Serialize;
 use rocket_dyn_templates::Template;
-use rocket_contrib::serve::StaticFiles;
 
 use rocket_sync_db_pools::database;
 
@@ -29,8 +29,8 @@ async fn index(db_connection: NodeDbConn) -> Template {
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        //.mount("/static", StaticFiles::from("/web/frontend/static"))
         .mount("/", routes![index])
+        .mount("/static", FileServer::from(relative!("frontend/dist")))
         .attach(Template::fairing())
         .attach(NodeDbConn::fairing())
 }
