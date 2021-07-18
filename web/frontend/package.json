@@ -10,19 +10,26 @@
   "dependencies": {},
   "devDependencies": {
     "@tsconfig/svelte": "^1.0.10",
-    "autoprefixer": "^10.2.6",
+    "autoprefixer": "^10.3.1",
     "clean-webpack-plugin": "^4.0.0-alpha.0",
+    "css-loader": "^6.0.0",
     "css-minimizer-webpack-plugin": "^3.0.2",
     "esbuild-loader": "^2.13.1",
+    "mini-css-extract-plugin": "^2.1.0",
+    "postcss": "^8.3.5",
+    "postcss-load-config": "^3.1.0",
+    "postcss-loader": "^6.1.1",
     "svelte": "^3.38.3",
     "svelte-loader": "^3.1.2",
     "svelte-preprocess": "^4.7.3",
+    "tailwindcss": "^2.2.4",
     "ts-loader": "^9.2.3",
     "typescript": "^4.3.4",
     "webpack": "^5.40.0",
     "webpack-merge": "^5.8.0",
     "webpack-nano": "^1.1.1",
     "webpack-plugin-serve": "^1.4.1",
+    "webpack-remove-empty-scripts": "^0.7.1",
     "webpackbar": "^5.0.0-3"
   }
 }

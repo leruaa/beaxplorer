@@ -6,16 +6,13 @@ const { mode } = require('webpack-nano/argv')
 const common = merge([
   {
     entry: {
-      index: './src/index.ts'
-    }
-  },
-  {
+      main: './src/css/main.css'
+    },
     output: {
-      filename: '[name].js',
-      path: path.resolve(process.cwd(), 'dist')
+      clean: true,
     }
   },
-  parts.svelte(mode),
+  parts.extractCss(),
   parts.cleanDist(),
   parts.useWebpackBar()
 ])

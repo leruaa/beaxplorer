@@ -5,6 +5,8 @@ const { WebpackPluginServe } = require('webpack-plugin-serve')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const WebpackBar = require('webpackbar')
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const RemoveEmptyScriptsPlugin = require('webpack-remove-empty-scripts')
 
 exports.devServer = () => ({
   watch: true,
@@ -33,12 +35,16 @@ exports.loadImages = ({ limit } = {}) => ({
 
 exports.optimize = () => ({
   optimization: {
-    minimize: true,
     splitChunks: {
-      chunks: 'all'
+      chunks: 'all',
+      cacheGroups: {
+        styles: {
+          type: "css/mini-extract",
+        },
+      },
     },
-    runtimeChunk: { name: 'runtime' },
-    minimizer: [`...`, new CssMinimizerPlugin()]
+    minimize: true,
+    minimizer: [`...`, new CssMinimizerPlugin()],
   }
 })
 
@@ -51,8 +57,28 @@ exports.loadSvg = () => ({
 })
 
 exports.postcss = () => ({
-  loader: 'postcss-loader'
+  
 })
+
+exports.extractCss = ({ options = {}, loaders = [] } = {}) => {
+  return {
+    module: {
+      rules: [
+        {
+          test: /\.(p?css)$/,
+          use: [MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader'],
+          sideEffects: true
+        }
+      ]
+    },
+    plugins: [
+      new RemoveEmptyScriptsPlugin(),
+      new MiniCssExtractPlugin({
+        filename: '[name].css'
+      })
+    ]
+  }
+}
 
 exports.svelte = mode => {
   const prod = mode === 'production'
