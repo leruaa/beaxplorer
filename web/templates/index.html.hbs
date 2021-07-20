@@ -1,10 +1,18 @@
 <html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="static/css/home.css" rel="stylesheet">
+  </head>
   <body>
-    <h1>Epoch</h1>
-    <ul >
-      {{#each epochs}}
-        <li>{{epoch}}</li>
-      {{/each}}
-    </ul>
+    {{> common/header }}
+    <div class="main">
+      <h1>Epoch</h1>
+      <ul >
+        {{#each epochs}}
+          <li>{{epoch}}</li>
+        {{/each}}
+      </ul>
+    </div>
   </body>
 </html>
