@@ -6,7 +6,7 @@ const { mode } = require('webpack-nano/argv')
 const common = merge([
   {
     entry: {
-      "css/home": './src/css/home.css'
+      "css/main": './src/css/main.css'
     },
     output: {
       clean: true,

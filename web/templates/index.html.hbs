@@ -2,17 +2,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="static/css/home.css" rel="stylesheet">
+    <link href="static/css/main.css" rel="stylesheet">
   </head>
   <body>
     {{> common/header }}
-    <div class="container mx-auto">
-      <h1>Epoch</h1>
-      <ul >
+    <section class="container mx-auto">
+      <h2>Yet Another Open Source Ethereum 2.0 Beacon Chain Explorer</h2>
+      <p>
+        <input />
+      </p>
+    </section>
+    <section class="container mx-auto">
+      <h2>Most recent epochs</h2>
+      <ul>
         {{#each epochs}}
           <li>{{epoch}}</li>
         {{/each}}
       </ul>
-    </div>
+    </section>
   </body>
 </html>
