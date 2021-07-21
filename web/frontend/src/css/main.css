@@ -1,15 +1,3 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-.main {
-  @apply container mx-auto;
-}
-
-nav.header {
-  @apply flex flex-row;
-
-  ol {
-    @apply flex flex-row;
-  }
-}
