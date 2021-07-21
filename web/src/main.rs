@@ -26,10 +26,18 @@ async fn index(db_connection: NodeDbConn) -> Template {
     }).await
 }
 
+#[get("/epochs")]
+async fn epochs(db_connection: NodeDbConn) -> Template {
+    db_connection.run(|c| {
+        let epochs = db::queries::epochs::get_latests(10).load::<EpochModel>(c).unwrap();
+        Template::render("epochs", HomeContext { epochs })
+    }).await
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![index])
+        .mount("/", routes![index, epochs])
         .mount("/static", FileServer::from(relative!("frontend/dist")))
         .attach(Template::fairing())
         .attach(NodeDbConn::fairing())

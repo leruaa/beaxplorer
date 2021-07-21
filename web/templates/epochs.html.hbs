@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="static/css/main.css" rel="stylesheet">
+  </head>
+  <body>
+    {{> common/header }}
+    <section class="container mx-auto">
+      <h2>Epochs</h2>
+      <table>
+        <tr>
+          <th>Epoch</th>
+          <th>Attestations</th>
+          <th>Deposits</th>
+          <th>Eligible</th>
+          <th>Voted</th>
+        </tr>
+        {{#each epochs}}
+          <tr>
+            <td>{{epoch}}</td>
+            <td>{{attestations_count}}</td>
+            <td>{{deposits_count}}</td>
+            <td>{{eligible_ether}} ETH</td>
+            <td>{{voted_ether}} ETH</td>
+          </tr>
+        {{/each}}
+      </table>
+    </section>
+  </body>
+</html>
