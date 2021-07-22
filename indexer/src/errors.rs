@@ -1,6 +1,7 @@
 use std::num::TryFromIntError;
 
 use thiserror::Error;
+use types::Slot;
 
 #[derive(Error, Debug)]
 pub enum IndexerError {
@@ -12,4 +13,10 @@ pub enum IndexerError {
 
     #[error(transparent)]
     QueryError(#[from] db::DieselError),
+
+    #[error("Node error")]
+    NodeError { inner_error: eth2::Error },
+
+    #[error("Element not found")]
+    ElementNotFound(Slot)
 }

@@ -1,6 +1,6 @@
-use eth2::{BeaconNodeHttpClient, types::{BlockId, StateId}};
+use eth2::{BeaconNodeHttpClient, types::{BlockId, GenericResponse, RootData, StateId}};
 use sensitive_url::SensitiveUrl;
-use types::{Epoch, EthSpec, Signature};
+use types::{Epoch, EthSpec, Hash256, Signature, SignedBeaconBlock, Slot};
 
 use crate::{errors::IndexerError, types::{consolidated_block::{BlockStatus, ConsolidatedBlock}, consolidated_epoch::ConsolidatedEpoch}};
 
@@ -22,19 +22,13 @@ impl EpochRetriever {
         let mut missed_blocks = Vec::new();
 
         for slot in epoch.slot_iter(E::slots_per_epoch()) {
-            let block_response = self.client.get_beacon_blocks::<E>(BlockId::Slot(slot)).await;
-            if let Ok(block_response) = block_response {
-                if let Some(block_response) = block_response {
-                    let block_root_response = self.client.get_beacon_blocks_root(BlockId::Slot(slot)).await;
-                    if let Ok(block_root_response) = block_root_response {
-                        if let Some(block_root_response) = block_root_response {
-                            consolidated_epoch.blocks.push(ConsolidatedBlock::new(epoch, slot, Some(block_response.data.message.clone()), block_root_response.data.root, block_response.data.signature, BlockStatus::Proposed, block_response.data.message.proposer_index));
-                        }
-                    }
-                }
-                else {
-                    missed_blocks.push(slot);
-                }
+            let block_response = self.get_block::<E>(slot).await?;
+            if let Some(block_response) = block_response {
+                let block_root = self.get_block_root(slot).await?;
+                consolidated_epoch.blocks.push(ConsolidatedBlock::new(epoch, slot, Some(block_response.data.message.clone()), block_root.data.root, block_response.data.signature, BlockStatus::Proposed, block_response.data.message.proposer_index));
+            }
+            else {
+                missed_blocks.push(slot);
             }
         }
 
@@ -45,12 +39,7 @@ impl EpochRetriever {
             if let Ok(proposer_duties) = proposer_duties {
                 for proposer in proposer_duties.data {
                     if missed_blocks.contains(&proposer.slot) {
-                        let block_root_response = self.client.get_beacon_blocks_root(BlockId::Slot(proposer.slot)).await;
-                        if let Ok(block_root_response) = block_root_response {
-                            if let Some(block_root_response) = block_root_response {
-                                consolidated_epoch.blocks.push(ConsolidatedBlock::new(epoch, proposer.slot, None, block_root_response.data.root,Signature::empty(), BlockStatus::Missed,  proposer.validator_index));
-                            }
-                        }
+                        consolidated_epoch.blocks.push(ConsolidatedBlock::new(epoch, proposer.slot, None, Hash256::zero(),Signature::empty(), BlockStatus::Missed,  proposer.validator_index));
                     }
                 }
             }
@@ -67,5 +56,18 @@ impl EpochRetriever {
         }
 
         Ok(consolidated_epoch)
+    }
+
+    async fn get_block<E: EthSpec>(&self, slot: Slot) -> Result<Option<GenericResponse<SignedBeaconBlock<E>>>, IndexerError> {
+        self.client.get_beacon_blocks::<E>(BlockId::Slot(slot))
+            .await
+            .map_err(|inner_error| IndexerError::NodeError { inner_error })
+    }
+
+    async fn get_block_root(&self, slot: Slot) -> Result<GenericResponse<RootData>, IndexerError> {
+        self.client.get_beacon_blocks_root(BlockId::Slot(slot))
+            .await
+            .map_err(|inner_error| IndexerError::NodeError { inner_error })?
+            .ok_or(IndexerError::ElementNotFound(slot))
     }
 }
