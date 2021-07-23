@@ -3,6 +3,8 @@ use std::env;
 use db::{Connection, PgConnection};
 use dotenv::dotenv;
 use ::indexer::{epoch_retriever::EpochRetriever, indexer::Indexer};
+use log::info;
+use simple_logger::SimpleLogger;
 use ::types::{Epoch, MainnetEthSpec};
 
 pub mod indexer;
@@ -13,6 +15,7 @@ pub mod errors;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+    SimpleLogger::new().with_level(log::LevelFilter::Info).init().ok();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let endpoint_url = env::var("ENDPOINT_URL").unwrap();
@@ -22,16 +25,12 @@ async fn main() {
     let mut epochs = Vec::new();
     let indexer = Indexer::new(db_connection);
 
-    println!("Start");
-
     for n in 40000..40010 {
-        println!("Indexing {:?}", n);
+        log::info!("Indexing epoch {}", n);
         if let Ok(epoch) = epoch_retriever.get_consolidated_epoch::<MainnetEthSpec>(Epoch::new(n)).await {
             epochs.push(epoch);
         }
-    }    
+    }
 
     indexer.index(epochs).await;
-    
-    println!("Indexed");
 }
