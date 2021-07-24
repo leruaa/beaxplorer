@@ -1,9 +1,9 @@
 use std::env;
+use std::time::{Duration, Instant};
 
 use db::{Connection, PgConnection};
 use dotenv::dotenv;
 use ::indexer::{epoch_retriever::EpochRetriever, indexer::Indexer};
-use log::info;
 use simple_logger::SimpleLogger;
 use ::types::{Epoch, MainnetEthSpec};
 
@@ -24,13 +24,19 @@ async fn main() {
     let epoch_retriever = EpochRetriever::new(endpoint_url);
     let mut epochs = Vec::new();
     let indexer = Indexer::new(db_connection);
+    let start = Instant::now();
 
     for n in 40000..40010 {
         log::info!("Indexing epoch {}", n);
-        if let Ok(epoch) = epoch_retriever.get_consolidated_epoch::<MainnetEthSpec>(Epoch::new(n)).await {
-            epochs.push(epoch);
+
+        match epoch_retriever.get_consolidated_epoch::<MainnetEthSpec>(Epoch::new(n)).await {
+            Ok(epoch) => epochs.push(epoch),
+            Err(err) => log::warn!("Error while indexing epoch {}: {:?}", n, err)
         }
     }
+
+    let duration = start.elapsed();
+    log::info!("Avg epoch indexing duration: {:?}", duration.div_f32(10.));
 
     indexer.index(epochs).await;
 }
