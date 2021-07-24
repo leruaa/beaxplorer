@@ -18,5 +18,5 @@ pub enum IndexerError {
     NodeError { inner_error: eth2::Error },
 
     #[error("Element not found")]
-    ElementNotFound(Slot)
+    ElementNotFound(Slot),
 }

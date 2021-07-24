@@ -2174,6 +2174,7 @@ dependencies = [
  "eth2",
  "futures",
  "log",
+ "parking_lot",
  "sensitive_url",
  "simple_logger",
  "thiserror",
