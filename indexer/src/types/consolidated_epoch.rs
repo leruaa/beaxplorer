@@ -1,7 +1,7 @@
-use std::convert::{TryInto};
+use std::convert::TryInto;
 
 use db::models::EpochModel;
-use types::{Epoch, EthSpec,  Validator};
+use types::{Epoch, EthSpec, Validator};
 
 use crate::errors::IndexerError;
 
@@ -24,10 +24,11 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
     }
 
     pub fn as_model(&self) -> Result<EpochModel, IndexerError> {
-        let epoch_as_i64 = self.epoch
+        let epoch_as_i64 = self
+            .epoch
             .as_u64()
             .try_into()
-            .map_err(|source| IndexerError::EpochCastingFailed { source } )?;
+            .map_err(|source| IndexerError::EpochCastingFailed { source })?;
 
         let epoch = EpochModel {
             epoch: epoch_as_i64,
@@ -43,7 +44,7 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
             finalized: Some(true),
             eligible_ether: None,
             global_participation_rate: None,
-            voted_ether: None
+            voted_ether: None,
         };
 
         Ok(epoch)

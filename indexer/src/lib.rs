@@ -1,4 +1,4 @@
-pub mod indexer;
 pub mod epoch_retriever;
-pub mod types;
 pub mod errors;
+pub mod indexer;
+pub mod types;

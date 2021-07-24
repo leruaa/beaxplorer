@@ -5,7 +5,6 @@ use types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 
 use crate::errors::IndexerError;
 
-
 #[derive(Debug)]
 pub struct ConsolidatedBlock<E: EthSpec> {
     pub epoch: Epoch,
@@ -32,8 +31,15 @@ impl std::fmt::Display for BlockStatus {
 }
 
 impl<E: EthSpec> ConsolidatedBlock<E> {
-
-    pub fn new(epoch: Epoch, slot: Slot, block: Option<BeaconBlock<E>>, block_root: Hash256, signature: Signature, status: BlockStatus, proposer: u64) -> Self {
+    pub fn new(
+        epoch: Epoch,
+        slot: Slot,
+        block: Option<BeaconBlock<E>>,
+        block_root: Hash256,
+        signature: Signature,
+        status: BlockStatus,
+        proposer: u64,
+    ) -> Self {
         ConsolidatedBlock {
             epoch,
             slot,
@@ -46,24 +52,31 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
     }
 
     pub fn as_model(&self) -> Result<BlockModel, IndexerError> {
-        let epoch_as_i64 = self.epoch
+        let epoch_as_i64 = self
+            .epoch
             .as_u64()
             .try_into()
-            .map_err(|source| IndexerError::EpochCastingFailed { source } )?;
-        let slot_as_i64 = self.slot
+            .map_err(|source| IndexerError::EpochCastingFailed { source })?;
+        let slot_as_i64 = self
+            .slot
             .as_u64()
             .try_into()
-            .map_err(|source| IndexerError::SlotCastingFailed { source } )?;    
-            
-        let proposer_as_i32 = self.proposer
+            .map_err(|source| IndexerError::SlotCastingFailed { source })?;
+
+        let proposer_as_i32 = self
+            .proposer
             .try_into()
-            .map_err(|source| IndexerError::SlotCastingFailed { source } )?;
+            .map_err(|source| IndexerError::SlotCastingFailed { source })?;
 
         let block = match self.block.clone() {
             Some(block) => {
-                let eth1data_deposit_count_as_i32 = block.body.eth1_data.deposit_count
-                    .try_into()
-                    .map_err(|source| IndexerError::SlotCastingFailed { source } )?;
+                let eth1data_deposit_count_as_i32 =
+                    block
+                        .body
+                        .eth1_data
+                        .deposit_count
+                        .try_into()
+                        .map_err(|source| IndexerError::SlotCastingFailed { source })?;
 
                 BlockModel {
                     epoch: epoch_as_i64,
@@ -75,7 +88,9 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
                     signature: self.signature.to_string().as_bytes().to_vec(),
                     graffiti: Some(block.body.graffiti.to_string().as_bytes().to_vec()),
                     graffiti_text: Some(block.body.graffiti.to_string()),
-                    eth1data_deposit_root: Some(block.body.eth1_data.deposit_root.as_bytes().to_vec()),
+                    eth1data_deposit_root: Some(
+                        block.body.eth1_data.deposit_root.as_bytes().to_vec(),
+                    ),
                     eth1data_deposit_count: eth1data_deposit_count_as_i32,
                     eth1data_block_hash: Some(block.body.eth1_data.block_hash.as_bytes().to_vec()),
                     proposer_slashings_count: block.body.proposer_slashings.len() as i32,
@@ -84,9 +99,9 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
                     deposits_count: block.body.deposits.len() as i32,
                     voluntary_exits_count: block.body.voluntary_exits.len() as i32,
                     proposer: proposer_as_i32,
-                    status: self.status.to_string()
+                    status: self.status.to_string(),
                 }
-            },
+            }
             None => BlockModel {
                 epoch: epoch_as_i64,
                 slot: slot_as_i64,
@@ -106,8 +121,8 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
                 deposits_count: 0,
                 voluntary_exits_count: 0,
                 proposer: proposer_as_i32,
-                status: self.status.to_string()
-            }
+                status: self.status.to_string(),
+            },
         };
 
         Ok(block)
