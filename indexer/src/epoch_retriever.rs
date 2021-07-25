@@ -5,8 +5,8 @@ use eth2::{
     BeaconNodeHttpClient,
 };
 use futures::future::try_join_all;
-use parking_lot::{RwLock, RwLockUpgradableReadGuard, RwLockWriteGuard};
 use sensitive_url::SensitiveUrl;
+use tokio::sync::RwLock;
 use types::{Epoch, EthSpec, Hash256, Signature, SignedBeaconBlock, Slot};
 
 use crate::{
@@ -55,7 +55,7 @@ impl EpochRetriever {
             .get_validators(epoch.start_slot(E::slots_per_epoch()))
             .await?;
         let duration = start.elapsed();
-        log::info!("get_beacon_states_validators duration: {:?}", duration);
+        log::trace!("get_beacon_states_validators duration: {:?}", duration);
 
         for validator_data in validators {
             consolidated_epoch.validators.push(validator_data.validator);
@@ -91,7 +91,7 @@ impl EpochRetriever {
         let start = Instant::now();
         let block_response = self.get_block::<E>(slot).await?;
         let duration = start.elapsed();
-        log::info!("get_block duration: {:?}", duration);
+        log::trace!("get_block duration: {:?}", duration);
 
         if let Some(block_response) = block_response {
             let start = Instant::now();
@@ -99,7 +99,7 @@ impl EpochRetriever {
                 .get_block_root(block_response.data.message.slot)
                 .await?;
             let duration = start.elapsed();
-            log::info!("get_block_root duration: {:?}", duration);
+            log::trace!("get_block_root duration: {:?}", duration);
             let consolidated_block = ConsolidatedBlock::new(
                 epoch,
                 block_response.data.message.slot,
@@ -112,18 +112,15 @@ impl EpochRetriever {
 
             return Ok(consolidated_block);
         } else {
-            let mut proposer_duties = proposer_duties_lock.upgradable_read();
+            let mut proposer_duties = proposer_duties_lock.read().await.clone();
 
             if proposer_duties.is_none() {
-                let mut proposer_duties_writable =
-                    RwLockUpgradableReadGuard::upgrade(proposer_duties);
+                let mut proposer_duties_writable = proposer_duties_lock.write().await;
                 proposer_duties_writable.replace(self.get_validator_duties_proposer(epoch).await?);
-
-                proposer_duties =
-                    RwLockWriteGuard::downgrade_to_upgradable(proposer_duties_writable);
+                proposer_duties = proposer_duties_writable.clone();
             }
 
-            if let Some(proposer_duties) = &*proposer_duties {
+            if let Some(proposer_duties) = proposer_duties {
                 for proposer in proposer_duties {
                     if proposer.slot == slot {
                         let consolidated_block = ConsolidatedBlock::new(
@@ -159,7 +156,7 @@ impl EpochRetriever {
         &self,
         epoch: Epoch,
     ) -> Result<Vec<ProposerData>, IndexerError> {
-        log::info!("Getting duties proposer for epoch {}", epoch);
+        log::trace!("Getting duties proposer for epoch {}", epoch);
         self.client
             .get_validator_duties_proposer(epoch)
             .await
