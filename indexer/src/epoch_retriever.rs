@@ -4,7 +4,7 @@ use eth2::{
     types::{BlockId, GenericResponse, ProposerData, RootData, StateId, ValidatorData},
     BeaconNodeHttpClient,
 };
-use futures::future::try_join_all;
+use futures::{future::try_join_all, Future};
 use sensitive_url::SensitiveUrl;
 use tokio::sync::RwLock;
 use types::{Epoch, EthSpec, Hash256, Signature, SignedBeaconBlock, Slot};
@@ -38,8 +38,11 @@ impl EpochRetriever {
         let mut build_consolidated_block_futures = Vec::new();
         let proposer_duties_lock = Arc::new(RwLock::new(Option::<Vec<ProposerData>>::None));
 
+        let get_validators_handle =
+            tokio::spawn(self.get_validators(epoch.start_slot(E::slots_per_epoch())));
+
         for slot in epoch.slot_iter(E::slots_per_epoch()) {
-            build_consolidated_block_futures.push(self.build_consolidated_block::<E>(
+            build_consolidated_block_futures.push(self.clone().build_consolidated_block::<E>(
                 epoch,
                 slot,
                 proposer_duties_lock.clone(),
@@ -50,12 +53,7 @@ impl EpochRetriever {
             consolidated_epoch.blocks.push(consolidated_block);
         }
 
-        let start = Instant::now();
-        let validators = self
-            .get_validators(epoch.start_slot(E::slots_per_epoch()))
-            .await?;
-        let duration = start.elapsed();
-        log::trace!("get_beacon_states_validators duration: {:?}", duration);
+        let validators = get_validators_handle.await??;
 
         for validator_data in validators {
             consolidated_epoch.validators.push(validator_data.validator);
@@ -142,14 +140,21 @@ impl EpochRetriever {
         Err(IndexerError::ElementNotFound(slot))
     }
 
-    async fn get_validators(&self, slot: Slot) -> Result<Vec<ValidatorData>, IndexerError> {
-        self.client
-            .get_beacon_states_validators(StateId::Slot(slot), None, None)
-            .await
-            .transpose()
-            .ok_or(IndexerError::ElementNotFound(slot))?
-            .map(|response| response.data)
-            .map_err(|inner_error| IndexerError::NodeError { inner_error })
+    fn get_validators(
+        &self,
+        slot: Slot,
+    ) -> impl Future<Output = Result<Vec<ValidatorData>, IndexerError>> {
+        let client = self.client.clone();
+
+        async move {
+            client
+                .get_beacon_states_validators(StateId::Slot(slot), None, None)
+                .await
+                .transpose()
+                .ok_or(IndexerError::ElementNotFound(slot))?
+                .map(|response| response.data)
+                .map_err(|inner_error| IndexerError::NodeError { inner_error })
+        }
     }
 
     async fn get_validator_duties_proposer(

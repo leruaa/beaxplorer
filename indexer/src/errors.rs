@@ -1,15 +1,13 @@
-use std::num::TryFromIntError;
-
 use thiserror::Error;
 use types::Slot;
 
 #[derive(Error, Debug)]
 pub enum IndexerError {
     #[error("Epoch cast error")]
-    EpochCastingFailed { source: TryFromIntError },
+    EpochCastingFailed { source: std::num::TryFromIntError },
 
     #[error("Slot cast error")]
-    SlotCastingFailed { source: TryFromIntError },
+    SlotCastingFailed { source: std::num::TryFromIntError },
 
     #[error(transparent)]
     QueryError(#[from] db::DieselError),
@@ -19,4 +17,7 @@ pub enum IndexerError {
 
     #[error("Element not found")]
     ElementNotFound(Slot),
+
+    #[error(transparent)]
+    JoinError(#[from] tokio::task::JoinError),
 }
