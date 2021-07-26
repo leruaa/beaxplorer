@@ -24,11 +24,7 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
     }
 
     pub fn as_model(&self) -> Result<EpochModel, IndexerError> {
-        let epoch_as_i64 = self
-            .epoch
-            .as_u64()
-            .try_into()
-            .map_err(|source| IndexerError::EpochCastingFailed { source })?;
+        let epoch_as_i64 = self.epoch.as_u64().try_into()?;
 
         let epoch = EpochModel {
             epoch: epoch_as_i64,

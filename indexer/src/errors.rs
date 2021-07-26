@@ -3,11 +3,8 @@ use types::Slot;
 
 #[derive(Error, Debug)]
 pub enum IndexerError {
-    #[error("Epoch cast error")]
-    EpochCastingFailed { source: std::num::TryFromIntError },
-
-    #[error("Slot cast error")]
-    SlotCastingFailed { source: std::num::TryFromIntError },
+    #[error(transparent)]
+    IntegerCastingError(#[from] std::num::TryFromIntError),
 
     #[error(transparent)]
     QueryError(#[from] db::DieselError),

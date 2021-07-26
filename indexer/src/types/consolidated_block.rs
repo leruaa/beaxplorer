@@ -52,31 +52,14 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
     }
 
     pub fn as_model(&self) -> Result<BlockModel, IndexerError> {
-        let epoch_as_i64 = self
-            .epoch
-            .as_u64()
-            .try_into()
-            .map_err(|source| IndexerError::EpochCastingFailed { source })?;
-        let slot_as_i64 = self
-            .slot
-            .as_u64()
-            .try_into()
-            .map_err(|source| IndexerError::SlotCastingFailed { source })?;
-
-        let proposer_as_i32 = self
-            .proposer
-            .try_into()
-            .map_err(|source| IndexerError::SlotCastingFailed { source })?;
+        let epoch_as_i64 = self.epoch.as_u64().try_into()?;
+        let slot_as_i64 = self.slot.as_u64().try_into()?;
+        let proposer_as_i32 = self.proposer.try_into()?;
 
         let block = match self.block.clone() {
             Some(block) => {
                 let eth1data_deposit_count_as_i32 =
-                    block
-                        .body
-                        .eth1_data
-                        .deposit_count
-                        .try_into()
-                        .map_err(|source| IndexerError::SlotCastingFailed { source })?;
+                    block.body.eth1_data.deposit_count.try_into()?;
 
                 BlockModel {
                     epoch: epoch_as_i64,
