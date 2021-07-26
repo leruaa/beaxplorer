@@ -110,4 +110,39 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
 
         Ok(block)
     }
+
+    pub fn get_attestations_count(&self) -> usize {
+        match self.block.clone() {
+            None => 0,
+            Some(block) => block.body.attestations.len(),
+        }
+    }
+
+    pub fn get_deposits_count(&self) -> usize {
+        match self.block.clone() {
+            None => 0,
+            Some(block) => block.body.deposits.len(),
+        }
+    }
+
+    pub fn get_voluntary_exits_count(&self) -> usize {
+        match self.block.clone() {
+            None => 0,
+            Some(block) => block.body.voluntary_exits.len(),
+        }
+    }
+
+    pub fn get_proposer_slashings_count(&self) -> usize {
+        match self.block.clone() {
+            None => 0,
+            Some(block) => block.body.proposer_slashings.len(),
+        }
+    }
+
+    pub fn get_attester_slashings_count(&self) -> usize {
+        match self.block.clone() {
+            None => 0,
+            Some(block) => block.body.attester_slashings.len(),
+        }
+    }
 }
