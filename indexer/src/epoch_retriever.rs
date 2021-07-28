@@ -1,6 +1,7 @@
 use std::{sync::Arc, time::Instant};
 
 use eth2::{
+    lighthouse::GlobalValidatorInclusionData,
     types::{BlockId, GenericResponse, ProposerData, RootData, StateId, ValidatorData},
     BeaconNodeHttpClient,
 };
@@ -34,12 +35,13 @@ impl EpochRetriever {
         &self,
         epoch: Epoch,
     ) -> Result<ConsolidatedEpoch<E>, IndexerError> {
-        let mut consolidated_epoch = ConsolidatedEpoch::<E>::new(epoch);
         let mut build_consolidated_block_futures = Vec::new();
         let proposer_duties_lock = Arc::new(RwLock::new(Option::<Vec<ProposerData>>::None));
 
         let get_validators_handle =
             tokio::spawn(self.get_validators(epoch.start_slot(E::slots_per_epoch())));
+
+        let get_validator_inclusion_handle = tokio::spawn(self.get_validator_inclusion(epoch));
 
         for slot in epoch.slot_iter(E::slots_per_epoch()) {
             build_consolidated_block_futures.push(self.clone().build_consolidated_block::<E>(
@@ -49,17 +51,12 @@ impl EpochRetriever {
             ));
         }
 
-        for consolidated_block in try_join_all(build_consolidated_block_futures).await? {
-            consolidated_epoch.blocks.push(consolidated_block);
-        }
-
-        let validators = get_validators_handle.await??;
-
-        for validator_data in validators {
-            consolidated_epoch.validators.push(validator_data.validator);
-        }
-
-        Ok(consolidated_epoch)
+        Ok(ConsolidatedEpoch::<E> {
+            epoch,
+            blocks: try_join_all(build_consolidated_block_futures).await?,
+            validators: get_validators_handle.await??,
+            validator_inclusion: get_validator_inclusion_handle.await??,
+        })
     }
 
     async fn get_block<E: EthSpec>(
@@ -167,5 +164,20 @@ impl EpochRetriever {
             .await
             .map(|response| response.data)
             .map_err(|inner_error| IndexerError::NodeError { inner_error })
+    }
+
+    fn get_validator_inclusion(
+        &self,
+        epoch: Epoch,
+    ) -> impl Future<Output = Result<GlobalValidatorInclusionData, IndexerError>> {
+        let client = self.client.clone();
+
+        async move {
+            client
+                .get_lighthouse_validator_inclusion_global(epoch)
+                .await
+                .map(|response| response.data)
+                .map_err(|inner_error| IndexerError::NodeError { inner_error })
+        }
     }
 }
