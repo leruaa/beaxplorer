@@ -4,6 +4,7 @@
 extern crate rocket;
 
 use crate::contexts::home::HomeContext;
+use contexts::epochs::EpochsContext;
 use db::models::EpochModel;
 use db::RunQueryDsl;
 use rocket::fs::{relative, FileServer};
@@ -37,7 +38,7 @@ async fn epochs(db_connection: NodeDbConn) -> Template {
             let epochs = db::queries::epochs::get_latests(10)
                 .load::<EpochModel>(c)
                 .unwrap();
-            Template::render("epochs", HomeContext::new(epochs))
+            Template::render("epochs", EpochsContext::new(epochs))
         })
         .await
 }
