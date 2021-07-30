@@ -1,24 +1,29 @@
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="static/css/main.css" rel="stylesheet">
-  </head>
-  <body>
-    {{> common/header }}
-    <section class="container mx-auto">
-      <h2>Yet Another Open Source Ethereum 2.0 Beacon Chain Explorer</h2>
-      <p>
-        <input />
-      </p>
-    </section>
-    <section class="container mx-auto">
-      <h2>Most recent epochs</h2>
-      <ul>
-        {{#each epochs}}
-          <li>{{epoch}}</li>
-        {{/each}}
-      </ul>
-    </section>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="static/css/main.css" rel="stylesheet">
+</head>
+
+<body>
+  <header>
+    {{> common/nav }}
+  </header>
+  <section class="container mx-auto">
+    <h2>Yet Another Open Source Ethereum 2.0 Beacon Chain Explorer</h2>
+    <p>
+      <input />
+    </p>
+  </section>
+  <section class="container mx-auto">
+    <h2>Most recent epochs</h2>
+    <ul>
+      {{#each epochs}}
+      <li>{{epoch}}</li>
+      {{/each}}
+    </ul>
+  </section>
+</body>
+
 </html>

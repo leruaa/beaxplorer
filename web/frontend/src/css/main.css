@@ -8,7 +8,9 @@
     @apply py-1;
   }
 
-
+  header {
+    @apply p-1 bg-blue-900 text-blue-50;
+  }
 }
 
 @layer components {
