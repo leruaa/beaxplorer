@@ -7,4 +7,28 @@
   h1, h2 {
     @apply py-1;
   }
+
+
+}
+
+@layer components {
+  div.tabular-data {
+    @apply border border-gray-200 rounded shadow;
+
+    p {
+      @apply p-1;
+    }
+
+    table {
+      @apply w-full;
+  
+      th {
+        @apply text-xs text-left text-gray-600 uppercase px-1.5 py-2 bg-gray-100;
+      }
+  
+      td {
+        @apply text-gray-800 p-1.5 border-t rounded border-gray-200;
+      }
+    }
+  }
 }

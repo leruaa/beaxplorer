@@ -10,26 +10,29 @@
   {{> common/header }}
   <section class="container mx-auto">
     <h2>Epochs</h2>
-    <table>
-      <tr>
-        <th>Epoch</th>
-        <th>Attestations</th>
-        <th>Deposits</th>
-        <th>Eligible</th>
-        <th>Voted</th>
-        <th>Rate</th>
-      </tr>
-      {{#each epochs}}
-      <tr>
-        <td>{{epoch}}</td>
-        <td>{{attestations_count}}</td>
-        <td>{{deposits_count}}</td>
-        <td>{{eligible_ether}} ETH</td>
-        <td>{{voted_ether}} ETH</td>
-        <td>{{global_participation_percentage}}%</td>
-      </tr>
-      {{/each}}
-    </table>
+    <div class="tabular-data">
+      <p>Showing epochs</p>
+      <table>
+        <tr>
+          <th>Epoch</th>
+          <th>Attestations</th>
+          <th>Deposits</th>
+          <th>Eligible</th>
+          <th>Voted</th>
+          <th>Rate</th>
+        </tr>
+        {{#each epochs}}
+        <tr>
+          <td>{{epoch}}</td>
+          <td>{{attestations_count}}</td>
+          <td>{{deposits_count}}</td>
+          <td>{{eligible_ether}} ETH</td>
+          <td>{{voted_ether}} ETH</td>
+          <td>{{global_participation_percentage}}%</td>
+        </tr>
+        {{/each}}
+      </table>
+    </div>
   </section>
 </body>
 
