@@ -19,6 +19,8 @@
           <th>Epoch</th>
           <th>Attestations</th>
           <th>Deposits</th>
+          <th>Slashings P / A</th>
+          <th>Finalized</th>
           <th>Eligible</th>
           <th>Voted</th>
           <th>Rate</th>
@@ -28,6 +30,14 @@
           <td>{{epoch}}</td>
           <td>{{attestations_count}}</td>
           <td>{{deposits_count}}</td>
+          <td>{{proposer_slashings_count}} / {{attester_slashings_count}}</td>
+          <td>
+            {{#if finalized}}
+            <span>Yes</span>
+            {{else}}
+            <span>No</span>
+            {{/if}}
+          </td>
           <td>{{eligible_ether}} ETH</td>
           <td>{{voted_ether}} ETH</td>
           <td>{{global_participation_percentage}}%</td>
