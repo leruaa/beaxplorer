@@ -8,8 +8,16 @@
     @apply py-1;
   }
 
+  a {
+    @apply text-blue-600;
+  }
+
   header {
     @apply p-1 bg-blue-900 text-blue-50;
+    
+    a {
+      @apply text-blue-50;
+    }
   }
 
   dl {

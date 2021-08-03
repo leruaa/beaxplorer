@@ -27,7 +27,7 @@
         </tr>
         {{#each epochs}}
         <tr>
-          <td>{{epoch}}</td>
+          <td><a href="/epoch/{{epoch}}">{{epoch}}</a></td>
           <td>{{attestations_count}}</td>
           <td>{{deposits_count}}</td>
           <td>{{proposer_slashings_count}} / {{attester_slashings_count}}</td>
