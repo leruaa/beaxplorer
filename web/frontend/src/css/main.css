@@ -11,6 +11,18 @@
   header {
     @apply p-1 bg-blue-900 text-blue-50;
   }
+
+  dl {
+    @apply p-1 flex flex-wrap;
+
+    dt {
+      @apply flex-none w-1/4;
+    }
+
+    dd {
+      @apply flex-none w-3/4;
+    }
+  }
 }
 
 @layer components {

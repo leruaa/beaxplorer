@@ -4,6 +4,7 @@
 extern crate rocket;
 
 use crate::contexts::home::HomeContext;
+use contexts::epoch::EpochContext;
 use contexts::epochs::EpochsContext;
 use db::models::EpochModel;
 use db::RunQueryDsl;
@@ -43,10 +44,20 @@ async fn epochs(db_connection: NodeDbConn) -> Template {
         .await
 }
 
+#[get("/epoch/<number>")]
+async fn epoch(number: i64, db_connection: NodeDbConn) -> Template {
+    db_connection
+        .run(move |c| {
+            let epoch = db::queries::epochs::by_number(number).first(c).unwrap();
+            Template::render("epoch", EpochContext::new(epoch))
+        })
+        .await
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![index, epochs])
+        .mount("/", routes![index, epochs, epoch])
         .mount("/static", FileServer::from(relative!("frontend/dist")))
         .attach(Template::fairing())
         .attach(NodeDbConn::fairing())
