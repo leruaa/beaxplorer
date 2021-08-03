@@ -20,7 +20,7 @@ impl ToFormattedString for i64 {
             .enumerate()
             .flat_map(|(i, c)| {
                 if i != 0 && i % 3 == 0 {
-                    Some(' ')
+                    Some(',')
                 } else {
                     None
                 }
