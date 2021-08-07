@@ -1,0 +1,36 @@
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="/static/css/main.css" rel="stylesheet">
+</head>
+
+<body>
+  <header>
+    {{> common/nav }}
+  </header>
+  <section class="container mx-auto">
+    {{#with block}}
+    <h2>Block {{slot}}</h2>
+    <div class="tabular-data">
+      <p>Showing block</p>
+
+      <dl>
+        <dt>Slot</dt>
+        <dd>{{slot}}</dd>
+        <dt>Epoch</dt>
+        <dd>{{epoch}}</dd>
+        <dt>Time</dt>
+        <dd></dd>
+        <dt>Proposer</dt>
+        <dd>{{proposer}}</dd>
+        <dt>Attestations</dt>
+        <dd>{{attestations_count}}</dd>
+      </dl>
+    </div>
+    {{/with}}
+  </section>
+</body>
+
+</html>

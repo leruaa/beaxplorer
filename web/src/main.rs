@@ -4,6 +4,7 @@
 extern crate rocket;
 
 use crate::contexts::home::HomeContext;
+use contexts::block::BlockContext;
 use contexts::blocks::BlocksContext;
 use contexts::epoch::EpochContext;
 use contexts::epochs::EpochsContext;
@@ -67,10 +68,20 @@ async fn blocks(db_connection: NodeDbConn) -> Template {
         .await
 }
 
+#[get("/block/<slot>")]
+async fn block(slot: i64, db_connection: NodeDbConn) -> Template {
+    db_connection
+        .run(move |c| {
+            let block = db::queries::blocks::by_slot(slot).first(c).unwrap();
+            Template::render("block", BlockContext::new(block))
+        })
+        .await
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![index, epochs, epoch, blocks])
+        .mount("/", routes![index, epochs, epoch, blocks, block])
         .mount("/static", FileServer::from(relative!("frontend/dist")))
         .attach(Template::fairing())
         .attach(NodeDbConn::fairing())
