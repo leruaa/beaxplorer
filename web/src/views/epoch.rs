@@ -1,7 +1,7 @@
 use db::models::EpochModel;
 use serde::Serialize;
 
-use crate::helpers::to_formatted_string::{ToEther, ToFormattedString, ToPercentage};
+use crate::helpers::to_formatted_string::{ToEther, ToPercentage};
 
 #[derive(Serialize, Default)]
 pub struct EpochView {
