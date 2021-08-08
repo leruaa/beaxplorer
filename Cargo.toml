@@ -3,6 +3,7 @@ members = [
     "web",
     "indexer",
     "db",
+    "shared",
 ]
 
 [patch]
