@@ -5,6 +5,7 @@ pub use diesel::prelude::*;
 
 pub fn by_slot<'a>(s: i64) -> blocks::BoxedQuery<'a, diesel::pg::Pg> {
     blocks::table
+        .limit(1)
         .filter(blocks::dsl::slot.eq_all(s))
         .into_boxed()
 }

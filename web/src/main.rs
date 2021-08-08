@@ -14,6 +14,7 @@ use rocket::fs::{relative, FileServer};
 use rocket_dyn_templates::Template;
 
 use rocket_sync_db_pools::database;
+use types::MainnetEthSpec;
 
 pub mod contexts;
 pub mod helpers;
@@ -63,7 +64,7 @@ async fn blocks(db_connection: NodeDbConn) -> Template {
             let blocks = db::queries::blocks::get_latests(10)
                 .load::<BlockModel>(c)
                 .unwrap();
-            Template::render("blocks", BlocksContext::new(blocks))
+            Template::render("blocks", BlocksContext::<MainnetEthSpec>::new(blocks))
         })
         .await
 }
@@ -73,7 +74,7 @@ async fn block(slot: i64, db_connection: NodeDbConn) -> Template {
     db_connection
         .run(move |c| {
             let block = db::queries::blocks::by_slot(slot).first(c).unwrap();
-            Template::render("block", BlockContext::new(block))
+            Template::render("block", BlockContext::<MainnetEthSpec>::new(block))
         })
         .await
 }

@@ -1,5 +1,5 @@
 use std::env;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use ::indexer::{epoch_retriever::EpochRetriever, indexer::Indexer};
 use ::types::{Epoch, MainnetEthSpec};
