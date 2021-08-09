@@ -29,7 +29,7 @@
         {{#each epochs}}
         <tr>
           <td><a href="/epoch/{{epoch}}">{{epoch}}</a></td>
-          <td>{{timestamp}}</td>
+          <td><span class="timestamp" data-timestamp="{{timestamp}}"></span></td>
           <td>{{attestations_count}}</td>
           <td>{{deposits_count}}</td>
           <td>{{proposer_slashings_count}} / {{attester_slashings_count}}</td>
@@ -48,6 +48,7 @@
       </table>
     </div>
   </section>
+  <script src="/static/js/main.js"></script>
 </body>
 
 </html>

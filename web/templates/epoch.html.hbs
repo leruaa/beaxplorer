@@ -28,7 +28,9 @@
           {{/if}}
         </dd>
         <dt>Time</dt>
-        <dd>{{timestamp}}</dd>
+        <dd>
+          <span class="timestamp" data-timestamp="{{timestamp}}"></span>
+        </dd>
         <dt>Attestations</dt>
         <dd>{{attestations_count}}</dd>
         <dt>Deposits</dt>
@@ -41,6 +43,8 @@
     </div>
     {{/with}}
   </section>
+
+  <script src="/static/js/main.js"></script>
 </body>
 
 </html>

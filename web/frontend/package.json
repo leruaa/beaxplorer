@@ -7,9 +7,13 @@
     "build": "NODE_ENV=production wp --config config/webpack.config.js --mode production",
     "start": "wp --config config/webpack.config.js --mode development"
   },
-  "dependencies": {},
+  "dependencies": {
+    "d3": "^7.0.0",
+    "d3-time-format": "^4.0.0"
+  },
   "devDependencies": {
     "@tsconfig/svelte": "^1.0.10",
+    "@types/d3": "^7.0.0",
     "autoprefixer": "^10.3.1",
     "clean-webpack-plugin": "^4.0.0-alpha.0",
     "css-loader": "^6.0.0",
