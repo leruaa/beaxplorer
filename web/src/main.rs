@@ -30,7 +30,7 @@ async fn index(db_connection: NodeDbConn) -> Template {
             let epochs = db::queries::epochs::get_latests(10)
                 .load::<EpochModel>(c)
                 .unwrap();
-            Template::render("index", HomeContext::new(epochs))
+            Template::render("index", HomeContext::<MainnetEthSpec>::new(epochs))
         })
         .await
 }
@@ -42,7 +42,7 @@ async fn epochs(db_connection: NodeDbConn) -> Template {
             let epochs = db::queries::epochs::get_latests(10)
                 .load::<EpochModel>(c)
                 .unwrap();
-            Template::render("epochs", EpochsContext::new(epochs))
+            Template::render("epochs", EpochsContext::<MainnetEthSpec>::new(epochs))
         })
         .await
 }
@@ -52,7 +52,7 @@ async fn epoch(number: i64, db_connection: NodeDbConn) -> Template {
     db_connection
         .run(move |c| {
             let epoch = db::queries::epochs::by_number(number).first(c).unwrap();
-            Template::render("epoch", EpochContext::new(epoch))
+            Template::render("epoch", EpochContext::<MainnetEthSpec>::new(epoch))
         })
         .await
 }

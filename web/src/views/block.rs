@@ -5,8 +5,9 @@ use std::{
     convert::{TryFrom, TryInto},
     marker::PhantomData,
 };
-use thiserror::Error;
 use types::{EthSpec, Slot};
+
+use super::errors::ConversionError;
 
 #[derive(Serialize, Default)]
 pub struct BlockView<E: EthSpec> {
@@ -39,13 +40,4 @@ impl<E: EthSpec> TryFrom<BlockModel> for BlockView<E> {
 
         Ok(view)
     }
-}
-
-#[derive(Error, Debug)]
-pub enum ConversionError {
-    #[error(transparent)]
-    IntegerCastingError(#[from] std::num::TryFromIntError),
-
-    #[error("Slot not found")]
-    SlotNotFound,
 }
