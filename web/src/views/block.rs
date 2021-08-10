@@ -15,7 +15,8 @@ pub struct BlockView<E: EthSpec> {
     pub slot: String,
     pub proposer: String,
     pub attestations_count: String,
-    pub timestamp: u64,
+    pub time: String,
+    pub ago: String,
     phantom: PhantomData<E>,
 }
 
@@ -31,10 +32,8 @@ impl<E: EthSpec> TryFrom<BlockModel> for BlockView<E> {
             slot: model.slot.to_string(),
             proposer: model.proposer.to_string(),
             attestations_count: model.attestations_count.to_string(),
-            timestamp: clock
-                .start_of(slot)
-                .ok_or(ConversionError::SlotNotFound)?
-                .as_secs(),
+            time: clock.format(slot),
+            ago: String::new(),
             phantom: PhantomData,
         };
 
