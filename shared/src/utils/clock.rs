@@ -34,6 +34,6 @@ impl Clock {
         let timestamp = self.timestamp(slot);
         let date = Utc.timestamp(timestamp as i64, 0);
 
-        date.format("%h-%m-%Y %r +%Z").to_string()
+        date.format("%a, %e %b %Y %r %Z").to_string()
     }
 }
