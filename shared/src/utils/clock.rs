@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{ops::Sub, time::Duration};
 
 use chrono::{TimeZone, Utc};
 use slot_clock::{SlotClock, SystemTimeSlotClock};
@@ -23,17 +23,28 @@ impl Clock {
         self.clock.start_of(slot)
     }
 
-    pub fn timestamp(&self, slot: Slot) -> u64 {
-        self.clock
+    pub fn format(&self, slot: Slot) -> String {
+        let timestamp = self
+            .clock
             .start_of(slot)
             .unwrap_or(Duration::new(0, 0))
-            .as_secs()
-    }
-
-    pub fn format(&self, slot: Slot) -> String {
-        let timestamp = self.timestamp(slot);
+            .as_secs();
         let date = Utc.timestamp(timestamp as i64, 0);
 
         date.format("%a, %e %b %Y %r %Z").to_string()
+    }
+
+    pub fn ago(&self, slot: Slot) -> String {
+        let f = timeago::Formatter::new();
+        let now = self.clock.now_duration();
+        let duration = self.clock.start_of(slot);
+
+        match now {
+            Some(now) => match duration {
+                Some(duration) => f.convert(now.sub(duration)),
+                None => String::new(),
+            },
+            None => String::new(),
+        }
     }
 }

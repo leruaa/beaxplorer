@@ -33,7 +33,7 @@ impl<E: EthSpec> TryFrom<BlockModel> for BlockView<E> {
             proposer: model.proposer.to_string(),
             attestations_count: model.attestations_count.to_string(),
             time: clock.format(slot),
-            ago: String::new(),
+            ago: clock.ago(slot),
             phantom: PhantomData,
         };
 
