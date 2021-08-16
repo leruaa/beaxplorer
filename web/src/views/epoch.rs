@@ -23,7 +23,8 @@ pub struct EpochView<E: EthSpec> {
     pub voted_ether: String,
     pub global_participation_percentage: String,
     pub finalized: bool,
-    pub timestamp: u64,
+    pub time: String,
+    pub ago: String,
     phantom: PhantomData<E>,
 }
 
@@ -32,6 +33,7 @@ impl<E: EthSpec> TryFrom<EpochModel> for EpochView<E> {
 
     fn try_from(model: EpochModel) -> Result<Self, Self::Error> {
         let epoch = Epoch::new(model.epoch.try_into()?);
+        let start_slot = epoch.start_slot(E::slots_per_epoch());
         let spec = E::default_spec();
         let clock = Clock::new(spec);
         let view = EpochView {
@@ -44,10 +46,8 @@ impl<E: EthSpec> TryFrom<EpochModel> for EpochView<E> {
             voted_ether: model.voted_ether.to_ether_value(),
             global_participation_percentage: model.global_participation_rate.to_percentage(),
             finalized: model.finalized.unwrap_or_default(),
-            timestamp: clock
-                .start_of(epoch.start_slot(E::slots_per_epoch()))
-                .ok_or(ConversionError::SlotNotFound)?
-                .as_secs(),
+            time: clock.format(start_slot),
+            ago: clock.ago(start_slot),
             phantom: PhantomData,
         };
 
