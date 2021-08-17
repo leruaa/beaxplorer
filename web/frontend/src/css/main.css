@@ -21,7 +21,7 @@
   }
 
   dl {
-    @apply p-1 flex flex-wrap;
+    @apply flex flex-wrap;
 
     dt {
       @apply flex-none w-1/4;
@@ -39,6 +39,16 @@
 
     p {
       @apply p-1;
+    }
+
+    dl {
+      dt, dd {
+        @apply p-2;
+      }
+
+      dt:not(:first-of-type), dd:not(:first-of-type) {
+        @apply border-t;
+      }
     }
 
     table {
