@@ -7,12 +7,9 @@
 </head>
 
 <body>
-  <header>
-    {{> common/nav }}
-  </header>
+  {{> common/header }}
   <section class="container mx-auto">
     {{#with block}}
-    <h2>Block {{slot}}</h2>
     <div class="tabular-data">
       <dl>
         <dt>Epoch</dt>

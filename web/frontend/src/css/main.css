@@ -20,6 +20,26 @@
     }
   }
 
+  ul.breadcrumb {
+    @apply flex py-2;
+
+    li:not(:first-child)::before {
+      content: '';
+      mask-image: url('/static/svg/solid/chevron-right.svg');
+      background-size: contain;
+      background-repeat: no-repeat;
+      @apply inline-block w-6 h-6 relative top-1.5 bg-gray-400;
+    }
+
+    li {
+      @apply text-lg;
+    }
+
+    img.icon {
+      @apply w-5 h-5;
+    }
+  }
+
   dl {
     @apply flex flex-wrap;
 
@@ -62,5 +82,9 @@
         @apply text-gray-800 p-1.5 border-t rounded border-gray-200;
       }
     }
+  }
+
+  img.icon {
+    @apply inline w-4 h-4;
   }
 }
