@@ -1,5 +1,6 @@
 use crate::schema::blocks;
 use crate::schema::epochs;
+use crate::schema::validators;
 use serde::Serialize;
 
 #[derive(Queryable, Insertable, Serialize, Clone)]
@@ -43,4 +44,22 @@ pub struct EpochModel {
     pub eligible_ether: Option<i64>,
     pub global_participation_rate: Option<f64>,
     pub voted_ether: Option<i64>,
+}
+
+#[derive(Queryable, Insertable, AsChangeset, Serialize, Clone)]
+#[table_name = "validators"]
+pub struct ValidatorModel {
+    pub validator_index: i32,
+    pub pubkey: Vec<u8>,
+    pub pubkey_hex: String,
+    pub withdrawable_epoch: i64,
+    pub withdrawal_credentials: Vec<u8>,
+    pub balance: i64,
+    pub balance_activation: Option<i64>,
+    pub effective_balance: i64,
+    pub slashed: bool,
+    pub activation_eligibility_epoch: i64,
+    pub activation_epoch: i64,
+    pub exit_epoch: i64,
+    pub status: String,
 }

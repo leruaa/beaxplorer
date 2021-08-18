@@ -41,4 +41,26 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(blocks, epochs,);
+table! {
+    validators (validator_index) {
+        validator_index -> Int4,
+        pubkey -> Bytea,
+        pubkey_hex -> Text,
+        withdrawable_epoch -> Int8,
+        withdrawal_credentials -> Bytea,
+        balance -> Int8,
+        balance_activation -> Nullable<Int8>,
+        effective_balance -> Int8,
+        slashed -> Bool,
+        activation_eligibility_epoch -> Int8,
+        activation_epoch -> Int8,
+        exit_epoch -> Int8,
+        status -> Varchar,
+    }
+}
+
+allow_tables_to_appear_in_same_query!(
+    blocks,
+    epochs,
+    validators,
+);

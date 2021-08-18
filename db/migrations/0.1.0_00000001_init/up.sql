@@ -43,3 +43,28 @@ create table blocks
 
 create index idx_blocks_proposer on blocks (proposer);
 create index idx_blocks_epoch on blocks (epoch);
+
+create table validators
+(
+    validator_index              int         not null,
+    pubkey                       bytea       not null,
+    pubkey_hex                   text        not null default '',
+    withdrawable_epoch           bigint      not null,
+    withdrawal_credentials       bytea       not null,
+    balance                      bigint      not null,
+    balance_activation           bigint,
+    effective_balance            bigint      not null,
+    slashed                      bool        not null,
+    activation_eligibility_epoch bigint      not null,
+    activation_epoch             bigint      not null,
+    exit_epoch                   bigint      not null,
+    status                     varchar(20) not null default '',
+    primary key (validator_index)
+);
+
+create index idx_validators_pubkey on validators (pubkey);
+create index idx_validators_pubkeyhex on validators (pubkey_hex);
+create index idx_validators_pubkeyhex_pattern_pos on validators (pubkey_hex varchar_pattern_ops);
+create index idx_validators_status on validators (status);
+create index idx_validators_balanceactivation on validators (balance_activation);
+create index idx_validators_activationepoch on validators (activation_epoch);
