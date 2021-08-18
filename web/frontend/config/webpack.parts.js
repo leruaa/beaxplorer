@@ -7,6 +7,7 @@ const WebpackBar = require('webpackbar')
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const RemoveEmptyScriptsPlugin = require('webpack-remove-empty-scripts')
+const CopyPlugin = require("copy-webpack-plugin");
 
 exports.devServer = () => ({
   watch: true,
@@ -57,7 +58,7 @@ exports.loadSvg = () => ({
 })
 
 exports.postcss = () => ({
-  
+
 })
 
 exports.extractCss = ({ options = {}, loaders = [] } = {}) => {
@@ -66,7 +67,15 @@ exports.extractCss = ({ options = {}, loaders = [] } = {}) => {
       rules: [
         {
           test: /\.(p?css)$/,
-          use: [MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader'],
+          use: [
+            MiniCssExtractPlugin.loader,
+            {
+              loader: 'css-loader',
+              options: {
+                url: false
+              }
+            },
+            'postcss-loader'],
           sideEffects: true
         }
       ]
@@ -145,6 +154,16 @@ exports.esbuild = () => {
     plugins: [new ESBuildPlugin()]
   }
 }
+
+exports.copy = () => ({
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { from: "src/svg", to: "svg" },
+      ],
+    }),
+  ]
+})
 
 exports.cleanDist = () => ({
   plugins: [new CleanWebpackPlugin()]

@@ -14,6 +14,7 @@ const common = merge([
     }
   },
   parts.extractCss(),
+  parts.copy(),
   parts.cleanDist(),
   parts.useWebpackBar()
 ])
