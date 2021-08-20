@@ -1,6 +1,5 @@
-use std::convert::TryInto;
-
 use db::models::BlockModel;
+use shared::utils::convert::{IntoClampedI32, IntoClampedI64};
 use types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 
 use crate::errors::IndexerError;
@@ -52,14 +51,13 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
     }
 
     pub fn as_model(&self) -> Result<BlockModel, IndexerError> {
-        let epoch_as_i64 = self.epoch.as_u64().try_into()?;
-        let slot_as_i64 = self.slot.as_u64().try_into()?;
-        let proposer_as_i32 = self.proposer.try_into()?;
+        let epoch_as_i64 = self.epoch.as_u64().into_i64();
+        let slot_as_i64 = self.slot.as_u64().into_i64();
+        let proposer_as_i32 = self.proposer.into_i32();
 
         let block = match self.block.clone() {
             Some(block) => {
-                let eth1data_deposit_count_as_i32 =
-                    block.body.eth1_data.deposit_count.try_into()?;
+                let eth1data_deposit_count_as_i32 = block.body.eth1_data.deposit_count.into_i32();
 
                 BlockModel {
                     epoch: epoch_as_i64,

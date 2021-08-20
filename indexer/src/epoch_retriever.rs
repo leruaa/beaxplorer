@@ -15,6 +15,7 @@ use crate::{
     types::{
         consolidated_block::{BlockStatus, ConsolidatedBlock},
         consolidated_epoch::ConsolidatedEpoch,
+        consolidated_validator::ConsolidatedValidator,
     },
 };
 
@@ -54,7 +55,11 @@ impl EpochRetriever {
         Ok(ConsolidatedEpoch::<E> {
             epoch,
             blocks: try_join_all(build_consolidated_block_futures).await?,
-            validators: get_validators_handle.await??,
+            validators: get_validators_handle
+                .await??
+                .into_iter()
+                .map(|v| ConsolidatedValidator(v))
+                .collect(),
             validator_inclusion: get_validator_inclusion_handle.await??,
         })
     }

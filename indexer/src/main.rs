@@ -30,7 +30,7 @@ async fn main() {
     let indexer = Indexer::new(db_connection);
     let start = Instant::now();
 
-    for n in 40000..40010 {
+    for n in 40000..40001 {
         log::info!("Indexing epoch {}", n);
 
         match epoch_retriever
@@ -45,5 +45,9 @@ async fn main() {
     let duration = start.elapsed();
     log::info!("Avg epoch indexing duration: {:?}", duration.div_f32(10.));
 
-    indexer.index(epochs).await;
+    let res = indexer.index(epochs).await;
+
+    if let Err(err) = res {
+        log::error!("Error while persisting in DB: {:?}", err);
+    }
 }

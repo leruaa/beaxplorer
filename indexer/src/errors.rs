@@ -4,9 +4,6 @@ use types::Slot;
 #[derive(Error, Debug)]
 pub enum IndexerError {
     #[error(transparent)]
-    IntegerCastingError(#[from] std::num::TryFromIntError),
-
-    #[error(transparent)]
     QueryError(#[from] db::DieselError),
 
     #[error("Node error")]

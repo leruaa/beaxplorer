@@ -1,3 +1,4 @@
+use db::schema::validators;
 use db::{PgConnection, RunQueryDsl};
 use types::EthSpec;
 

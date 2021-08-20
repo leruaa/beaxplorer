@@ -1,33 +1,35 @@
-use std::{convert::TryInto, ops::Div};
+use std::ops::Div;
 
 use db::models::EpochModel;
-use eth2::{lighthouse::GlobalValidatorInclusionData, types::ValidatorData};
+use eth2::lighthouse::GlobalValidatorInclusionData;
+use shared::utils::convert::IntoClampedI64;
 use types::{Epoch, EthSpec};
 
 use crate::errors::IndexerError;
 
 use super::consolidated_block::ConsolidatedBlock;
+use super::consolidated_validator::ConsolidatedValidator;
 
 #[derive(Debug)]
 pub struct ConsolidatedEpoch<E: EthSpec> {
     pub epoch: Epoch,
     pub blocks: Vec<ConsolidatedBlock<E>>,
-    pub validators: Vec<ValidatorData>,
+    pub validators: Vec<ConsolidatedValidator>,
     pub validator_inclusion: GlobalValidatorInclusionData,
 }
 
 impl<E: EthSpec> ConsolidatedEpoch<E> {
     pub fn as_model(&self) -> Result<EpochModel, IndexerError> {
-        let epoch = self.epoch.as_u64().try_into()?;
-        let total_validator_balance: i64 = self.get_total_validator_balance().try_into()?;
+        let epoch = self.epoch.as_u64().into_i64();
+        let total_validator_balance: i64 = self.get_total_validator_balance().into_i64();
         let eligible_ether = self
             .validator_inclusion
             .previous_epoch_active_gwei
-            .try_into()?;
+            .into_i64();
         let voted_ether = self
             .validator_inclusion
             .previous_epoch_target_attesting_gwei
-            .try_into()?;
+            .into_i64();
         let global_participation_rate = (self
             .validator_inclusion
             .previous_epoch_target_attesting_gwei as f64)
@@ -85,7 +87,7 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
     pub fn get_total_validator_balance(&self) -> u64 {
         self.validators
             .iter()
-            .map(|v| v.validator.effective_balance)
+            .map(|v| v.0.validator.effective_balance)
             .sum()
     }
 }

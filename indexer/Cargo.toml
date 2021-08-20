@@ -14,6 +14,7 @@ thiserror = "1.0.26"
 log = "0.4.14"
 simple_logger = "1.11.0"
 db = { path = "../db" }
+shared = { path = "../shared" }
 
 eth2 = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 types = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
