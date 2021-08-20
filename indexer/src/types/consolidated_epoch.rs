@@ -4,6 +4,7 @@ use db::models::EpochModel;
 use db::schema::epochs;
 use db::{PgConnection, RunQueryDsl};
 use eth2::lighthouse::GlobalValidatorInclusionData;
+use eth2::types::ValidatorBalanceData;
 use shared::utils::convert::IntoClampedI64;
 use types::{Epoch, EthSpec};
 
@@ -11,13 +12,12 @@ use crate::errors::IndexerError;
 use crate::persistable::Persistable;
 
 use super::consolidated_block::ConsolidatedBlock;
-use super::consolidated_validator::ConsolidatedValidator;
 
 #[derive(Debug)]
 pub struct ConsolidatedEpoch<E: EthSpec> {
     pub epoch: Epoch,
     pub blocks: Vec<ConsolidatedBlock<E>>,
-    pub validators: Vec<ConsolidatedValidator>,
+    pub validator_balances: Vec<ValidatorBalanceData>,
     pub validator_inclusion: GlobalValidatorInclusionData,
 }
 
@@ -46,8 +46,9 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
             attestations_count: self.get_attestations_count() as i32,
             deposits_count: self.get_deposits_count() as i32,
             voluntary_exits_count: self.get_voluntary_exits_count() as i32,
-            validators_count: self.validators.len() as i32,
-            average_validator_balance: total_validator_balance.div(self.validators.len() as i64),
+            validators_count: self.validator_balances.len() as i32,
+            average_validator_balance: total_validator_balance
+                .div(self.validator_balances.len() as i64),
             total_validator_balance: total_validator_balance,
             finalized: Some(global_participation_rate >= 2f64 / 3f64),
             eligible_ether: Some(eligible_ether),
@@ -88,10 +89,7 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
     }
 
     pub fn get_total_validator_balance(&self) -> u64 {
-        self.validators
-            .iter()
-            .map(|v| v.0.validator.effective_balance)
-            .sum()
+        self.validator_balances.iter().map(|v| v.balance).sum()
     }
 }
 
