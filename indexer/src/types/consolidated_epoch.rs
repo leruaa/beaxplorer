@@ -1,11 +1,14 @@
 use std::ops::Div;
 
 use db::models::EpochModel;
+use db::schema::epochs;
+use db::{PgConnection, RunQueryDsl};
 use eth2::lighthouse::GlobalValidatorInclusionData;
 use shared::utils::convert::IntoClampedI64;
 use types::{Epoch, EthSpec};
 
 use crate::errors::IndexerError;
+use crate::persistable::Persistable;
 
 use super::consolidated_block::ConsolidatedBlock;
 use super::consolidated_validator::ConsolidatedValidator;
@@ -89,5 +92,21 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
             .iter()
             .map(|v| v.0.validator.effective_balance)
             .sum()
+    }
+}
+
+impl<E: EthSpec> Persistable for ConsolidatedEpoch<E> {
+    fn persist(&self, db_connection: &PgConnection) -> Result<(), IndexerError> {
+        let epoch_model = self.as_model()?;
+
+        db::insert_into(epochs::table)
+            .values(epoch_model)
+            .execute(db_connection)?;
+
+        for consolidated_block in &self.blocks {
+            consolidated_block.persist(db_connection)?;
+        }
+
+        Ok(())
     }
 }

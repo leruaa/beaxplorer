@@ -1,15 +1,16 @@
 use std::env;
 use std::time::Instant;
 
-use ::indexer::{epoch_retriever::EpochRetriever, indexer::Indexer};
+use ::indexer::epoch_retriever::EpochRetriever;
 use ::types::{Epoch, MainnetEthSpec};
 use db::{Connection, PgConnection};
 use dotenv::dotenv;
+use indexer::persistable::Persistable;
 use simple_logger::SimpleLogger;
 
 pub mod epoch_retriever;
 pub mod errors;
-pub mod indexer;
+pub mod persistable;
 pub mod types;
 
 #[tokio::main]
@@ -26,28 +27,24 @@ async fn main() {
     let db_connection = PgConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url));
     let epoch_retriever = EpochRetriever::new(endpoint_url);
-    let mut epochs = Vec::new();
-    let indexer = Indexer::new(db_connection);
     let start = Instant::now();
 
-    for n in 40000..40001 {
+    for n in 40000..40010 {
         log::info!("Indexing epoch {}", n);
 
         match epoch_retriever
             .get_consolidated_epoch::<MainnetEthSpec>(Epoch::new(n))
             .await
         {
-            Ok(epoch) => epochs.push(epoch),
+            Ok(epoch) => {
+                if let Err(err) = epoch.persist(&db_connection) {
+                    log::warn!("Error while persisting epoch {}: {:?}", n, err);
+                }
+            }
             Err(err) => log::warn!("Error while indexing epoch {}: {:?}", n, err),
         }
     }
 
     let duration = start.elapsed();
     log::info!("Avg epoch indexing duration: {:?}", duration.div_f32(10.));
-
-    let res = indexer.index(epochs).await;
-
-    if let Err(err) = res {
-        log::error!("Error while persisting in DB: {:?}", err);
-    }
 }

@@ -1,8 +1,8 @@
-use db::models::BlockModel;
+use db::{models::BlockModel, schema::blocks, PgConnection, RunQueryDsl};
 use shared::utils::convert::{IntoClampedI32, IntoClampedI64};
 use types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 
-use crate::errors::IndexerError;
+use crate::{errors::IndexerError, persistable::Persistable};
 
 #[derive(Debug)]
 pub struct ConsolidatedBlock<E: EthSpec> {
@@ -142,5 +142,16 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
             None => 0,
             Some(block) => block.body.attester_slashings.len(),
         }
+    }
+}
+
+impl<E: EthSpec> Persistable for ConsolidatedBlock<E> {
+    fn persist(&self, db_connection: &PgConnection) -> Result<(), IndexerError> {
+        let block_model = self.as_model()?;
+        db::insert_into(blocks::table)
+            .values(block_model)
+            .execute(db_connection)?;
+
+        Ok(())
     }
 }
