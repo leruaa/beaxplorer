@@ -8,6 +8,7 @@ use dotenv::dotenv;
 use indexer::persistable::Persistable;
 use simple_logger::SimpleLogger;
 
+pub mod beacon_node_client;
 pub mod epoch_retriever;
 pub mod errors;
 pub mod persistable;

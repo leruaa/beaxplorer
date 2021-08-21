@@ -19,5 +19,5 @@ async fn get_consolidated_epoch() {
 
     assert!(consolidated_epoch.epoch.as_u64() == 45000);
     assert!(consolidated_epoch.blocks.len() == MainnetEthSpec::slots_per_epoch() as usize);
-    assert!(consolidated_epoch.validators.len() > 0);
+    assert!(consolidated_epoch.validator_balances.len() > 0);
 }

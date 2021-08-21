@@ -1,19 +1,12 @@
 use std::{sync::Arc, time::Instant};
 
-use eth2::{
-    lighthouse::GlobalValidatorInclusionData,
-    types::{
-        BlockId, GenericResponse, ProposerData, RootData, StateId, ValidatorBalanceData,
-        ValidatorData,
-    },
-    BeaconNodeHttpClient,
-};
-use futures::{future::try_join_all, Future};
-use sensitive_url::SensitiveUrl;
+use eth2::types::ProposerData;
+use futures::future::try_join_all;
 use tokio::sync::RwLock;
-use types::{Epoch, EthSpec, Hash256, Signature, SignedBeaconBlock, Slot};
+use types::{Epoch, EthSpec, Hash256, Signature, Slot};
 
 use crate::{
+    beacon_node_client::BeaconNodeClient,
     errors::IndexerError,
     types::{
         consolidated_block::{BlockStatus, ConsolidatedBlock},
@@ -22,15 +15,13 @@ use crate::{
 };
 
 pub struct EpochRetriever {
-    client: BeaconNodeHttpClient,
+    client: BeaconNodeClient,
 }
 
 impl EpochRetriever {
     pub fn new(endpoint_url: String) -> Self {
-        let url = SensitiveUrl::parse(&endpoint_url).unwrap();
-
         EpochRetriever {
-            client: BeaconNodeHttpClient::new(url),
+            client: BeaconNodeClient::new(endpoint_url),
         }
     }
 
@@ -41,10 +32,13 @@ impl EpochRetriever {
         let mut build_consolidated_block_futures = Vec::new();
         let proposer_duties_lock = Arc::new(RwLock::new(Option::<Vec<ProposerData>>::None));
 
-        let get_validator_balances_handle =
-            tokio::spawn(self.get_validators_balances(epoch.start_slot(E::slots_per_epoch())));
+        let get_validator_balances_handle = tokio::spawn(
+            self.client
+                .get_validators_balances(epoch.start_slot(E::slots_per_epoch())),
+        );
 
-        let get_validator_inclusion_handle = tokio::spawn(self.get_validator_inclusion(epoch));
+        let get_validator_inclusion_handle =
+            tokio::spawn(self.client.get_validator_inclusion(epoch));
 
         for slot in epoch.slot_iter(E::slots_per_epoch()) {
             build_consolidated_block_futures.push(self.clone().build_consolidated_block::<E>(
@@ -62,24 +56,6 @@ impl EpochRetriever {
         })
     }
 
-    async fn get_block<E: EthSpec>(
-        &self,
-        slot: Slot,
-    ) -> Result<Option<GenericResponse<SignedBeaconBlock<E>>>, IndexerError> {
-        self.client
-            .get_beacon_blocks::<E>(BlockId::Slot(slot))
-            .await
-            .map_err(|inner_error| IndexerError::NodeError { inner_error })
-    }
-
-    async fn get_block_root(&self, slot: Slot) -> Result<GenericResponse<RootData>, IndexerError> {
-        self.client
-            .get_beacon_blocks_root(BlockId::Slot(slot))
-            .await
-            .map_err(|inner_error| IndexerError::NodeError { inner_error })?
-            .ok_or(IndexerError::ElementNotFound(slot))
-    }
-
     async fn build_consolidated_block<E: EthSpec>(
         &self,
         epoch: Epoch,
@@ -87,13 +63,14 @@ impl EpochRetriever {
         proposer_duties_lock: Arc<RwLock<Option<Vec<ProposerData>>>>,
     ) -> Result<ConsolidatedBlock<E>, IndexerError> {
         let start = Instant::now();
-        let block_response = self.get_block::<E>(slot).await?;
+        let block_response = self.client.get_block::<E>(slot).await?;
         let duration = start.elapsed();
         log::trace!("get_block duration: {:?}", duration);
 
         if let Some(block_response) = block_response {
             let start = Instant::now();
             let block_root = self
+                .client
                 .get_block_root(block_response.data.message.slot)
                 .await?;
             let duration = start.elapsed();
@@ -114,7 +91,8 @@ impl EpochRetriever {
 
             if proposer_duties.is_none() {
                 let mut proposer_duties_writable = proposer_duties_lock.write().await;
-                proposer_duties_writable.replace(self.get_validator_duties_proposer(epoch).await?);
+                proposer_duties_writable
+                    .replace(self.client.get_validator_duties_proposer(epoch).await?);
                 proposer_duties = proposer_duties_writable.clone();
             }
 
@@ -138,66 +116,5 @@ impl EpochRetriever {
         }
 
         Err(IndexerError::ElementNotFound(slot))
-    }
-
-    fn get_validators(
-        &self,
-        slot: Slot,
-    ) -> impl Future<Output = Result<Vec<ValidatorData>, IndexerError>> {
-        let client = self.client.clone();
-
-        async move {
-            client
-                .get_beacon_states_validators(StateId::Slot(slot), None, None)
-                .await
-                .transpose()
-                .ok_or(IndexerError::ElementNotFound(slot))?
-                .map(|response| response.data)
-                .map_err(|inner_error| IndexerError::NodeError { inner_error })
-        }
-    }
-
-    fn get_validators_balances(
-        &self,
-        slot: Slot,
-    ) -> impl Future<Output = Result<Vec<ValidatorBalanceData>, IndexerError>> {
-        let client = self.client.clone();
-
-        async move {
-            client
-                .get_beacon_states_validator_balances(StateId::Slot(slot), None)
-                .await
-                .transpose()
-                .ok_or(IndexerError::ElementNotFound(slot))?
-                .map(|response| response.data)
-                .map_err(|inner_error| IndexerError::NodeError { inner_error })
-        }
-    }
-
-    async fn get_validator_duties_proposer(
-        &self,
-        epoch: Epoch,
-    ) -> Result<Vec<ProposerData>, IndexerError> {
-        log::trace!("Getting duties proposer for epoch {}", epoch);
-        self.client
-            .get_validator_duties_proposer(epoch)
-            .await
-            .map(|response| response.data)
-            .map_err(|inner_error| IndexerError::NodeError { inner_error })
-    }
-
-    fn get_validator_inclusion(
-        &self,
-        epoch: Epoch,
-    ) -> impl Future<Output = Result<GlobalValidatorInclusionData, IndexerError>> {
-        let client = self.client.clone();
-
-        async move {
-            client
-                .get_lighthouse_validator_inclusion_global(epoch)
-                .await
-                .map(|response| response.data)
-                .map_err(|inner_error| IndexerError::NodeError { inner_error })
-        }
     }
 }
