@@ -1,15 +1,15 @@
 use std::env;
 use std::time::Instant;
 
-use ::indexer::epoch_retriever::EpochRetriever;
 use ::types::{Epoch, MainnetEthSpec};
 use db::{Connection, PgConnection};
 use dotenv::dotenv;
+use indexer::beacon_node_client::BeaconNodeClient;
 use indexer::persistable::Persistable;
+use indexer::types::consolidated_epoch::ConsolidatedEpoch;
 use simple_logger::SimpleLogger;
 
 pub mod beacon_node_client;
-pub mod epoch_retriever;
 pub mod errors;
 pub mod persistable;
 pub mod types;
@@ -27,22 +27,19 @@ async fn main() {
 
     let db_connection = PgConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url));
-    let epoch_retriever = EpochRetriever::new(endpoint_url);
+    let client = BeaconNodeClient::new(endpoint_url);
     let start = Instant::now();
 
     for n in 40000..40010 {
         log::info!("Indexing epoch {}", n);
 
-        match epoch_retriever
-            .get_consolidated_epoch::<MainnetEthSpec>(Epoch::new(n))
-            .await
-        {
+        match ConsolidatedEpoch::<MainnetEthSpec>::new(Epoch::new(n), client.clone()).await {
             Ok(epoch) => {
                 if let Err(err) = epoch.persist(&db_connection) {
                     log::warn!("Error while persisting epoch {}: {:?}", n, err);
                 }
             }
-            Err(err) => log::warn!("Error while indexing epoch {}: {:?}", n, err),
+            Err(err) => log::warn!("Error while building epoch {}: {:?}", n, err),
         }
     }
 

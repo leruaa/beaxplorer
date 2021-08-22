@@ -1,3 +1,3 @@
 extern crate indexer;
 
-mod epoch_retriever;
+mod consolidated_epoch;

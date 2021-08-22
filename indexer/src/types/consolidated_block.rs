@@ -1,8 +1,12 @@
+use std::{sync::Arc, time::Instant};
+
 use db::{models::BlockModel, schema::blocks, PgConnection, RunQueryDsl};
+use eth2::types::ProposerData;
 use shared::utils::convert::{IntoClampedI32, IntoClampedI64};
+use tokio::sync::RwLock;
 use types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 
-use crate::{errors::IndexerError, persistable::Persistable};
+use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError, persistable::Persistable};
 
 #[derive(Debug)]
 pub struct ConsolidatedBlock<E: EthSpec> {
@@ -30,24 +34,65 @@ impl std::fmt::Display for BlockStatus {
 }
 
 impl<E: EthSpec> ConsolidatedBlock<E> {
-    pub fn new(
+    pub async fn new(
         epoch: Epoch,
         slot: Slot,
-        block: Option<BeaconBlock<E>>,
-        block_root: Hash256,
-        signature: Signature,
-        status: BlockStatus,
-        proposer: u64,
-    ) -> Self {
-        ConsolidatedBlock {
-            epoch,
-            slot,
-            block,
-            block_root,
-            signature,
-            status,
-            proposer,
+        proposer_duties_lock: Arc<RwLock<Option<Vec<ProposerData>>>>,
+        client: BeaconNodeClient,
+    ) -> Result<Self, IndexerError> {
+        let start = Instant::now();
+        let block_response = client.get_block::<E>(slot).await?;
+        let duration = start.elapsed();
+        log::trace!("get_block duration: {:?}", duration);
+
+        if let Some(block_response) = block_response {
+            let start = Instant::now();
+            let block_root = client
+                .get_block_root(block_response.data.message.slot)
+                .await?;
+            let duration = start.elapsed();
+            log::trace!("get_block_root duration: {:?}", duration);
+            let consolidated_block = ConsolidatedBlock {
+                epoch,
+                slot: block_response.data.message.slot,
+                block: Some(block_response.data.message.clone()),
+                block_root: block_root.data.root,
+                signature: block_response.data.signature,
+                status: BlockStatus::Proposed,
+                proposer: block_response.data.message.proposer_index,
+            };
+
+            return Ok(consolidated_block);
+        } else {
+            let mut proposer_duties = proposer_duties_lock.read().await.clone();
+
+            if proposer_duties.is_none() {
+                let mut proposer_duties_writable = proposer_duties_lock.write().await;
+                proposer_duties_writable
+                    .replace(client.get_validator_duties_proposer(epoch).await?);
+                proposer_duties = proposer_duties_writable.clone();
+            }
+
+            if let Some(proposer_duties) = proposer_duties {
+                for proposer in proposer_duties {
+                    if proposer.slot == slot {
+                        let consolidated_block = ConsolidatedBlock {
+                            epoch,
+                            slot: proposer.slot,
+                            block: None,
+                            block_root: Hash256::zero(),
+                            signature: Signature::empty(),
+                            status: BlockStatus::Missed,
+                            proposer: proposer.validator_index,
+                        };
+
+                        return Ok(consolidated_block);
+                    }
+                }
+            }
         }
+
+        Err(IndexerError::ElementNotFound(slot))
     }
 
     pub fn as_model(&self) -> Result<BlockModel, IndexerError> {

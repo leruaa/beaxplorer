@@ -1,13 +1,17 @@
 use std::ops::Div;
+use std::sync::Arc;
 
 use db::models::EpochModel;
 use db::schema::epochs;
 use db::{PgConnection, RunQueryDsl};
 use eth2::lighthouse::GlobalValidatorInclusionData;
-use eth2::types::ValidatorBalanceData;
+use eth2::types::{ProposerData, ValidatorBalanceData};
+use futures::future::try_join_all;
 use shared::utils::convert::IntoClampedI64;
+use tokio::sync::RwLock;
 use types::{Epoch, EthSpec};
 
+use crate::beacon_node_client::BeaconNodeClient;
 use crate::errors::IndexerError;
 use crate::persistable::Persistable;
 
@@ -22,6 +26,32 @@ pub struct ConsolidatedEpoch<E: EthSpec> {
 }
 
 impl<E: EthSpec> ConsolidatedEpoch<E> {
+    pub async fn new(epoch: Epoch, client: BeaconNodeClient) -> Result<Self, IndexerError> {
+        let mut build_consolidated_block_futures = Vec::new();
+        let proposer_duties_lock = Arc::new(RwLock::new(Option::<Vec<ProposerData>>::None));
+
+        let get_validator_balances_handle =
+            tokio::spawn(client.get_validators_balances(epoch.start_slot(E::slots_per_epoch())));
+
+        let get_validator_inclusion_handle = tokio::spawn(client.get_validator_inclusion(epoch));
+
+        for slot in epoch.slot_iter(E::slots_per_epoch()) {
+            build_consolidated_block_futures.push(ConsolidatedBlock::new(
+                epoch,
+                slot,
+                proposer_duties_lock.clone(),
+                client.clone(),
+            ));
+        }
+
+        Ok(ConsolidatedEpoch::<E> {
+            epoch,
+            blocks: try_join_all(build_consolidated_block_futures).await?,
+            validator_balances: get_validator_balances_handle.await??,
+            validator_inclusion: get_validator_inclusion_handle.await??,
+        })
+    }
+
     pub fn as_model(&self) -> Result<EpochModel, IndexerError> {
         let epoch = self.epoch.as_u64().into_i64();
         let total_validator_balance: i64 = self.get_total_validator_balance().into_i64();

@@ -12,6 +12,7 @@ use types::{Epoch, EthSpec, SignedBeaconBlock, Slot};
 
 use crate::errors::IndexerError;
 
+#[derive(Clone)]
 pub struct BeaconNodeClient {
     client: BeaconNodeHttpClient,
 }
