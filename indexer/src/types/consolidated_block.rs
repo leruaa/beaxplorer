@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Instant};
 
 use db::{models::BlockModel, schema::blocks, PgConnection, RunQueryDsl};
-use eth2::types::ProposerData;
+use eth2::types::{BlockId, ProposerData};
 use shared::utils::convert::{IntoClampedI32, IntoClampedI64};
 use tokio::sync::RwLock;
 use types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
@@ -41,15 +41,14 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
         client: BeaconNodeClient,
     ) -> Result<Self, IndexerError> {
         let start = Instant::now();
-        let block_response = client.get_block::<E>(slot).await?;
+        let block = BlockId::Slot(slot);
+        let block_response = client.get_block::<E>(block).await?;
         let duration = start.elapsed();
         log::trace!("get_block duration: {:?}", duration);
 
         if let Some(block_response) = block_response {
             let start = Instant::now();
-            let block_root = client
-                .get_block_root(block_response.data.message.slot)
-                .await?;
+            let block_root = client.get_block_root(block).await?;
             let duration = start.elapsed();
             log::trace!("get_block_root duration: {:?}", duration);
             let consolidated_block = ConsolidatedBlock {
@@ -92,7 +91,7 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
             }
         }
 
-        Err(IndexerError::ElementNotFound(slot))
+        Err(IndexerError::ElementNotFound(block.to_string()))
     }
 
     pub fn as_model(&self) -> Result<BlockModel, IndexerError> {

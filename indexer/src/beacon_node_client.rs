@@ -28,14 +28,14 @@ impl BeaconNodeClient {
 
     pub fn get_block<E: EthSpec>(
         &self,
-        slot: Slot,
+        block: BlockId,
     ) -> impl Future<Output = Result<Option<GenericResponse<SignedBeaconBlock<E>>>, IndexerError>>
     {
         let client = self.client.clone();
 
         async move {
             client
-                .get_beacon_blocks::<E>(BlockId::Slot(slot))
+                .get_beacon_blocks::<E>(block)
                 .await
                 .map_err(|inner_error| IndexerError::NodeError { inner_error })
         }
@@ -43,31 +43,31 @@ impl BeaconNodeClient {
 
     pub fn get_block_root(
         &self,
-        slot: Slot,
+        block: BlockId,
     ) -> impl Future<Output = Result<GenericResponse<RootData>, IndexerError>> {
         let client = self.client.clone();
 
         async move {
             client
-                .get_beacon_blocks_root(BlockId::Slot(slot))
+                .get_beacon_blocks_root(block)
                 .await
                 .map_err(|inner_error| IndexerError::NodeError { inner_error })?
-                .ok_or(IndexerError::ElementNotFound(slot))
+                .ok_or(IndexerError::ElementNotFound(block.to_string()))
         }
     }
 
     pub fn get_validators(
         &self,
-        slot: Slot,
+        state: StateId,
     ) -> impl Future<Output = Result<Vec<ValidatorData>, IndexerError>> {
         let client = self.client.clone();
 
         async move {
             client
-                .get_beacon_states_validators(StateId::Slot(slot), None, None)
+                .get_beacon_states_validators(state, None, None)
                 .await
                 .transpose()
-                .ok_or(IndexerError::ElementNotFound(slot))?
+                .ok_or(IndexerError::ElementNotFound(state.to_string()))?
                 .map(|response| response.data)
                 .map_err(|inner_error| IndexerError::NodeError { inner_error })
         }
@@ -75,16 +75,16 @@ impl BeaconNodeClient {
 
     pub fn get_validators_balances(
         &self,
-        slot: Slot,
+        state: StateId,
     ) -> impl Future<Output = Result<Vec<ValidatorBalanceData>, IndexerError>> {
         let client = self.client.clone();
 
         async move {
             client
-                .get_beacon_states_validator_balances(StateId::Slot(slot), None)
+                .get_beacon_states_validator_balances(state, None)
                 .await
                 .transpose()
-                .ok_or(IndexerError::ElementNotFound(slot))?
+                .ok_or(IndexerError::ElementNotFound(state.to_string()))?
                 .map(|response| response.data)
                 .map_err(|inner_error| IndexerError::NodeError { inner_error })
         }

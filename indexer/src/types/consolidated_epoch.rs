@@ -5,7 +5,7 @@ use db::models::EpochModel;
 use db::schema::epochs;
 use db::{PgConnection, RunQueryDsl};
 use eth2::lighthouse::GlobalValidatorInclusionData;
-use eth2::types::{ProposerData, ValidatorBalanceData};
+use eth2::types::{ProposerData, StateId, ValidatorBalanceData};
 use futures::future::try_join_all;
 use shared::utils::convert::IntoClampedI64;
 use tokio::sync::RwLock;
@@ -30,8 +30,9 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
         let mut build_consolidated_block_futures = Vec::new();
         let proposer_duties_lock = Arc::new(RwLock::new(Option::<Vec<ProposerData>>::None));
 
-        let get_validator_balances_handle =
-            tokio::spawn(client.get_validators_balances(epoch.start_slot(E::slots_per_epoch())));
+        let get_validator_balances_handle = tokio::spawn(
+            client.get_validators_balances(StateId::Slot(epoch.start_slot(E::slots_per_epoch()))),
+        );
 
         let get_validator_inclusion_handle = tokio::spawn(client.get_validator_inclusion(epoch));
 

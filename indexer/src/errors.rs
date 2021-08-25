@@ -1,5 +1,4 @@
 use thiserror::Error;
-use types::Slot;
 
 #[derive(Error, Debug)]
 pub enum IndexerError {
@@ -10,7 +9,7 @@ pub enum IndexerError {
     NodeError { inner_error: eth2::Error },
 
     #[error("Element not found")]
-    ElementNotFound(Slot),
+    ElementNotFound(String),
 
     #[error(transparent)]
     JoinError(#[from] tokio::task::JoinError),
