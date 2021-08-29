@@ -4,9 +4,11 @@ use std::time::Instant;
 use ::types::{Epoch, MainnetEthSpec};
 use db::{Connection, PgConnection};
 use dotenv::dotenv;
+use eth2::types::StateId;
 use indexer::beacon_node_client::BeaconNodeClient;
 use indexer::persistable::Persistable;
 use indexer::types::consolidated_epoch::ConsolidatedEpoch;
+use indexer::types::consolidated_validator::ConsolidatedValidator;
 use simple_logger::SimpleLogger;
 
 pub mod beacon_node_client;
@@ -41,6 +43,17 @@ async fn main() {
             }
             Err(err) => log::warn!("Error while building epoch {}: {:?}", n, err),
         }
+    }
+
+    log::info!("Indexing validators");
+
+    match ConsolidatedValidator::from_state(StateId::Head, client).await {
+        Ok(validators) => {
+            if let Err(err) = validators.persist(&db_connection) {
+                log::warn!("Error while persisting validators: {:?}", err);
+            }
+        }
+        Err(err) => log::warn!("Error while building validators: {:?}", err),
     }
 
     let duration = start.elapsed();

@@ -8,7 +8,7 @@ use eth2::{
 };
 use futures::Future;
 use sensitive_url::SensitiveUrl;
-use types::{Epoch, EthSpec, SignedBeaconBlock, Slot};
+use types::{Epoch, EthSpec, SignedBeaconBlock};
 
 use crate::errors::IndexerError;
 
