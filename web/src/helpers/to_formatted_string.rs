@@ -1,11 +1,11 @@
 use std::ops::{Div, Mul};
 
 pub trait ToFormattedString {
-    fn to_formatted_string(&self) -> String;
+    fn to_formatted_string(&self, decimals: u32) -> String;
 }
 
 pub trait ToEther: ToFormattedString {
-    fn to_ether_value(&self) -> String;
+    fn to_ether_value(&self, decimals: u32) -> String;
 }
 
 pub trait ToPercentage: ToFormattedString {
@@ -13,7 +13,7 @@ pub trait ToPercentage: ToFormattedString {
 }
 
 impl ToFormattedString for i64 {
-    fn to_formatted_string(&self) -> String {
+    fn to_formatted_string(&self, _: u32) -> String {
         self.to_string()
             .chars()
             .rev()
@@ -35,40 +35,41 @@ impl ToFormattedString for i64 {
 }
 
 impl ToEther for i64 {
-    fn to_ether_value(&self) -> String {
-        self.div(1_000_000_000).to_formatted_string()
+    fn to_ether_value(&self, decimals: u32) -> String {
+        let f = *self as f64;
+        f.div(1_000_000_000f64).to_formatted_string(decimals)
     }
 }
 
 impl ToFormattedString for f64 {
-    fn to_formatted_string(&self) -> String {
+    fn to_formatted_string(&self, decimals: u32) -> String {
         let int_value = self.trunc() as i64;
-        let frac_value = self.fract().mul(100f64).round();
+        let frac_value = self.fract().mul(10i32.pow(decimals) as f64).round();
 
-        format!("{}.{}", int_value.to_formatted_string(), frac_value)
+        format!("{}.{}", int_value.to_formatted_string(0), frac_value)
     }
 }
 
 impl ToPercentage for f64 {
     fn to_percentage(&self) -> String {
-        self.mul(100f64).to_formatted_string()
+        self.mul(100f64).to_formatted_string(0)
     }
 }
 
 impl<T: ToFormattedString> ToFormattedString for Option<T> {
-    fn to_formatted_string(&self) -> String {
+    fn to_formatted_string(&self, _: u32) -> String {
         match self {
             None => 0.to_string(),
-            Some(n) => n.to_formatted_string(),
+            Some(n) => n.to_formatted_string(0),
         }
     }
 }
 
 impl<T: ToEther> ToEther for Option<T> {
-    fn to_ether_value(&self) -> String {
+    fn to_ether_value(&self, decimals: u32) -> String {
         match self {
             None => 0.to_string(),
-            Some(n) => n.to_ether_value(),
+            Some(n) => n.to_ether_value(decimals),
         }
     }
 }
