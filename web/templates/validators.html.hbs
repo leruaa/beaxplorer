@@ -1,0 +1,41 @@
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="/static/css/main.css" rel="stylesheet">
+</head>
+
+<body>
+  {{> common/header }}
+  <section class="container mx-auto">
+    <div class="tabular-data">
+      <p>Showing validators</p>
+      <table>
+        <tr>
+          <th>Index</th>
+          <th>Public key</th>
+          <th>Balance</th>
+          <th>State</th>
+          <th>Activation</th>
+          <th>Exit</th>
+          <th>Withdrawable epoch</th>
+        </tr>
+        {{#each validators}}
+        <tr>
+          <td><a href="/validator/{{index}}">{{index}}</a></td>
+          <td>{{public_key_extract}}&hellip;</td>
+          <td>{{balance}} ETH ({{effective_balance}} ETH)</td>
+          <td>{{status}}</td>
+          <td>{{activation_ago}} ({{activation_epoch}})</td>
+          <td>{{#if exit_ago}}{{exit_ago}} ({{exit_epoch}}){{else}}&ndash;{{/if}}</td>
+          <td>{{#if withdrawable_ago}}{{withdrawable_ago}} ({{withdrawable_epoch}}){{else}}&ndash;{{/if}}</td>
+        </tr>
+        {{/each}}
+      </table>
+    </div>
+  </section>
+  <script src="/static/js/main.js"></script>
+</body>
+
+</html>
