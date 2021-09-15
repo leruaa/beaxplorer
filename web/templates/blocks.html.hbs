@@ -24,7 +24,7 @@
           <td><a href="/epoch/{{epoch}}">{{epoch}}</a></td>
           <td><a href="/block/{{slot}}">{{slot}}</a></td>
           <td>{{ago}}</td>
-          <td>{{proposer}}</td>
+          <td>{{> common/icon v="outline" id="user" }} <a href="/validator/{{proposer}}">{{proposer}}</a></td>
           <td>{{attestations_count}}</td>
         </tr>
         {{/each}}
