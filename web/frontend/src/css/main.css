@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer base {
-  h1, h2 {
+  h1,
+  h2 {
     @apply py-1;
   }
 
@@ -14,28 +14,16 @@
 
   header {
     @apply p-1 bg-blue-900 text-blue-50;
-    
+
     a {
       @apply text-blue-50;
     }
   }
 
-  ul.breadcrumb {
-    @apply flex py-2;
+  .breadcrumb {
+    @apply flex items-center py-2 text-lg;
 
-    li:not(:first-child)::before {
-      content: '';
-      mask-image: url('/static/svg/solid/chevron-right.svg');
-      background-size: contain;
-      background-repeat: no-repeat;
-      @apply inline-block w-6 h-6 relative top-1.5 bg-gray-400;
-    }
-
-    li {
-      @apply text-lg;
-    }
-
-    img.icon {
+    .icon {
       @apply w-5 h-5;
     }
   }
@@ -62,29 +50,31 @@
     }
 
     dl {
-      dt, dd {
+      dt,
+      dd {
         @apply p-2;
       }
 
-      dt:not(:first-of-type), dd:not(:first-of-type) {
+      dt:not(:first-of-type),
+      dd:not(:first-of-type) {
         @apply border-t;
       }
     }
 
     table {
       @apply w-full;
-  
+
       th {
         @apply text-xs text-left text-gray-600 uppercase px-1.5 py-2 bg-gray-100;
       }
-  
+
       td {
         @apply text-gray-800 p-1.5 border-t rounded border-gray-200;
       }
     }
   }
 
-  img.icon {
+  .icon {
     @apply inline w-4 h-4;
   }
 }

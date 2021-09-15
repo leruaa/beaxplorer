@@ -1,11 +1,13 @@
 {{#if breadcrumb}}
 <ul class="breadcrumb">
-  <li><a href="/"><img class="icon" src="/static/svg/solid/home.svg"></a></li>
+  <a href="/">{{> common/icon v="solid" id="home" }}</a>
   {{#each breadcrumb.parts}}
   {{#if link}}
-  <li><a href="{{link}}">{{text}}</a></li>
+    {{> common/icon class="mt-1 text-gray-500" v="solid" id="chevron-right" }}
+    <a href="{{link}}">{{text}}</a>
   {{else}}
-  <li>{{text}}</li>
+    {{> common/icon class="mt-1 text-gray-500" v="solid" id="chevron-right" }}
+    {{text}}
   {{/if}}
   {{/each}}
 </ul>
