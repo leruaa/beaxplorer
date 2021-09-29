@@ -75,6 +75,6 @@
   }
 
   .icon {
-    @apply inline align-bottom w-5 h-5;
+    @apply inline align-text-bottom w-5 h-5;
   }
 }
