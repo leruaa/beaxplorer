@@ -8,6 +8,7 @@ use contexts::block::BlockContext;
 use contexts::blocks::BlocksContext;
 use contexts::epoch::EpochContext;
 use contexts::epochs::EpochsContext;
+use contexts::validator::ValidatorContext;
 use contexts::validators::ValidatorsContext;
 use db::models::{BlockModel, EpochModel, ValidatorModel};
 use db::RunQueryDsl;
@@ -95,12 +96,25 @@ async fn validators(db_connection: NodeDbConn) -> Template {
         .await
 }
 
+#[get("/validator/<number>")]
+async fn validator(number: i32, db_connection: NodeDbConn) -> Template {
+    db_connection
+        .run(move |c| {
+            let validator = db::queries::validators::by_number(number).first(c).unwrap();
+            Template::render(
+                "validator",
+                ValidatorContext::<MainnetEthSpec>::new(validator),
+            )
+        })
+        .await
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
         .mount(
             "/",
-            routes![index, epochs, epoch, blocks, block, validators],
+            routes![index, epochs, epoch, blocks, block, validators, validator],
         )
         .mount("/static", FileServer::from(relative!("frontend/dist")))
         .attach(Template::fairing())

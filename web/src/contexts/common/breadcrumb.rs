@@ -1,4 +1,4 @@
-use db::models::{BlockModel, EpochModel};
+use db::models::{BlockModel, EpochModel, ValidatorModel};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -54,5 +54,11 @@ impl From<EpochModel> for BreadcrumbPart {
 impl From<BlockModel> for BreadcrumbPart {
     fn from(model: BlockModel) -> Self {
         Self::from_text(format!("Block {} details", model.slot).as_str())
+    }
+}
+
+impl From<ValidatorModel> for BreadcrumbPart {
+    fn from(model: ValidatorModel) -> Self {
+        Self::from_text(format!("Validator {} details", model.validator_index).as_str())
     }
 }
