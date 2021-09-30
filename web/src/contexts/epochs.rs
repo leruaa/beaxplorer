@@ -17,7 +17,7 @@ pub struct EpochsContext<E: EthSpec> {
 impl<E: EthSpec> EpochsContext<E> {
     pub fn new(epochs: Vec<EpochModel>) -> Self {
         EpochsContext {
-            breadcrumb: vec![BreadcrumbPart::from_text("Epochs")].into(),
+            breadcrumb: vec![BreadcrumbPart::from_text_with_icon("Epochs", "clock")].into(),
             epochs: epochs.into_iter().map(|e| e.try_into().ok()).collect(),
         }
     }

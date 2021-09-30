@@ -18,7 +18,7 @@ impl<E: EthSpec> EpochContext<E> {
     pub fn new(epoch: EpochModel) -> Self {
         EpochContext {
             breadcrumb: vec![
-                BreadcrumbPart::from_link("Epochs", "/epochs"),
+                BreadcrumbPart::from_link("Epochs", "/epochs", "clock"),
                 epoch.clone().into(),
             ]
             .into(),

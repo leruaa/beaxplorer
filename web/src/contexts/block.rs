@@ -18,7 +18,7 @@ impl<E: EthSpec> BlockContext<E> {
     pub fn new(block: BlockModel) -> Self {
         BlockContext {
             breadcrumb: vec![
-                BreadcrumbPart::from_link("Blocks", "/blocks"),
+                BreadcrumbPart::from_link("Blocks", "/blocks", "cube"),
                 block.clone().into(),
             ]
             .into(),

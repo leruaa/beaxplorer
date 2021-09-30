@@ -17,14 +17,18 @@
 
     a {
       @apply text-blue-50;
+
+      .icon {
+        @apply align-middle;
+      }
     }
   }
 
   .breadcrumb {
-    @apply flex items-center py-2 text-lg;
+    @apply py-2 text-lg;
 
     .icon {
-      @apply w-5 h-5;
+      @apply align-middle;
     }
   }
 

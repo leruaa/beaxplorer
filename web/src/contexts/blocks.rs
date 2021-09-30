@@ -17,7 +17,7 @@ pub struct BlocksContext<E: EthSpec> {
 impl<E: EthSpec> BlocksContext<E> {
     pub fn new(blocks: Vec<BlockModel>) -> Self {
         BlocksContext {
-            breadcrumb: vec![BreadcrumbPart::from_text("Blocks")].into(),
+            breadcrumb: vec![BreadcrumbPart::from_text_with_icon("Blocks", "cube")].into(),
             blocks: blocks.into_iter().map(|e| e.try_into().ok()).collect(),
         }
     }

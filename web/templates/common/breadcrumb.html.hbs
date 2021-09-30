@@ -3,10 +3,18 @@
   <a href="/">{{> common/icon v="solid" id="home" }}</a>
   {{#each breadcrumb.parts}}
   {{#if link}}
-    {{> common/icon class="mt-1 text-gray-500" v="solid" id="chevron-right" }}
-    <a href="{{link}}">{{text}}</a>
+    {{> common/icon class="text-gray-500" v="solid" id="chevron-right" }}
+    <a href="{{link}}">
+      {{#if icon}}
+        {{> common/icon v="outline" id=icon }}
+      {{/if}}
+      {{text}}
+    </a>
   {{else}}
-    {{> common/icon class="mt-1 text-gray-500" v="solid" id="chevron-right" }}
+    {{> common/icon class="text-gray-500" v="solid" id="chevron-right" }}
+    {{#if icon}}
+      {{> common/icon v="outline" id=icon }}
+    {{/if}}
     {{text}}
   {{/if}}
   {{/each}}

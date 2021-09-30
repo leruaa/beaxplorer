@@ -17,7 +17,7 @@ pub struct ValidatorsContext<E: EthSpec> {
 impl<E: EthSpec> ValidatorsContext<E> {
     pub fn new(validators: Vec<ValidatorModel>) -> Self {
         ValidatorsContext {
-            breadcrumb: vec![BreadcrumbPart::from_text("Validators")].into(),
+            breadcrumb: vec![BreadcrumbPart::from_text_with_icon("Validators", "users")].into(),
             validators: validators.into_iter().map(|e| e.try_into().ok()).collect(),
         }
     }

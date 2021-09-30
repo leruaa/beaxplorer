@@ -16,6 +16,7 @@ impl From<Vec<BreadcrumbPart>> for Breadcrumb {
 pub struct BreadcrumbPart {
     pub text: String,
     pub link: Option<String>,
+    pub icon: Option<String>,
 }
 
 impl BreadcrumbPart {
@@ -23,13 +24,23 @@ impl BreadcrumbPart {
         BreadcrumbPart {
             text: text.into(),
             link: None,
+            icon: None,
         }
     }
 
-    pub fn from_link(text: &str, link: &str) -> BreadcrumbPart {
+    pub fn from_text_with_icon(text: &str, icon: &str) -> BreadcrumbPart {
+        BreadcrumbPart {
+            text: text.into(),
+            link: None,
+            icon: Some(icon.into()),
+        }
+    }
+
+    pub fn from_link(text: &str, link: &str, icon: &str) -> BreadcrumbPart {
         BreadcrumbPart {
             text: text.into(),
             link: Some(link.into()),
+            icon: Some(icon.into()),
         }
     }
 }
