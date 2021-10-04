@@ -2,6 +2,7 @@
 members = [
     "web",
     "indexer",
+    "indexer_cli",
     "db",
     "shared",
 ]
