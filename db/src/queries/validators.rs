@@ -1,14 +1,16 @@
-use diesel::{dsl::Find, QueryDsl};
+use diesel::{PgConnection, QueryDsl, QueryResult, RunQueryDsl};
+
+use crate::models::ValidatorModel;
 
 use super::super::schema::validators;
 
-pub fn by_number<'a>(number: i32) -> Find<validators::table, i32> {
-    validators::table.find(number)
+pub fn by_number<'a>(number: i32, connection: &PgConnection) -> QueryResult<ValidatorModel> {
+    validators::table.find(number).first(connection)
 }
 
-pub fn get_latests<'a>(limit: i64) -> validators::BoxedQuery<'a, diesel::pg::Pg> {
+pub fn get_latests<'a>(limit: i64, connection: &PgConnection) -> QueryResult<Vec<ValidatorModel>> {
     validators::table
         .limit(limit)
         .order(validators::validator_index)
-        .into_boxed()
+        .load(connection)
 }

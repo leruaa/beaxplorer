@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
-use db::{ConnectionManager, PgConnection, Pool, RunQueryDsl};
+use db::{ConnectionManager, PgConnection, Pool};
 use dotenv::dotenv;
 use indexer::indexer::Indexer;
 use simple_logger::SimpleLogger;

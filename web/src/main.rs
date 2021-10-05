@@ -10,8 +10,6 @@ use contexts::epoch::EpochContext;
 use contexts::epochs::EpochsContext;
 use contexts::validator::ValidatorContext;
 use contexts::validators::ValidatorsContext;
-use db::models::{BlockModel, ValidatorModel};
-use db::RunQueryDsl;
 use rocket::fs::{relative, FileServer};
 use rocket_dyn_templates::Template;
 
@@ -59,9 +57,7 @@ async fn epoch(number: i64, db_connection: NodeDbConn) -> Template {
 async fn blocks(db_connection: NodeDbConn) -> Template {
     db_connection
         .run(|c| -> Template {
-            let blocks = db::queries::blocks::get_latests(10)
-                .load::<BlockModel>(c)
-                .unwrap();
+            let blocks = db::queries::blocks::get_latests(10, &c).unwrap();
             Template::render("blocks", BlocksContext::<MainnetEthSpec>::new(blocks))
         })
         .await
@@ -71,7 +67,7 @@ async fn blocks(db_connection: NodeDbConn) -> Template {
 async fn block(slot: i64, db_connection: NodeDbConn) -> Template {
     db_connection
         .run(move |c| {
-            let block = db::queries::blocks::by_slot(slot).first(c).unwrap();
+            let block = db::queries::blocks::by_slot(slot, &c).unwrap();
             Template::render("block", BlockContext::<MainnetEthSpec>::new(block))
         })
         .await
@@ -81,9 +77,7 @@ async fn block(slot: i64, db_connection: NodeDbConn) -> Template {
 async fn validators(db_connection: NodeDbConn) -> Template {
     db_connection
         .run(|c| -> Template {
-            let validators = db::queries::validators::get_latests(10)
-                .load::<ValidatorModel>(c)
-                .unwrap();
+            let validators = db::queries::validators::get_latests(10, &c).unwrap();
             Template::render(
                 "validators",
                 ValidatorsContext::<MainnetEthSpec>::new(validators),
@@ -96,7 +90,7 @@ async fn validators(db_connection: NodeDbConn) -> Template {
 async fn validator(number: i32, db_connection: NodeDbConn) -> Template {
     db_connection
         .run(move |c| {
-            let validator = db::queries::validators::by_number(number).first(c).unwrap();
+            let validator = db::queries::validators::by_number(number, &c).unwrap();
             Template::render(
                 "validator",
                 ValidatorContext::<MainnetEthSpec>::new(validator),
