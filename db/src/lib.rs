@@ -7,4 +7,5 @@ pub mod schema;
 
 pub use diesel::insert_into;
 pub use diesel::prelude::*;
+pub use diesel::r2d2::*;
 pub use diesel::result::Error as DieselError;
