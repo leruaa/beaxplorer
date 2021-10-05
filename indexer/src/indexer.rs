@@ -6,6 +6,7 @@ use types::{Epoch, MainnetEthSpec};
 
 use crate::{
     beacon_node_client::BeaconNodeClient,
+    errors::IndexerError,
     persistable::Persistable,
     types::{consolidated_epoch::ConsolidatedEpoch, consolidated_validator::ConsolidatedValidator},
 };
@@ -19,6 +20,18 @@ impl Indexer {
         Indexer {
             beacon_client: BeaconNodeClient::new(endpoint_url),
         }
+    }
+
+    pub async fn get_latest_indexed_epoch(
+        &self,
+        pool: &Arc<Pool<ConnectionManager<PgConnection>>>,
+    ) -> Result<Option<u64>, IndexerError> {
+        let db_connection = pool.get().expect("Error when getting connection");
+
+        let latest_finalized_epoch =
+            db::queries::epochs::get_latest_finalized_epoch(&db_connection)?;
+
+        Ok(latest_finalized_epoch.map(|n| n as u64))
     }
 
     pub async fn index_epoch(

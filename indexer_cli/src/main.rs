@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
-use db::{ConnectionManager, PgConnection, Pool};
+use db::{ConnectionManager, PgConnection, Pool, RunQueryDsl};
 use dotenv::dotenv;
 use indexer::indexer::Indexer;
 use simple_logger::SimpleLogger;
@@ -36,8 +36,13 @@ async fn main() {
     .expect("Error setting Ctrl-C handler");
 
     tokio::spawn(async move {
-        let mut n = 0;
         let indexer = Indexer::new(endpoint_url);
+        let mut n = indexer
+            .get_latest_indexed_epoch(&db_pool.clone())
+            .await
+            .unwrap()
+            .map(|n| n + 1)
+            .unwrap_or_else(|| 0);
 
         while running.load(Ordering::SeqCst) {
             indexer.index_epoch(&db_pool.clone(), n).await;

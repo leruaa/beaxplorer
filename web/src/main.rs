@@ -10,7 +10,7 @@ use contexts::epoch::EpochContext;
 use contexts::epochs::EpochsContext;
 use contexts::validator::ValidatorContext;
 use contexts::validators::ValidatorsContext;
-use db::models::{BlockModel, EpochModel, ValidatorModel};
+use db::models::{BlockModel, ValidatorModel};
 use db::RunQueryDsl;
 use rocket::fs::{relative, FileServer};
 use rocket_dyn_templates::Template;
@@ -29,9 +29,7 @@ struct NodeDbConn(db::PgConnection);
 async fn index(db_connection: NodeDbConn) -> Template {
     db_connection
         .run(|c| {
-            let epochs = db::queries::epochs::get_latests(10)
-                .load::<EpochModel>(c)
-                .unwrap();
+            let epochs = db::queries::epochs::get_latests(10, c).unwrap();
             Template::render("index", HomeContext::<MainnetEthSpec>::new(epochs))
         })
         .await
@@ -41,9 +39,7 @@ async fn index(db_connection: NodeDbConn) -> Template {
 async fn epochs(db_connection: NodeDbConn) -> Template {
     db_connection
         .run(|c| {
-            let epochs = db::queries::epochs::get_latests(10)
-                .load::<EpochModel>(c)
-                .unwrap();
+            let epochs = db::queries::epochs::get_latests(10, c).unwrap();
             Template::render("epochs", EpochsContext::<MainnetEthSpec>::new(epochs))
         })
         .await
@@ -53,7 +49,7 @@ async fn epochs(db_connection: NodeDbConn) -> Template {
 async fn epoch(number: i64, db_connection: NodeDbConn) -> Template {
     db_connection
         .run(move |c| {
-            let epoch = db::queries::epochs::by_number(number).first(c).unwrap();
+            let epoch = db::queries::epochs::by_number(number, c).unwrap();
             Template::render("epoch", EpochContext::<MainnetEthSpec>::new(epoch))
         })
         .await
