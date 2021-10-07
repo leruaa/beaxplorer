@@ -33,12 +33,12 @@ async fn index(db_connection: NodeDbConn) -> Template {
         .await
 }
 
-#[get("/epochs")]
-async fn epochs(db_connection: NodeDbConn) -> Template {
+#[get("/epochs?<page>")]
+async fn epochs(page: Option<i64>, db_connection: NodeDbConn) -> Template {
     db_connection
-        .run(|c| {
-            let epochs = db::queries::epochs::get_latests(10, c).unwrap();
-            Template::render("epochs", EpochsContext::<MainnetEthSpec>::new(epochs))
+        .run(move |c| {
+            let epochs = db::queries::epochs::get_paginated(page.unwrap_or_else(|| 1), c).unwrap();
+            Template::render("epochs", EpochsContext::<MainnetEthSpec>::new(epochs.0))
         })
         .await
 }

@@ -4,6 +4,7 @@ extern crate diesel;
 pub mod models;
 pub mod queries;
 pub mod schema;
+pub mod utils;
 
 pub use diesel::insert_into;
 pub use diesel::prelude::*;
