@@ -9,7 +9,7 @@ use dotenv::dotenv;
 async fn get_consolidated_epoch() {
     dotenv().ok();
 
-    let endpoint = env::var("ENDPOINT_URL").unwrap();
+    let endpoint = env::var("LIGHTHOUSE_ENDPOINT_URL").unwrap();
     let client = BeaconNodeClient::new(endpoint);
 
     let consolidated_epoch = ConsolidatedEpoch::<MainnetEthSpec>::new(Epoch::new(45000), client)

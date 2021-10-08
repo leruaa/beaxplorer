@@ -18,7 +18,7 @@ async fn main() {
         .ok();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let endpoint_url = env::var("ENDPOINT_URL").unwrap();
+    let endpoint_url = env::var("LIGHTHOUSE_ENDPOINT_URL").unwrap();
     let db_pool = Arc::new(
         Pool::new(ConnectionManager::<PgConnection>::new(&database_url))
             .expect(&format!("Error connecting to {}", database_url)),
