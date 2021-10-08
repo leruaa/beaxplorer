@@ -53,12 +53,12 @@ async fn epoch(number: i64, db_connection: NodeDbConn) -> Template {
         .await
 }
 
-#[get("/blocks")]
-async fn blocks(db_connection: NodeDbConn) -> Template {
+#[get("/blocks?<page>")]
+async fn blocks(page: Option<i64>, db_connection: NodeDbConn) -> Template {
     db_connection
-        .run(|c| -> Template {
-            let blocks = db::queries::blocks::get_latests(10, &c).unwrap();
-            Template::render("blocks", BlocksContext::<MainnetEthSpec>::new(blocks))
+        .run(move |c| -> Template {
+            let blocks = db::queries::blocks::get_paginated(page.unwrap_or_else(|| 1), &c).unwrap();
+            Template::render("blocks", BlocksContext::<MainnetEthSpec>::new(blocks.0))
         })
         .await
 }

@@ -16,7 +16,7 @@ relying on [Lighthouse](https://lighthouse.sigmaprime.io/).
   `cargo install diesel_cli`
 
 - Create a file named `.env` containing the database url and the Lighthouse
-  endpoint url (see [.env.exexample](./.env.example))
+  endpoint url (see [.env.example](./.env.example))
 
 - Init the database:
 
