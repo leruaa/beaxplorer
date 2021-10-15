@@ -11,6 +11,7 @@ module.exports = {
   },
   buildOptions: {
     out: "dist",
+    watch: true
   },
   plugins: [
     '@snowpack/plugin-typescript',
