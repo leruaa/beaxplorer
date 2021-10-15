@@ -38,7 +38,10 @@ async fn epochs(page: Option<i64>, db_connection: NodeDbConn) -> Template {
     db_connection
         .run(move |c| {
             let epochs = db::queries::epochs::get_paginated(page.unwrap_or_else(|| 1), c).unwrap();
-            Template::render("epochs", EpochsContext::<MainnetEthSpec>::new(epochs.0))
+            Template::render(
+                "epochs",
+                EpochsContext::<MainnetEthSpec>::new(epochs.0, epochs.1),
+            )
         })
         .await
 }
