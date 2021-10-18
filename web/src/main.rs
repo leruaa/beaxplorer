@@ -10,18 +10,16 @@ use contexts::epoch::EpochContext;
 use contexts::epochs::EpochsContext;
 use contexts::validator::ValidatorContext;
 use contexts::validators::ValidatorsContext;
+use helpers::db::NodeDbConn;
 use rocket::fs::{relative, FileServer};
 use rocket_dyn_templates::Template;
 
-use rocket_sync_db_pools::database;
 use types::MainnetEthSpec;
 
 pub mod contexts;
 pub mod helpers;
+pub mod requests;
 pub mod views;
-
-#[database("node")]
-struct NodeDbConn(db::PgConnection);
 
 #[get("/")]
 async fn index(db_connection: NodeDbConn) -> Template {
@@ -110,6 +108,7 @@ fn rocket() -> _ {
             "/",
             routes![index, epochs, epoch, blocks, block, validators, validator],
         )
+        .mount("/api", routes![requests::api::epochs])
         .mount("/static", FileServer::from(relative!("frontend/dist")))
         .attach(Template::fairing())
         .attach(NodeDbConn::fairing())
