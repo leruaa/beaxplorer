@@ -47,18 +47,19 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
         log::trace!("get_block duration: {:?}", duration);
 
         if let Some(block_response) = block_response {
+            let (beacon_block, signature) = block_response.data.deconstruct();
             let start = Instant::now();
             let block_root = client.get_block_root(block).await?;
             let duration = start.elapsed();
             log::trace!("get_block_root duration: {:?}", duration);
             let consolidated_block = ConsolidatedBlock {
                 epoch,
-                slot: block_response.data.message.slot,
-                block: Some(block_response.data.message.clone()),
+                slot: beacon_block.slot(),
+                block: Some(beacon_block.clone()),
                 block_root: block_root.data.root,
-                signature: block_response.data.signature,
+                signature: signature,
                 status: BlockStatus::Proposed,
-                proposer: block_response.data.message.proposer_index,
+                proposer: beacon_block.proposer_index(),
             };
 
             return Ok(consolidated_block);
@@ -101,28 +102,33 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
 
         let block = match self.block.clone() {
             Some(block) => {
-                let eth1data_deposit_count_as_i32 = block.body.eth1_data.deposit_count.into_i32();
+                let eth1data_deposit_count_as_i32 =
+                    block.body().eth1_data().deposit_count.into_i32();
 
                 BlockModel {
                     epoch: epoch_as_i64,
                     slot: slot_as_i64,
                     block_root: self.block_root.as_bytes().to_vec(),
-                    parent_root: block.parent_root.as_bytes().to_vec(),
-                    state_root: block.state_root.as_bytes().to_vec(),
-                    randao_reveal: Some(block.body.randao_reveal.to_string().as_bytes().to_vec()),
+                    parent_root: block.parent_root().as_bytes().to_vec(),
+                    state_root: block.state_root().as_bytes().to_vec(),
+                    randao_reveal: Some(
+                        block.body().randao_reveal().to_string().as_bytes().to_vec(),
+                    ),
                     signature: self.signature.to_string().as_bytes().to_vec(),
-                    graffiti: Some(block.body.graffiti.to_string().as_bytes().to_vec()),
-                    graffiti_text: Some(block.body.graffiti.to_string()),
+                    graffiti: Some(block.body().graffiti().to_string().as_bytes().to_vec()),
+                    graffiti_text: Some(block.body().graffiti().to_string()),
                     eth1data_deposit_root: Some(
-                        block.body.eth1_data.deposit_root.as_bytes().to_vec(),
+                        block.body().eth1_data().deposit_root.as_bytes().to_vec(),
                     ),
                     eth1data_deposit_count: eth1data_deposit_count_as_i32,
-                    eth1data_block_hash: Some(block.body.eth1_data.block_hash.as_bytes().to_vec()),
-                    proposer_slashings_count: block.body.proposer_slashings.len() as i32,
-                    attester_slashings_count: block.body.attester_slashings.len() as i32,
-                    attestations_count: block.body.attestations.len() as i32,
-                    deposits_count: block.body.deposits.len() as i32,
-                    voluntary_exits_count: block.body.voluntary_exits.len() as i32,
+                    eth1data_block_hash: Some(
+                        block.body().eth1_data().block_hash.as_bytes().to_vec(),
+                    ),
+                    proposer_slashings_count: block.body().proposer_slashings().len() as i32,
+                    attester_slashings_count: block.body().attester_slashings().len() as i32,
+                    attestations_count: block.body().attestations().len() as i32,
+                    deposits_count: block.body().deposits().len() as i32,
+                    voluntary_exits_count: block.body().voluntary_exits().len() as i32,
                     proposer: proposer_as_i32,
                     status: self.status.to_string(),
                 }
@@ -156,35 +162,35 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
     pub fn get_attestations_count(&self) -> usize {
         match self.block.clone() {
             None => 0,
-            Some(block) => block.body.attestations.len(),
+            Some(block) => block.body().attestations().len(),
         }
     }
 
     pub fn get_deposits_count(&self) -> usize {
         match self.block.clone() {
             None => 0,
-            Some(block) => block.body.deposits.len(),
+            Some(block) => block.body().deposits().len(),
         }
     }
 
     pub fn get_voluntary_exits_count(&self) -> usize {
         match self.block.clone() {
             None => 0,
-            Some(block) => block.body.voluntary_exits.len(),
+            Some(block) => block.body().voluntary_exits().len(),
         }
     }
 
     pub fn get_proposer_slashings_count(&self) -> usize {
         match self.block.clone() {
             None => 0,
-            Some(block) => block.body.proposer_slashings.len(),
+            Some(block) => block.body().proposer_slashings().len(),
         }
     }
 
     pub fn get_attester_slashings_count(&self) -> usize {
         match self.block.clone() {
             None => 0,
-            Some(block) => block.body.attester_slashings.len(),
+            Some(block) => block.body().attester_slashings().len(),
         }
     }
 }

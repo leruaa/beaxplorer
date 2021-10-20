@@ -1,10 +1,12 @@
+use std::time::Duration;
+
 use eth2::{
     lighthouse::GlobalValidatorInclusionData,
     types::{
-        BlockId, GenericResponse, ProposerData, RootData, StateId, ValidatorBalanceData,
-        ValidatorData,
+        BlockId, ForkVersionedResponse, GenericResponse, ProposerData, RootData, StateId,
+        ValidatorBalanceData, ValidatorData,
     },
-    BeaconNodeHttpClient,
+    BeaconNodeHttpClient, Timeouts,
 };
 use futures::Future;
 use sensitive_url::SensitiveUrl;
@@ -22,14 +24,14 @@ impl BeaconNodeClient {
         let url = SensitiveUrl::parse(&endpoint_url).unwrap();
 
         BeaconNodeClient {
-            client: BeaconNodeHttpClient::new(url),
+            client: BeaconNodeHttpClient::new(url, Timeouts::set_all(Duration::from_secs(20))),
         }
     }
 
     pub fn get_block<E: EthSpec>(
         &self,
         block: BlockId,
-    ) -> impl Future<Output = Result<Option<GenericResponse<SignedBeaconBlock<E>>>, IndexerError>>
+    ) -> impl Future<Output = Result<Option<ForkVersionedResponse<SignedBeaconBlock<E>>>, IndexerError>>
     {
         let client = self.client.clone();
 
