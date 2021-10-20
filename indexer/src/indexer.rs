@@ -38,38 +38,35 @@ impl Indexer {
         &self,
         pool: &Arc<Pool<ConnectionManager<PgConnection>>>,
         number: u64,
-    ) {
+    ) -> Result<(), IndexerError> {
         log::info!("Indexing epoch {}", number);
 
         let db_connection = pool.get().expect("Error when getting connection");
 
-        match ConsolidatedEpoch::<MainnetEthSpec>::new(
+        let epoch = ConsolidatedEpoch::<MainnetEthSpec>::new(
             Epoch::new(number),
             self.beacon_client.clone(),
         )
-        .await
-        {
-            Ok(epoch) => {
-                if let Err(err) = epoch.persist(&db_connection) {
-                    log::warn!("Error while persisting epoch {}: {:?}", number, err);
-                }
-            }
-            Err(err) => log::warn!("Error while building epoch {}: {:?}", number, err),
-        }
+        .await?;
+
+        epoch.persist(&db_connection)?;
+
+        Ok(())
     }
 
-    pub async fn index_validators(&self, pool: &Arc<Pool<ConnectionManager<PgConnection>>>) {
+    pub async fn index_validators(
+        &self,
+        pool: &Arc<Pool<ConnectionManager<PgConnection>>>,
+    ) -> Result<(), IndexerError> {
         log::info!("Indexing validators");
 
         let db_connection = pool.get().expect("Error when getting connection");
 
-        match ConsolidatedValidator::from_state(StateId::Head, self.beacon_client.clone()).await {
-            Ok(validators) => {
-                if let Err(err) = validators.persist(&db_connection) {
-                    log::warn!("Error while persisting validators: {:?}", err);
-                }
-            }
-            Err(err) => log::warn!("Error while building validators: {:?}", err),
-        }
+        let validators =
+            ConsolidatedValidator::from_state(StateId::Head, self.beacon_client.clone()).await?;
+
+        validators.persist(&db_connection)?;
+
+        Ok(())
     }
 }

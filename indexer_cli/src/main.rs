@@ -45,11 +45,20 @@ async fn main() {
             .unwrap_or_else(|| 0);
 
         while running.load(Ordering::SeqCst) {
-            indexer.index_epoch(&db_pool.clone(), n).await;
-            n = n + 1;
+            match indexer.index_epoch(&db_pool.clone(), n).await {
+                Ok(_) => {
+                    n = n + 1;
+                }
+                Err(err) => {
+                    running.store(false, Ordering::SeqCst);
+                    log::error!("Error while indexing epoch {}: {:?}", n, err);
+                }
+            }
         }
 
-        indexer.index_validators(&db_pool.clone()).await;
+        if let Err(err) = indexer.index_validators(&db_pool.clone()).await {
+            log::warn!("Error while indexing validators: {:?}", err);
+        }
 
         sender.send(()).unwrap();
     });
