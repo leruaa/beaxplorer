@@ -108,8 +108,8 @@ fn rocket() -> _ {
             "/",
             routes![index, epochs, epoch, blocks, block, validators, validator],
         )
+        .mount("/", FileServer::from(relative!("frontend/dist")))
         .mount("/api", routes![requests::api::epochs])
-        .mount("/static", FileServer::from(relative!("frontend/dist")))
         .attach(Template::fairing())
         .attach(NodeDbConn::fairing())
 }
