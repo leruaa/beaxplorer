@@ -24,7 +24,7 @@ impl BeaconNodeClient {
         let url = SensitiveUrl::parse(&endpoint_url).unwrap();
 
         BeaconNodeClient {
-            client: BeaconNodeHttpClient::new(url, Timeouts::set_all(Duration::from_secs(20))),
+            client: BeaconNodeHttpClient::new(url, Timeouts::set_all(Duration::from_secs(60))),
         }
     }
 
