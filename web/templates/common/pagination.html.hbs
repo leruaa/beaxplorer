@@ -1,8 +1,8 @@
 <div class="flex justify-end space-x-2 p-2">
-  <button disabled="disabled">{{> common/icon v="outline" id="chevron-double-left" }}</button>
-  <button disabled="disabled">{{> common/icon v="outline" id="chevron-left" }}</button>
+  <button id="first-page" disabled="disabled">{{> common/icon v="outline" id="chevron-double-left" }}</button>
+  <button id="previous-page" disabled="disabled">{{> common/icon v="outline" id="chevron-left" }}</button>
   <input class="w-20 p-1 border border-blue-300 rounded" value="1" />
   <span class="py-1">of {{count}}</span>
-  <button>{{> common/icon v="outline" id="chevron-right" }}</button>
-  <button>{{> common/icon v="outline" id="chevron-double-right" }}</button>
+  <button id="next-page">{{> common/icon v="outline" id="chevron-right" }}</button>
+  <button id="last-page">{{> common/icon v="outline" id="chevron-double-right" }}</button>
 </div>

@@ -11,43 +11,47 @@
   <section class="container mx-auto">
     <div class="tabular-data">
       <p>Showing epochs</p>
-      <table>
-        <tr>
-          <th>Epoch</th>
-          <th>Time</th>
-          <th>Attestations</th>
-          <th>Deposits</th>
-          <th>Slashings P / A</th>
-          <th>Finalized</th>
-          <th>Eligible</th>
-          <th>Voted</th>
-          <th>Rate</th>
-        </tr>
-        {{#each epochs}}
-        <tr>
-          <td><a href="/epoch/{{epoch}}">{{epoch}}</a></td>
-          <td>{{ago}}</td>
-          <td>{{attestations_count}}</td>
-          <td>{{deposits_count}}</td>
-          <td>{{proposer_slashings_count}} / {{attester_slashings_count}}</td>
-          <td>
-            {{#if finalized}}
-            <span>Yes</span>
-            {{else}}
-            <span>No</span>
-            {{/if}}
-          </td>
-          <td>{{eligible_ether}} ETH</td>
-          <td>{{voted_ether}} ETH</td>
-          <td>{{global_participation_percentage}}%</td>
-        </tr>
-        {{/each}}
+      <table id="epochs">
+        <thead>
+          <tr>
+            <th>Epoch</th>
+            <th>Time</th>
+            <th>Attestations</th>
+            <th>Deposits</th>
+            <th>Slashings P / A</th>
+            <th>Finalized</th>
+            <th>Eligible</th>
+            <th>Voted</th>
+            <th>Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each epochs}}
+          <tr>
+            <td><a href="/epoch/{{epoch}}">{{epoch}}</a></td>
+            <td>{{ago}}</td>
+            <td>{{attestations_count}}</td>
+            <td>{{deposits_count}}</td>
+            <td>{{proposer_slashings_count}} / {{attester_slashings_count}}</td>
+            <td>
+              {{#if finalized}}
+              <span>Yes</span>
+              {{else}}
+              <span>No</span>
+              {{/if}}
+            </td>
+            <td>{{eligible_ether}} ETH</td>
+            <td>{{voted_ether}} ETH</td>
+            <td>{{global_participation_percentage}}%</td>
+          </tr>
+          {{/each}}
+        </tbody>
       </table>
       {{> common/pagination count=pages_count }}
     </div>
   </section>
   <script src="/js/main.js" type="module"></script>
-  <script src="/static/js/main.js"></script>
+  <script src="/js/epochs.js" type="module"></script>
 </body>
 
 </html>
