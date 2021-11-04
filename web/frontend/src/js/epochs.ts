@@ -1,5 +1,7 @@
 import { Grid, html } from "gridjs";
 
+let epochsList = document.getElementById("epochs-list")!;
+
 new Grid({
   columns: [
     {
@@ -38,9 +40,18 @@ new Grid({
         e.voted_ether,
         e.global_participation_percentage
       ]
-    )
+    ),
+    total: (data) => parseInt(epochsList.dataset.pageCount!) * 10
+  },
+  pagination: {
+    enabled: true,
+    summary: false,
+    limit: 10,
+    server: {
+      url: (prev, page, limit) => `${prev}?page=${page + 1}`
+    }
   }
-}).render(document.getElementById("epochs-list")!);
+}).render(epochsList);
 
 /*
 paginate("epochs",
