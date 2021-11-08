@@ -1,29 +1,31 @@
-use diesel::{dsl::max, QueryDsl};
+use diesel::{
+    dsl::max,
+    pg::Pg,
+    sql_types::{BigInt, Nullable},
+    QueryDsl,
+};
 
-use crate::{models::EpochModel, schema::epochs::dsl::*, utils::pagination::*};
+use crate::schema::epochs::dsl::*;
 use diesel::prelude::*;
 
-pub fn by_number<'a>(e: i64, connection: &PgConnection) -> QueryResult<EpochModel> {
-    epochs.find(e).first(connection)
+type EpochsBoxedQuery<'a> = crate::schema::epochs::BoxedQuery<'a, Pg>;
+
+pub fn all<'a>() -> EpochsBoxedQuery<'a> {
+    epochs.into_boxed()
 }
 
-pub fn get_latests<'a>(limit: i64, connection: &PgConnection) -> QueryResult<Vec<EpochModel>> {
-    epochs.limit(limit).order(epoch).load(connection)
+pub fn by_number<'a>(e: i64) -> EpochsBoxedQuery<'a> {
+    epochs.find(e).into_boxed()
 }
 
-pub fn get_paginated<'a>(
-    page: i64,
-    connection: &PgConnection,
-) -> QueryResult<(Vec<EpochModel>, i64)> {
-    epochs
-        .order(epoch)
-        .paginate(page)
-        .load_and_count_pages(connection)
+pub fn get_latests<'a>(limit: i64) -> EpochsBoxedQuery<'a> {
+    epochs.limit(limit).order(epoch).into_boxed()
 }
 
-pub fn get_latest_finalized_epoch<'a>(connection: &PgConnection) -> QueryResult<Option<i64>> {
+pub fn get_latest_finalized_epoch<'a>(
+) -> crate::schema::epochs::BoxedQuery<'a, Pg, Nullable<BigInt>> {
     epochs
         .select(max(epoch))
         .filter(finalized.eq_all(true))
-        .get_result(connection)
+        .into_boxed()
 }

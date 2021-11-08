@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use db::{ConnectionManager, PgConnection, Pool};
+use db::{ConnectionManager, PgConnection, Pool, RunQueryDsl};
 use eth2::types::StateId;
 use types::{Epoch, MainnetEthSpec};
 
@@ -28,8 +28,8 @@ impl Indexer {
     ) -> Result<Option<u64>, IndexerError> {
         let db_connection = pool.get().expect("Error when getting connection");
 
-        let latest_finalized_epoch =
-            db::queries::epochs::get_latest_finalized_epoch(&db_connection)?;
+        let latest_finalized_epoch = db::queries::epochs::get_latest_finalized_epoch()
+            .first::<Option<i64>>(&db_connection)?;
 
         Ok(latest_finalized_epoch.map(|n| n as u64))
     }
