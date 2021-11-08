@@ -32,7 +32,7 @@
     }
   }
 
-  button {
+  buttn {
     @apply text-blue-600 p-1 border border-blue-300 rounded;
 
     &:hover {
@@ -98,7 +98,11 @@
         @apply flex justify-end px-4 py-2;
 
         button {
-          @apply rounded-none border-0 border-t border-b border-r border-gray-300 px-2;
+          @apply text-blue-600 border-t border-b border-r border-gray-300 px-2 py-1;
+
+          &:disabled {
+            @apply text-gray-400 border-gray-300 cursor-not-allowed;
+          }
 
           &:first-child {
             @apply rounded-l border-l;
