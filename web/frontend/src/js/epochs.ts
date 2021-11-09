@@ -6,23 +6,42 @@ paginate({
   apiUrl: "/api/epochs",
   columns: [
     {
+      id: "epoch",
       name: "Epoch",
       formatter: (cell: any) => html(`<a href="/epoch/${cell}">${cell}</a>`)
     },
-    "Time",
-    "Attestations",
-    "Deposits",
-    "Slashings P / A",
-    "Finalized",
     {
+      id: "ag0",
+      name: "Time"
+    },
+    {
+      id: "attestations_count",
+      name: "Attestations"
+    },
+    {
+      id: "deposits_count",
+      name: "Deposits",
+    },
+    {
+      id: "attester_slashings_count",
+      name: "Slashings P / A",
+    },
+    {
+      id: "finalized",
+      name: "Finalized"
+    },
+    {
+      id: "eligible_ether",
       name: "Eligible",
       formatter: (cell: any) => `${cell} ETH`
     },
     {
+      id: "voted_ether",
       name: "Voted",
       formatter: (cell: any) => `${cell} ETH`
     },
     {
+      id: "global_participation_rate",
       name: "Rate",
       formatter: (cell: any) => `${cell}%`
     }
