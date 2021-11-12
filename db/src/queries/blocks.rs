@@ -1,4 +1,4 @@
-use diesel::QueryDsl;
+use diesel::{pg::Pg, ExpressionMethods, QueryDsl};
 
 use crate::{models::BlockModel, utils::pagination::*};
 
