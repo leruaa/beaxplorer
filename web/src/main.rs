@@ -99,7 +99,9 @@ async fn validators(page: Option<i64>, db_connection: NodeDbConn) -> Template {
 async fn validator(number: i32, db_connection: NodeDbConn) -> Template {
     db_connection
         .run(move |c| {
-            let validator = db::queries::validators::by_number(number, &c).unwrap();
+            let validator = db::queries::validators::by_number(number)
+                .get_result(c)
+                .unwrap();
             Template::render(
                 "validator",
                 ValidatorContext::<MainnetEthSpec>::new(validator),
