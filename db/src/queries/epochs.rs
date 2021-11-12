@@ -8,17 +8,17 @@ use diesel::{
 use crate::schema::epochs::dsl::*;
 use diesel::prelude::*;
 
-type EpochsBoxedQuery<'a> = crate::schema::epochs::BoxedQuery<'a, Pg>;
+type BoxedQuery<'a> = crate::schema::epochs::BoxedQuery<'a, Pg>;
 
-pub fn all<'a>() -> EpochsBoxedQuery<'a> {
+pub fn all<'a>() -> BoxedQuery<'a> {
     epochs.into_boxed()
 }
 
-pub fn by_number<'a>(e: i64) -> EpochsBoxedQuery<'a> {
+pub fn by_number<'a>(e: i64) -> BoxedQuery<'a> {
     epochs.find(e).into_boxed()
 }
 
-pub fn get_latests<'a>(limit: i64) -> EpochsBoxedQuery<'a> {
+pub fn get_latests<'a>(limit: i64) -> BoxedQuery<'a> {
     epochs.limit(limit).order(epoch).into_boxed()
 }
 
