@@ -86,7 +86,7 @@ async fn validators(page: Option<i64>, db_connection: NodeDbConn) -> Template {
     db_connection
         .run(move |c| -> Template {
             let validators =
-                db::queries::validators::get_paginated(page.unwrap_or_else(|| 1), &c).unwrap();
+                controllers::validators::get_paginated(page.unwrap_or_else(|| 1), &c).unwrap();
             Template::render(
                 "validators",
                 ValidatorsContext::<MainnetEthSpec>::new(validators.0),
