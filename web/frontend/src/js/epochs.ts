@@ -11,7 +11,7 @@ paginate({
       formatter: (cell: any) => html(`<a href="/epoch/${cell}">${cell}</a>`)
     },
     {
-      id: "ag0",
+      id: "ago",
       name: "Time"
     },
     {
