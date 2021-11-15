@@ -15,7 +15,7 @@ export function paginate(settings: PaginationSettings) {
     server: {
       url: settings.apiUrl,
       then: settings.dataMapping,
-      total: (data) => parseInt(wrapper.dataset.pageCount!) * 10
+      total: (data) => data.page_count * 10
     },
     pagination: {
       enabled: true,

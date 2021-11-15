@@ -46,7 +46,7 @@ paginate({
       formatter: (cell: any) => `${cell}%`
     }
   ],
-  dataMapping: (data: any) => data.map(
+  dataMapping: (data: any) => data.results.map(
     (e: any) => [
       e.epoch,
       e.ago,

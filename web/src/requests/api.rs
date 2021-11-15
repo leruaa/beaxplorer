@@ -1,6 +1,10 @@
 use std::convert::TryInto;
 
-use crate::{controllers, helpers::db::NodeDbConn, views::epoch::EpochView};
+use crate::{
+    controllers,
+    helpers::db::NodeDbConn,
+    views::{epoch::EpochView, paginated::PaginatedView},
+};
 use rocket::serde::json::Json;
 use types::MainnetEthSpec;
 
@@ -10,19 +14,21 @@ pub async fn epochs(
     sort: Option<String>,
     dir: Option<String>,
     db_connection: NodeDbConn,
-) -> Json<Vec<EpochView<MainnetEthSpec>>> {
+) -> Json<PaginatedView<EpochView<MainnetEthSpec>>> {
     db_connection
         .run(move |c| {
-            let epochs =
+            let paginated =
                 controllers::epochs::get_paginated(page.unwrap_or_else(|| 1), sort, dir, c)
-                    .unwrap()
-                    .0
-                    .into_iter()
-                    .map(|e| e.try_into().ok())
-                    .filter_map(|e| e)
-                    .collect();
+                    .unwrap();
 
-            Json(epochs)
+            let epochs = paginated
+                .0
+                .into_iter()
+                .map(|e| e.try_into().ok())
+                .filter_map(|e| e)
+                .collect();
+
+            Json(PaginatedView::new(epochs, paginated.1))
         })
         .await
 }
