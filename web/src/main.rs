@@ -41,10 +41,7 @@ async fn epochs(page: Option<i64>, db_connection: NodeDbConn) -> Template {
                 controllers::epochs::get_paginated(page.unwrap_or_else(|| 1), None, None, c)
                     .unwrap();
 
-            Template::render(
-                "epochs",
-                EpochsContext::<MainnetEthSpec>::new(epochs.0, epochs.1),
-            )
+            Template::render("epochs", EpochsContext::new(epochs.1))
         })
         .await
 }
@@ -64,9 +61,9 @@ async fn epoch(number: i64, db_connection: NodeDbConn) -> Template {
 #[get("/blocks?<page>")]
 async fn blocks(page: Option<i64>, db_connection: NodeDbConn) -> Template {
     db_connection
-        .run(move |c| -> Template {
-            let blocks = db::queries::blocks::get_paginated(page.unwrap_or_else(|| 1), &c).unwrap();
-            Template::render("blocks", BlocksContext::<MainnetEthSpec>::new(blocks.0))
+        .run(|c| -> Template {
+            let blocks = controllers::blocks::get_paginated(1, &c).unwrap();
+            Template::render("blocks", BlocksContext::new())
         })
         .await
 }
@@ -87,10 +84,7 @@ async fn validators(page: Option<i64>, db_connection: NodeDbConn) -> Template {
         .run(move |c| -> Template {
             let validators =
                 controllers::validators::get_paginated(page.unwrap_or_else(|| 1), &c).unwrap();
-            Template::render(
-                "validators",
-                ValidatorsContext::<MainnetEthSpec>::new(validators.0),
-            )
+            Template::render("validators", ValidatorsContext::new())
         })
         .await
 }
