@@ -33,17 +33,9 @@ async fn index(db_connection: NodeDbConn) -> Template {
         .await
 }
 
-#[get("/epochs?<page>")]
-async fn epochs(page: Option<i64>, db_connection: NodeDbConn) -> Template {
-    db_connection
-        .run(move |c| {
-            let epochs =
-                controllers::epochs::get_paginated(page.unwrap_or_else(|| 1), None, None, c)
-                    .unwrap();
-
-            Template::render("epochs", EpochsContext::new(epochs.1))
-        })
-        .await
+#[get("/epochs")]
+async fn epochs() -> Template {
+    Template::render("epochs", EpochsContext::new())
 }
 
 #[get("/epoch/<number>")]
