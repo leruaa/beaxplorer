@@ -54,7 +54,7 @@ async fn epoch(number: i64, db_connection: NodeDbConn) -> Template {
 async fn blocks(page: Option<i64>, db_connection: NodeDbConn) -> Template {
     db_connection
         .run(|c| -> Template {
-            let blocks = controllers::blocks::get_paginated(1, &c).unwrap();
+            let blocks = controllers::blocks::get_paginated(1, None, None, &c).unwrap();
             Template::render("blocks", BlocksContext::new())
         })
         .await
@@ -104,7 +104,10 @@ fn rocket() -> _ {
             routes![index, epochs, epoch, blocks, block, validators, validator],
         )
         .mount("/", FileServer::from(relative!("frontend/dist")))
-        .mount("/api", routes![requests::api::epochs])
+        .mount(
+            "/api",
+            routes![requests::api::epochs, requests::api::blocks],
+        )
         .attach(Template::fairing())
         .attach(NodeDbConn::fairing())
 }

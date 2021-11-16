@@ -11,26 +11,11 @@
   <section class="container mx-auto">
     <div class="tabular-data">
       <p>Showing blocks</p>
-      <table>
-        <tr>
-          <th>Epoch</th>
-          <th>Slot</th>
-          <th>Time</th>
-          <th>Proposer</th>
-          <th>Attestations</th>
-        </tr>
-        {{#each blocks}}
-        <tr>
-          <td><a href="/epoch/{{epoch}}">{{epoch}}</a></td>
-          <td><a href="/block/{{slot}}">{{slot}}</a></td>
-          <td>{{ago}}</td>
-          <td>{{> common/icon v="outline" id="user" }} <a href="/validator/{{proposer}}">{{proposer}}</a></td>
-          <td>{{attestations_count}}</td>
-        </tr>
-        {{/each}}
-      </table>
+      <div id="blocks-list"></div>
     </div>
   </section>
+  <script src="/js/main.js" type="module"></script>
+  <script src="/js/blocks.js" type="module"></script>
 </body>
 
 </html>

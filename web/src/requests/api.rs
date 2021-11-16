@@ -3,7 +3,7 @@ use std::convert::TryInto;
 use crate::{
     controllers,
     helpers::db::NodeDbConn,
-    views::{epoch::EpochView, paginated::PaginatedView},
+    views::{block::BlockView, epoch::EpochView, paginated::PaginatedView},
 };
 use rocket::serde::json::Json;
 use types::MainnetEthSpec;
@@ -29,6 +29,31 @@ pub async fn epochs(
                 .collect();
 
             Json(PaginatedView::new(epochs, paginated.1))
+        })
+        .await
+}
+
+#[get("/blocks?<sort>&<page>&<dir>")]
+pub async fn blocks(
+    page: Option<i64>,
+    sort: Option<String>,
+    dir: Option<String>,
+    db_connection: NodeDbConn,
+) -> Json<PaginatedView<BlockView<MainnetEthSpec>>> {
+    db_connection
+        .run(move |c| {
+            let paginated =
+                controllers::blocks::get_paginated(page.unwrap_or_else(|| 1), sort, dir, c)
+                    .unwrap();
+
+            let blocks = paginated
+                .0
+                .into_iter()
+                .map(|e| e.try_into().ok())
+                .filter_map(|e| e)
+                .collect();
+
+            Json(PaginatedView::new(blocks, paginated.1))
         })
         .await
 }
