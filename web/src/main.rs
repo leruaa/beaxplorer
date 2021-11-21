@@ -70,11 +70,7 @@ async fn block(slot: i64, db_connection: NodeDbConn) -> Template {
 #[get("/validators?<page>")]
 async fn validators(page: Option<i64>, db_connection: NodeDbConn) -> Template {
     db_connection
-        .run(move |c| -> Template {
-            let validators =
-                controllers::validators::get_paginated(page.unwrap_or_else(|| 1), &c).unwrap();
-            Template::render("validators", ValidatorsContext::new())
-        })
+        .run(move |c| -> Template { Template::render("validators", ValidatorsContext::new()) })
         .await
 }
 
