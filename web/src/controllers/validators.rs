@@ -5,6 +5,8 @@ use db::{
 
 pub fn get_paginated<'a>(
     page: i64,
+    sort: Option<String>,
+    direction: Option<String>,
     connection: &PgConnection,
 ) -> QueryResult<(Vec<ValidatorModel>, i64)> {
     db::queries::validators::all()
