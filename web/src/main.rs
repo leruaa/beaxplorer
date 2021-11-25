@@ -99,7 +99,11 @@ fn rocket() -> _ {
         .mount("/", FileServer::from(relative!("frontend/dist")))
         .mount(
             "/api",
-            routes![requests::api::epochs, requests::api::blocks],
+            routes![
+                requests::api::epochs,
+                requests::api::blocks,
+                requests::api::validators
+            ],
         )
         .attach(Template::fairing())
         .attach(NodeDbConn::fairing())
