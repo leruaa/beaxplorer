@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url("outline/icons.css");
+@import url("solid/icons.css");
+
 @layer base {
   h1,
   h2 {
@@ -160,6 +163,6 @@
   }
 
   .icon {
-    @apply inline align-text-bottom w-5 h-5;
+    @apply align-text-bottom;
   }
 }
