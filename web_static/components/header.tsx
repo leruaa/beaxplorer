@@ -8,7 +8,7 @@ export default () => {
         <Nav />
       </header>
       <h2 className="container mx-auto">
-        <Breadcrumb />
+        <Breadcrumb breadcrumb={{ parts: [] }} />
       </h2>
     </>
   )

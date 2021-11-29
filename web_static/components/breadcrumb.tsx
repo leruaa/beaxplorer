@@ -4,19 +4,19 @@ const BreadcrumbPart = (props) => {
   if (props.link) {
     return (
       <>
-        <Icon className="text-gray-500" v="solid" id="chevron-right" />
-          <a href="{{link}}">
-            <Icon v="outline" id={props.icon} />
-            {props.text}
-          </a>
+        <i className="icon solid-chevron-right text-gray-500" />
+        <a href="{{link}}">
+          <Icon v="outline" id={props.icon} />
+          {props.text}
+        </a>
       </>
     );
   }
   else {
     return (
       <>
-        <Icon className="text-gray-500" v="solid" id="chevron-right" />
-        <Icon v="outline" id={props.icon} />
+        <i className="icon solid-chevron-right text-gray-500" />
+        <i className={`icon outline-${props.icon}`} />
         {props.text}
       </>
     );
@@ -32,7 +32,7 @@ export default (props) => {
 
     return (
       <ul className="breadcrumb">
-        <a href="/"><Icon v="solid" id="home" /></a>
+        <a href="/"><i className="icon solid-home" /></a>
         {parts}
       </ul>
     );
