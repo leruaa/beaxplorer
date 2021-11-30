@@ -1,5 +1,3 @@
-import Icon from "./icon";
-
 export default () => {
   return (
     <nav className="container mx-auto flex flex-row text-lg">

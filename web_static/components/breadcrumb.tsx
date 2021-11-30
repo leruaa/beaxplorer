@@ -1,12 +1,10 @@
-import Icon from "./icon";
-
 const BreadcrumbPart = (props) => {
   if (props.link) {
     return (
       <>
         <i className="icon solid-chevron-right text-gray-500" />
         <a href="{{link}}">
-          <Icon v="outline" id={props.icon} />
+          <i className={`icon outline-${props.icon}`} />
           {props.text}
         </a>
       </>
