@@ -29,10 +29,12 @@ export default (props) => {
     });
 
     return (
-      <ul className="breadcrumb">
-        <a href="/"><i className="icon solid-home" /></a>
-        {parts}
-      </ul>
+      <h2 className="container mx-auto">
+        <ul className="breadcrumb">
+          <a href="/"><i className="icon solid-home" /></a>
+          {parts}
+        </ul>
+      </h2>
     );
   }
 

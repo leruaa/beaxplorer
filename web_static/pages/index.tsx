@@ -1,6 +1,9 @@
+import Breadcrumb from "../components/breadcrumb";
+
 export default () => {
   return (
     <>
+      <Breadcrumb breadcrumb={{ parts: [] }} />
       <section className="container mx-auto">
         <h2>Yet Another Open Source Ethereum 2.0 Beacon Chain Explorer</h2>
         <p>
