@@ -25,7 +25,7 @@ const BreadcrumbPart = (props) => {
 export default (props) => {
   if (props.breadcrumb) {
     const parts = props.breadcrumb.parts.map((value) => {
-      return <BreadcrumbPart props={value} />
+      return <BreadcrumbPart{...value} />
     });
 
     return (
