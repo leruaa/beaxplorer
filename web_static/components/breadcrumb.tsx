@@ -4,7 +4,8 @@ const BreadcrumbPart = (props) => {
       <>
         <i className="icon solid-chevron-right text-gray-500" />
         <a href="{{link}}">
-          <i className={`icon outline-${props.icon}`} />
+          <i className={`icon outline-${props.icon}`} /> 
+          &nbsp;
           {props.text}
         </a>
       </>
@@ -15,6 +16,7 @@ const BreadcrumbPart = (props) => {
       <>
         <i className="icon solid-chevron-right text-gray-500" />
         <i className={`icon outline-${props.icon}`} />
+        &nbsp;
         {props.text}
       </>
     );
