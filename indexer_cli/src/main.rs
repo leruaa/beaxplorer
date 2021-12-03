@@ -5,9 +5,10 @@ use std::time::Instant;
 
 use db::{ConnectionManager, PgConnection, Pool};
 use dotenv::dotenv;
-use indexer::indexer::Indexer;
 use simple_logger::SimpleLogger;
 use tokio::sync::oneshot;
+
+pub mod node_to_db;
 
 #[tokio::main]
 async fn main() {
@@ -36,29 +37,7 @@ async fn main() {
     .expect("Error setting Ctrl-C handler");
 
     tokio::spawn(async move {
-        let indexer = Indexer::new(endpoint_url);
-        let mut n = indexer
-            .get_latest_indexed_epoch(&db_pool.clone())
-            .await
-            .unwrap()
-            .map(|n| n + 1)
-            .unwrap_or_else(|| 0);
-
-        while running.load(Ordering::SeqCst) {
-            match indexer.index_epoch(&db_pool.clone(), n).await {
-                Ok(_) => {
-                    n = n + 1;
-                }
-                Err(err) => {
-                    running.store(false, Ordering::SeqCst);
-                    log::error!("Error while indexing epoch {}: {:?}", n, err);
-                }
-            }
-        }
-
-        if let Err(err) = indexer.index_validators(&db_pool.clone()).await {
-            log::warn!("Error while indexing validators: {:?}", err);
-        }
+        node_to_db::process(endpoint_url, db_pool, running).await;
 
         sender.send(()).unwrap();
     });
