@@ -18,7 +18,7 @@ dependencies = [
  "serde_derive",
  "serde_yaml",
  "slog",
- "types",
+ "types 0.2.0",
  "validator_dir",
  "zeroize",
 ]
@@ -1067,7 +1067,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "tree_hash",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -1421,7 +1421,7 @@ dependencies = [
  "serde",
  "serde_json",
  "store",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -1430,7 +1430,7 @@ version = "0.2.0"
 source = "git+https://github.com/sigp/lighthouse?branch=stable#fff01b24ddedcd54486e374460855ca20d3dd232"
 dependencies = [
  "paste",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -1530,7 +1530,7 @@ dependencies = [
  "tokio",
  "tokio-io-timeout",
  "tokio-util",
- "types",
+ "types 0.2.0",
  "unsigned-varint 0.6.0",
 ]
 
@@ -1543,7 +1543,7 @@ dependencies = [
  "eth2_config",
  "eth2_ssz",
  "serde_yaml",
- "types",
+ "types 0.2.0",
  "zip",
 ]
 
@@ -2492,12 +2492,15 @@ dependencies = [
  "eth2",
  "futures",
  "log",
+ "rmp",
+ "rmp-serde",
  "sensitive_url",
+ "serde",
  "shared",
  "simple_logger",
  "thiserror",
  "tokio",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -4387,7 +4390,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_yaml",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -4856,6 +4859,27 @@ checksum = "999508abb0ae792aabed2460c45b89106d97fe4adac593bdaef433c2605847b5"
 dependencies = [
  "bytes 1.1.0",
  "rustc-hex",
+]
+
+[[package]]
+name = "rmp"
+version = "0.8.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f55e5fa1446c4d5dd1f5daeed2a4fe193071771a2636274d0d7a3b082aa7ad6"
+dependencies = [
+ "byteorder",
+ "num-traits",
+]
+
+[[package]]
+name = "rmp-serde"
+version = "0.15.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "723ecff9ad04f4ad92fe1c8ca6c20d2196d9286e9c60727c4cb5511629260e9d"
+dependencies = [
+ "byteorder",
+ "rmp",
+ "serde",
 ]
 
 [[package]]
@@ -5356,7 +5380,7 @@ dependencies = [
  "chrono",
  "slot_clock",
  "timeago",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -5495,7 +5519,7 @@ dependencies = [
  "lazy_static",
  "lighthouse_metrics",
  "parking_lot",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -5632,7 +5656,7 @@ dependencies = [
  "safe_arith",
  "smallvec",
  "tree_hash",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -5710,7 +5734,7 @@ dependencies = [
  "slog",
  "sloggers",
  "state_processing",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -6296,6 +6320,13 @@ checksum = "b63708a265f51345575b27fe43f9500ad611579e764c79edbc2037b1121959ec"
 
 [[package]]
 name = "types"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "types"
 version = "0.2.0"
 source = "git+https://github.com/sigp/lighthouse?branch=stable#fff01b24ddedcd54486e374460855ca20d3dd232"
 dependencies = [
@@ -6503,7 +6534,7 @@ dependencies = [
  "lockfile",
  "rand 0.7.3",
  "tree_hash",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -6586,6 +6617,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "632f73e236b219150ea279196e54e610f5dbafa5d61786303d4da54f84e47fce"
 dependencies = [
  "cfg-if 1.0.0",
+ "serde",
+ "serde_json",
  "wasm-bindgen-macro",
 ]
 
@@ -6671,7 +6704,7 @@ dependencies = [
  "serde",
  "shared",
  "thiserror",
- "types",
+ "types 0.2.0",
 ]
 
 [[package]]
@@ -6688,8 +6721,13 @@ dependencies = [
 name = "web_static"
 version = "0.1.0"
 dependencies = [
+ "bytes 1.1.0",
  "js-sys",
+ "reqwest",
+ "rmp-serde",
+ "types 0.1.0",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
 ]
 

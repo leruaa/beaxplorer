@@ -5,6 +5,7 @@ members = [
     "indexer",
     "indexer_cli",
     "db",
+    "types",
     "shared",
 ]
 
