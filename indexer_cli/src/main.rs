@@ -8,6 +8,7 @@ use dotenv::dotenv;
 use simple_logger::SimpleLogger;
 use tokio::sync::oneshot;
 
+pub mod db_to_files;
 pub mod node_to_db;
 
 #[tokio::main]
@@ -37,7 +38,8 @@ async fn main() {
     .expect("Error setting Ctrl-C handler");
 
     tokio::spawn(async move {
-        node_to_db::process(endpoint_url, db_pool, running).await;
+        //node_to_db::process(endpoint_url, db_pool, running).await;
+        db_to_files::process(db_pool);
 
         sender.send(()).unwrap();
     });
