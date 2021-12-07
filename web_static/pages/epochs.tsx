@@ -7,7 +7,8 @@ export default () => {
   const columns = [
     {
       accessor: "epoch",
-      Header: "Epoch"
+      Header: "Epoch",
+      Cell: ({ value }) => <a href={`/epoch/${value}`}>{value}</a>
     },
     {
       accessor: "ago",
