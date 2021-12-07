@@ -26,8 +26,8 @@ const BreadcrumbPart = (props) => {
 
 export default (props) => {
   if (props.breadcrumb) {
-    const parts = props.breadcrumb.parts.map((value) => {
-      return <BreadcrumbPart{...value} />
+    const parts = props.breadcrumb.parts.map((value, index) => {
+      return <BreadcrumbPart key={index} {...value} />
     });
 
     return (
