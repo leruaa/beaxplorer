@@ -14,6 +14,8 @@ bytes = "1.1.0"
 rmp-serde = "^0.15"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.28"
+serde_json = "1.0"
+thiserror = "1.0"
 js-sys = "0.3.52"
 web-sys = "0.3.55"
 

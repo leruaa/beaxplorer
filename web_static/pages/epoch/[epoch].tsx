@@ -5,7 +5,7 @@ export async function getServerSideProps(context) {
   const wasmModule = await import('../../pkg');
 
   return {
-    props: await wasmModule.get_epoch(context.params.epoch)
+    props: await wasmModule.get_epoch("http://localhost:3000", context.params.epoch)
   }
 }
 

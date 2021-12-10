@@ -6725,6 +6725,8 @@ dependencies = [
  "js-sys",
  "reqwest",
  "rmp-serde",
+ "serde_json",
+ "thiserror",
  "types 0.1.0",
  "wasm-bindgen",
  "wasm-bindgen-futures",
