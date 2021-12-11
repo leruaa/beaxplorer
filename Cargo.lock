@@ -2490,6 +2490,7 @@ dependencies = [
  "db",
  "dotenv",
  "eth2",
+ "flate2",
  "futures",
  "log",
  "rmp",
