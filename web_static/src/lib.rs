@@ -24,12 +24,12 @@ async fn get_epoch_internal(base: String, epoch: String) -> Result<JsValue, Dese
 
 #[derive(Error, Debug)]
 pub enum DeserializeError {
-    #[error("reqwest")]
+    #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
 
-    #[error("rmp_serde")]
+    #[error(transparent)]
     SerdeRmp(#[from] rmp_serde::decode::Error),
 
-    #[error("serde_json")]
+    #[error(transparent)]
     SerdeJson(#[from] serde_json::error::Error),
 }
