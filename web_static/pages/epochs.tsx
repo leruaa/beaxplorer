@@ -2,7 +2,17 @@ import { useMemo } from "react";
 import DataTable from "../components/data-table";
 import Breadcrumb from "../components/breadcrumb";
 
-export default () => {
+export async function getServerSideProps(context) {
+  const wasmModule = await import('../pkg');
+
+  return {
+    props: {
+      epochs: await wasmModule.get_epochs("http://localhost:3000", context.query.page || "1")
+    } 
+  }
+}
+
+export default (props) => {
 
   const columns = [
     {
@@ -44,24 +54,13 @@ export default () => {
     }
   ];
 
-  const data = [
-    {
-      epoch: 1,
-      attestations_count: 965
-    },
-    {
-      epoch: 2,
-      attestations_count: 486
-    },
-  ]
-
   return (
     <>
       <Breadcrumb breadcrumb={{ parts: [{ text: "Epochs", icon: "clock" }] }} />
       <section className="container mx-auto">
         <div className="tabular-data">
           <p>Showing epochs</p>
-          <DataTable columns={useMemo(() => columns, [])} data={useMemo(() => data, [])}/>
+          <DataTable columns={useMemo(() => columns, [])} data={useMemo(() => props.epochs, [])}/>
         </div>
       </section>
     </>
