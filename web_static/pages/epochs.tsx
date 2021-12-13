@@ -1,18 +1,31 @@
-import { useMemo } from "react";
+import { useMemo, useCallback, useState } from "react";
+import { useRouter } from 'next/router'
 import DataTable from "../components/data-table";
 import Breadcrumb from "../components/breadcrumb";
 
-export async function getServerSideProps(context) {
-  const wasmModule = await import('../pkg');
 
+export async function getServerSideProps(context) {
+  const pageIndex = parseInt(context.query.page, 10) - 1;
   return {
     props: {
-      epochs: await wasmModule.get_epochs("http://localhost:3000", context.query.page || "1")
-    } 
+      epochs: await getEpochs(pageIndex || 0),
+      pageIndex
+    }
   }
 }
 
+async function getEpochs(pageIndex) {
+  const wasmModule = await import('../pkg');
+
+  return await wasmModule.get_epochs("http://localhost:3000", pageIndex)
+}
+
 export default (props) => {
+
+  const router = useRouter()
+  const { page } = router.query
+
+  console.log("EPOCHS: " + page);
 
   const columns = [
     {
@@ -54,13 +67,32 @@ export default (props) => {
     }
   ];
 
+  const [pageCount, setPageCount] = useState(100);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const fetchData = useCallback(async ({ pageSize, pageIndex }) => {
+    if (pageIndex == props.pageIndex) {
+      setData(props.epochs);
+    }
+    else {
+      setData(await getEpochs(pageIndex));
+    }
+  }, []);
+
   return (
     <>
       <Breadcrumb breadcrumb={{ parts: [{ text: "Epochs", icon: "clock" }] }} />
       <section className="container mx-auto">
         <div className="tabular-data">
           <p>Showing epochs</p>
-          <DataTable columns={useMemo(() => columns, [])} data={useMemo(() => props.epochs, [])}/>
+          <DataTable 
+            columns={useMemo(() => columns, [])}
+            data={data}
+            fetchData={fetchData}
+            loading={loading}
+            pageIndex={page ? parseInt(page as string, 10) - 1 : 0}
+            pageCount={pageCount}
+          />
         </div>
       </section>
     </>
