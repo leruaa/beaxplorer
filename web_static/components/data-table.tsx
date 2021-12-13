@@ -35,6 +35,26 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
   return (
     // apply the table props
     <>
+      <div className="pagination">
+        <span>
+          Show
+          &nbsp;
+          <select
+            value={pageSize}
+            onChange={e => {
+              setPageSize(Number(e.target.value))
+            }}
+          >
+            {[10, 20, 30, 40, 50].map(pageSize => (
+              <option key={pageSize} value={pageSize}>
+                {pageSize}
+              </option>
+            ))}
+          </select>
+          &nbsp;
+          entries
+        </span>
+      </div>
       <table {...getTableProps()}>
         <thead>
           {// Loop over the header rows
@@ -77,27 +97,16 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
         </tbody>
       </table>
 
-      <div className="pagination">
+      <div className="pagination justify-end">
         <button onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
-          {'<<'}
-        </button>{' '}
+          First
+        </button>
+        &nbsp;
         <button onClick={() => previousPage()} disabled={!canPreviousPage}>
           {'<'}
-        </button>{' '}
-        <button onClick={() => nextPage()} disabled={!canNextPage}>
-          {'>'}
-        </button>{' '}
-        <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
-          {'>>'}
-        </button>{' '}
+        </button>
+        &nbsp;
         <span>
-          Page{' '}
-          <strong>
-            {pageIndex + 1} of {pageOptions.length}
-          </strong>{' '}
-        </span>
-        <span>
-          | Go to page:{' '}
           <input
             type="number"
             defaultValue={pageIndex + 1}
@@ -107,19 +116,17 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
             }}
             style={{ width: '100px' }}
           />
-        </span>{' '}
-        <select
-          value={pageSize}
-          onChange={e => {
-            setPageSize(Number(e.target.value))
-          }}
-        >
-          {[10, 20, 30, 40, 50].map(pageSize => (
-            <option key={pageSize} value={pageSize}>
-              Show {pageSize}
-            </option>
-          ))}
-        </select>
+          &nbsp;
+          of {pageOptions.length}
+        </span>
+        &nbsp;
+        <button onClick={() => nextPage()} disabled={!canNextPage}>
+          {'>'}
+        </button>
+        &nbsp;
+        <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
+          Last
+        </button>
       </div>
     </>
   )

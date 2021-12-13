@@ -35,11 +35,11 @@
     }
   }
 
-  buttn {
-    @apply text-blue-600 p-1 border border-blue-300 rounded;
+  button {
+    @apply text-blue-600 px-2 border border-blue-300 rounded;
 
     &:hover {
-      @apply text-white bg-blue-600 border-blue-600;
+      @apply border-blue-600;
     }
 
     &:disabled {
@@ -49,6 +49,11 @@
     &:disabled:hover {
       @apply bg-transparent;
     }
+  }
+
+  input,
+  select {
+    @apply border rounded border-gray-300 px-2 py-1;
   }
 
   dl {
@@ -88,7 +93,7 @@
       @apply w-full;
 
       th {
-        @apply text-xs text-left text-gray-600 uppercase bg-gray-100;
+        @apply text-xs text-left px-1.5 py-2 text-gray-600 uppercase bg-gray-100;
       }
 
       td {
@@ -96,69 +101,29 @@
       }
     }
 
-    .gridjs-th {
-      .gridjs-th-content {
-        @apply inline-block px-1.5 py-2;
-      }
-
-      .gridjs-sort {
-        @apply w-4 h-4 px-2 py-3;
-        background-color: transparent;
-        background-repeat: no-repeat;
-        background-position-x: center;
-        background-size: contain;
-      }
-
-      .gridjs-sort-neutral {
-        opacity: 0.4;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='h-5 w-5' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath d='M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z' /%3E%3C/svg%3E");
-      }
-
-      .gridjs-sort-asc {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='h-5 w-5' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z' clip-rule='evenodd' /%3E%3C/svg%3E");
-      }
-
-      .gridjs-sort-desc {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='h-5 w-5' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z' clip-rule='evenodd' /%3E%3C/svg%3E");
-      }
+    .gridjs-sort {
+      @apply w-4 h-4 px-2 py-3;
+      background-color: transparent;
+      background-repeat: no-repeat;
+      background-position-x: center;
+      background-size: contain;
     }
 
-    .gridjs-pagination {
-      .gridjs-pages {
-        @apply flex justify-end px-4 py-2;
+    .gridjs-sort-neutral {
+      opacity: 0.4;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='h-5 w-5' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath d='M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z' /%3E%3C/svg%3E");
+    }
 
-        button {
-          @apply text-blue-600 border-t border-b border-r border-gray-300 px-2 py-1;
+    .gridjs-sort-asc {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='h-5 w-5' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z' clip-rule='evenodd' /%3E%3C/svg%3E");
+    }
 
-          &:disabled {
-            @apply text-gray-400 border-gray-300 cursor-not-allowed;
-          }
+    .gridjs-sort-desc {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='h-5 w-5' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z' clip-rule='evenodd' /%3E%3C/svg%3E");
+    }
 
-          &:first-child {
-            @apply rounded-l border-l;
-          }
-
-          &:last-child {
-            @apply rounded-r;
-          }
-        }
-
-        .gridjs-currentPage {
-          @apply text-black cursor-auto;
-
-          &:hover {
-            @apply bg-transparent;
-          }
-        }
-
-        .gridjs-spread {
-          @apply text-gray-400 cursor-auto;
-
-          &:hover {
-            @apply bg-transparent;
-          }
-        }
-      }
+    .pagination {
+      @apply flex p-4;
     }
   }
 
