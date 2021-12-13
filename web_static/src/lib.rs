@@ -24,8 +24,8 @@ async fn get_epoch_internal(base: String, epoch: String) -> Result<JsValue, Dese
 }
 
 #[wasm_bindgen]
-pub async fn get_epochs(base: String, page: String) -> Result<JsValue, JsValue> {
-    let result = get_epochs_internal(base, page).await;
+pub async fn get_epochs(base: String, page_index: i32) -> Result<JsValue, JsValue> {
+    let result = get_epochs_internal(base, (page_index + 1).to_string()).await;
 
     match result {
         Err(err) => Err(Error::new(&err.to_string()).into()),
