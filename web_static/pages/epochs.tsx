@@ -84,7 +84,6 @@ export default (props) => {
       <Breadcrumb breadcrumb={{ parts: [{ text: "Epochs", icon: "clock" }] }} />
       <section className="container mx-auto">
         <div className="tabular-data">
-          <p>Showing epochs</p>
           <DataTable 
             columns={useMemo(() => columns, [])}
             data={data}
