@@ -1,6 +1,6 @@
 use bytes::Buf;
-use flate2::{read::ZlibDecoder, Compression};
-use js_sys::Error;
+use futures::future::try_join_all;
+use js_sys::{Array, Error};
 use thiserror::Error;
 use types::models::EpochModel;
 use wasm_bindgen::prelude::*;
@@ -24,8 +24,8 @@ async fn get_epoch_internal(base: String, epoch: String) -> Result<JsValue, Dese
 }
 
 #[wasm_bindgen]
-pub async fn get_epochs(base: String, page_index: i32) -> Result<JsValue, JsValue> {
-    let result = get_epochs_internal(base, (page_index + 1).to_string()).await;
+pub async fn get_epochs(base: String, page_index: i32, page_size: i32) -> Result<Array, JsValue> {
+    let result = get_epochs_internal(base, page_index, page_size).await;
 
     match result {
         Err(err) => Err(Error::new(&err.to_string()).into()),
@@ -33,14 +33,22 @@ pub async fn get_epochs(base: String, page_index: i32) -> Result<JsValue, JsValu
     }
 }
 
-async fn get_epochs_internal(base: String, page: String) -> Result<JsValue, DeserializeError> {
-    let response = reqwest::get(format!("{}/data/epochs/page/{}.msg", base, page)).await?;
+async fn get_epochs_internal(
+    base: String,
+    page_index: i32,
+    page_size: i32,
+) -> Result<Array, DeserializeError> {
+    let mut futures = vec![];
+    let start_epoch = page_index * page_size + 1;
+    let end_epoch = start_epoch + page_size;
 
-    let decoder = ZlibDecoder::new(response.bytes().await?.reader());
+    for epoch in start_epoch..end_epoch {
+        futures.push(get_epoch_internal(base.clone(), epoch.to_string()));
+    }
 
-    let epochs = rmp_serde::from_read::<_, Vec<EpochModel>>(decoder)?;
+    let epochs = try_join_all(futures).await?;
 
-    JsValue::from_serde(&epochs).map_err(Into::into)
+    Ok(epochs.into_iter().collect::<Array>())
 }
 
 #[derive(Error, Debug)]

@@ -8,16 +8,16 @@ export async function getServerSideProps(context) {
   const pageIndex = parseInt(context.query.page, 10) - 1;
   return {
     props: {
-      epochs: await getEpochs(pageIndex || 0),
+      epochs: await getEpochs(pageIndex || 0, 10),
       pageIndex
     }
   }
 }
 
-async function getEpochs(pageIndex) {
+async function getEpochs(pageIndex, pageCount) {
   const wasmModule = await import('../pkg');
 
-  return await wasmModule.get_epochs("http://localhost:3000", pageIndex)
+  return await wasmModule.get_epochs("http://localhost:3000", pageIndex, pageCount)
 }
 
 export default (props) => {
@@ -75,7 +75,7 @@ export default (props) => {
       setData(props.epochs);
     }
     else {
-      setData(await getEpochs(pageIndex));
+      setData(await getEpochs(pageIndex, pageSize));
     }
   }, []);
 
