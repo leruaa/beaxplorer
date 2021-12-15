@@ -21,6 +21,7 @@ impl Indexer {
             e.serialize(&mut Serializer::new(&mut f)).unwrap();
         }
 
+        /*
         let mut i = 1;
         for chunk in epochs.chunks(10) {
             let f = BufWriter::new(
@@ -30,5 +31,6 @@ impl Indexer {
             chunk.serialize(&mut Serializer::new(&mut enc)).unwrap();
             i = i + 1;
         }
+        */
     }
 }
