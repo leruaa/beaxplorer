@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use db::{ConnectionManager, PgConnection, Pool, RunQueryDsl};
 use eth2::types::StateId;
-use types::{Epoch, MainnetEthSpec};
+use lighthouse_types::{Epoch, MainnetEthSpec};
 
 use crate::{
     beacon_node_client::BeaconNodeClient,

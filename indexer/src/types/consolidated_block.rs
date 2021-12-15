@@ -2,9 +2,9 @@ use std::{sync::Arc, time::Instant};
 
 use db::{models::BlockModel, schema::blocks, PgConnection, RunQueryDsl};
 use eth2::types::{BlockId, ProposerData};
+use lighthouse_types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 use shared::utils::convert::{IntoClampedI32, IntoClampedI64};
 use tokio::sync::RwLock;
-use types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 
 use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError, persistable::Persistable};
 

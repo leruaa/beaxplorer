@@ -7,9 +7,9 @@ use db::{PgConnection, RunQueryDsl};
 use eth2::lighthouse::GlobalValidatorInclusionData;
 use eth2::types::{ProposerData, StateId, ValidatorBalanceData};
 use futures::future::try_join_all;
+use lighthouse_types::{Epoch, EthSpec};
 use shared::utils::convert::IntoClampedI64;
 use tokio::sync::RwLock;
-use types::{Epoch, EthSpec};
 
 use crate::beacon_node_client::BeaconNodeClient;
 use crate::errors::IndexerError;

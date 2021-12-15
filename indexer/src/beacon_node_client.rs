@@ -10,7 +10,7 @@ use eth2::{
 };
 use futures::Future;
 use sensitive_url::SensitiveUrl;
-use types::{Epoch, EthSpec, SignedBeaconBlock};
+use lighthouse_types::{Epoch, EthSpec, SignedBeaconBlock};
 
 use crate::errors::IndexerError;
 
