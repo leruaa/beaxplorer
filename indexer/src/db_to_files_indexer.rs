@@ -4,6 +4,7 @@ use db::{models::EpochModel, ConnectionManager, PgConnection, Pool, RunQueryDsl}
 use flate2::{write::ZlibEncoder, Compression};
 use rmp_serde::Serializer;
 use serde::Serialize;
+use types::meta::EpochsMeta;
 
 pub struct Indexer {}
 
@@ -20,6 +21,12 @@ impl Indexer {
             );
             e.serialize(&mut Serializer::new(&mut f)).unwrap();
         }
+
+        // meta
+        let mut f =
+            BufWriter::new(File::create("../web_static/public/data/epochs/meta.msg").unwrap());
+        let meta = EpochsMeta::new(epochs.len());
+        meta.serialize(&mut Serializer::new(&mut f)).unwrap();
 
         /*
         let mut i = 1;
