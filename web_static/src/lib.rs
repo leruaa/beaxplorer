@@ -2,7 +2,7 @@ use bytes::Buf;
 use futures::future::try_join_all;
 use js_sys::{Array, Error};
 use thiserror::Error;
-use types::models::EpochModel;
+use types::{meta::EpochsMeta, models::EpochModel};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -49,6 +49,24 @@ async fn get_epochs_internal(
     let epochs = try_join_all(futures).await?;
 
     Ok(epochs.into_iter().collect::<Array>())
+}
+
+#[wasm_bindgen]
+pub async fn get_epochs_meta(base: String) -> Result<JsValue, JsValue> {
+    let result = get_epochs_meta_internal(base).await;
+
+    match result {
+        Err(err) => Err(Error::new(&err.to_string()).into()),
+        Ok(meta) => Ok(meta),
+    }
+}
+
+async fn get_epochs_meta_internal(base: String) -> Result<JsValue, DeserializeError> {
+    let response = reqwest::get(format!("{}/data/epochs/meta.msg", base)).await?;
+
+    let epoch = rmp_serde::from_read::<_, EpochsMeta>(response.bytes().await?.reader())?;
+
+    JsValue::from_serde(&epoch).map_err(Into::into)
 }
 
 #[derive(Error, Debug)]

@@ -20,12 +20,16 @@ async function getEpochs(pageIndex, pageCount) {
   return await wasmModule.get_epochs("http://localhost:3000", pageIndex, pageCount)
 }
 
+async function getEpochsMeta() {
+  const wasmModule = await import('../pkg');
+
+  return await wasmModule.get_epochs_meta("http://localhost:3000");
+}
+
 export default (props) => {
 
   const router = useRouter()
   const { page } = router.query
-
-  console.log("EPOCHS: " + page);
 
   const columns = [
     {
@@ -67,6 +71,14 @@ export default (props) => {
     }
   ];
 
+  const getEpochsCount = useMemo(
+    async (): Promise<number> => {
+      const meta = await getEpochsMeta();
+      return meta.count;
+    },
+    [],
+  );
+
   const [pageCount, setPageCount] = useState(100);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +88,7 @@ export default (props) => {
     }
     else {
       setData(await getEpochs(pageIndex, pageSize));
+      setPageCount(Math.ceil(await getEpochsCount / pageSize));
     }
   }, []);
 
