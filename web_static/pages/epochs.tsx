@@ -2,6 +2,7 @@ import { useMemo, useCallback, useState } from "react";
 import { useRouter } from 'next/router'
 import DataTable from "../components/data-table";
 import Breadcrumb from "../components/breadcrumb";
+import { get_epochs, get_epochs_meta } from "../pkg";
 
 
 export async function getServerSideProps(context) {
@@ -15,15 +16,11 @@ export async function getServerSideProps(context) {
 }
 
 async function getEpochs(pageIndex, pageCount) {
-  const wasmModule = await import('../pkg');
-
-  return await wasmModule.get_epochs("http://localhost:3000", pageIndex, pageCount)
+  return await get_epochs("http://localhost:3000", pageIndex, pageCount)
 }
 
 async function getEpochsMeta() {
-  const wasmModule = await import('../pkg');
-
-  return await wasmModule.get_epochs_meta("http://localhost:3000");
+  return await get_epochs_meta("http://localhost:3000");
 }
 
 export default (props) => {
