@@ -1,7 +1,7 @@
 use std::env;
 
 use indexer::{beacon_node_client::BeaconNodeClient, types::consolidated_epoch::ConsolidatedEpoch};
-use types::{Epoch, EthSpec, MainnetEthSpec};
+use lighthouse_types::{Epoch, EthSpec, MainnetEthSpec};
 
 use dotenv::dotenv;
 
