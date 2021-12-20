@@ -2,31 +2,25 @@ import { useMemo, useCallback, useState } from "react";
 import { useRouter } from 'next/router'
 import DataTable from "../components/data-table";
 import Breadcrumb from "../components/breadcrumb";
-import { get_epochs, get_epochs_meta } from "../pkg";
+import { Epochs } from "../pkg";
 
 
 export async function getServerSideProps(context) {
+  const epochs = new Epochs("http://localhost:3000");
   const pageIndex = parseInt(context.query.page, 10) - 1;
   return {
     props: {
-      epochs: await getEpochs(pageIndex || 0, 10),
+      epochs: await epochs.page(pageIndex || 0, 10),
       pageIndex
     }
   }
-}
-
-async function getEpochs(pageIndex, pageCount) {
-  return await get_epochs("http://localhost:3000", pageIndex, pageCount)
-}
-
-async function getEpochsMeta() {
-  return await get_epochs_meta("http://localhost:3000");
 }
 
 export default (props) => {
 
   const router = useRouter()
   const { page } = router.query
+  const epochs = new Epochs("http://localhost:3000");
 
   const columns = [
     {
@@ -70,7 +64,7 @@ export default (props) => {
 
   const getEpochsCount = useMemo(
     async (): Promise<number> => {
-      const meta = await getEpochsMeta();
+      const meta = await epochs.meta();
       return meta.count;
     },
     [],
@@ -84,7 +78,7 @@ export default (props) => {
       setData(props.epochs);
     }
     else {
-      setData(await getEpochs(pageIndex, pageSize));
+      setData(await epochs.page(pageIndex, pageSize));
       setPageCount(Math.ceil(await getEpochsCount / pageSize));
     }
   }, []);
