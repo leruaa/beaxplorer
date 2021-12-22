@@ -3,7 +3,7 @@ use std::cmp::min;
 use bytes::Buf;
 use futures::future::try_join_all;
 use js_sys::{Array, Error, Promise};
-use types::{meta::EpochsMeta, models::EpochModel};
+use types::{meta::EpochsMeta, views::EpochView};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
@@ -46,7 +46,7 @@ impl Epochs {
     async fn get_epoch(base_url: String, epoch: String) -> Result<JsValue, DeserializeError> {
         let response = reqwest::get(format!("{}/data/epochs/{}.msg", base_url, epoch)).await?;
 
-        let epoch = rmp_serde::from_read::<_, EpochModel>(response.bytes().await?.reader())?;
+        let epoch = rmp_serde::from_read::<_, EpochView>(response.bytes().await?.reader())?;
 
         JsValue::from_serde(&epoch).map_err(Into::into)
     }

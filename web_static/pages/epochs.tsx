@@ -29,7 +29,7 @@ export default (props) => {
       Cell: ({ value }) => <a href={`/epoch/${value}`}>{value}</a>
     },
     {
-      accessor: "ago",
+      accessor: "timestamp",
       Header: "Time"
     },
     {
