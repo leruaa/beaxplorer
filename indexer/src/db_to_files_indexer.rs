@@ -1,10 +1,13 @@
-use std::{fs::File, io::BufWriter, sync::Arc};
+use std::{convert::TryFrom, fs::File, io::BufWriter, sync::Arc};
 
 use db::{models::EpochModel, ConnectionManager, PgConnection, Pool, RunQueryDsl};
 use flate2::{write::ZlibEncoder, Compression};
+use lighthouse_types::MainnetEthSpec;
 use rmp_serde::Serializer;
 use serde::Serialize;
-use types::meta::EpochsMeta;
+use types::{meta::EpochsMeta, views::EpochView};
+
+use crate::types::spec_epoch_model::SpecEpochModel;
 
 pub struct Indexer {}
 
@@ -15,11 +18,16 @@ impl Indexer {
             .load::<EpochModel>(&db_connection)
             .unwrap();
 
-        for e in &epochs {
+        for model in &epochs {
+            let view = EpochView::try_from(SpecEpochModel::<MainnetEthSpec>::new(model)).unwrap();
             let mut f = BufWriter::new(
-                File::create(format!("../web_static/public/data/epochs/{}.msg", e.epoch)).unwrap(),
+                File::create(format!(
+                    "../web_static/public/data/epochs/{}.msg",
+                    view.epoch
+                ))
+                .unwrap(),
             );
-            e.serialize(&mut Serializer::new(&mut f)).unwrap();
+            view.serialize(&mut Serializer::new(&mut f)).unwrap();
         }
 
         // meta

@@ -1,8 +1,10 @@
+use std::marker::PhantomData;
+
 use serde::Deserialize;
 use serde::Serialize;
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct BlockModel {
+pub struct BlockView {
     pub epoch: i64,
     pub slot: i64,
     pub block_root: Vec<u8>,
@@ -25,8 +27,9 @@ pub struct BlockModel {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct EpochModel {
+pub struct EpochView {
     pub epoch: i64,
+    pub timestamp: u64,
     pub blocks_count: i32,
     pub proposer_slashings_count: i32,
     pub attester_slashings_count: i32,
@@ -36,14 +39,14 @@ pub struct EpochModel {
     pub validators_count: i32,
     pub average_validator_balance: i64,
     pub total_validator_balance: i64,
-    pub finalized: Option<bool>,
+    pub finalized: bool,
     pub eligible_ether: Option<i64>,
     pub global_participation_rate: Option<f64>,
     pub voted_ether: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct ValidatorModel {
+pub struct ValidatorView {
     pub validator_index: i32,
     pub pubkey: Vec<u8>,
     pub pubkey_hex: String,
