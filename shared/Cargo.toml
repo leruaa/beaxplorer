@@ -9,5 +9,6 @@ edition = "2018"
 [dependencies]
 chrono = "0.4"
 timeago = "0.3"
+thiserror = "1.0.26"
 types = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 slot_clock = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
