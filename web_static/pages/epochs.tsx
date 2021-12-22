@@ -46,7 +46,8 @@ export default (props) => {
     },
     {
       accessor: "finalized",
-      Header: "Finalized"
+      Header: "Finalized",
+      Cell: ({ value }) => value ? "Yes" : "No"
     },
     {
       accessor: "eligible_ether",
