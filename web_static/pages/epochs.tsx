@@ -6,7 +6,7 @@ import { Epochs } from "../pkg";
 
 
 export async function getServerSideProps(context) {
-  const epochs = new Epochs("http://localhost:3000");
+  const epochs = await Epochs.build("http://localhost:3000");
   const pageIndex = parseInt(context.query.page, 10) - 1;
   return {
     props: {
@@ -20,7 +20,7 @@ export default (props) => {
 
   const router = useRouter()
   const { page } = router.query
-  const epochs = new Epochs("http://localhost:3000");
+  const epochsMemo = useMemo(async () => await Epochs.build("http://localhost:3000"), []);
 
   const columns = [
     {
@@ -64,6 +64,7 @@ export default (props) => {
 
   const getEpochsCount = useMemo(
     async (): Promise<number> => {
+      const epochs = await epochsMemo;
       const meta = await epochs.meta();
       return meta.count;
     },
@@ -78,6 +79,7 @@ export default (props) => {
       setData(props.epochs);
     }
     else {
+      const epochs = await epochsMemo;
       setData(await epochs.page(pageIndex, pageSize));
       setPageCount(Math.ceil(await getEpochsCount / pageSize));
     }
