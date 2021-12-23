@@ -1,5 +1,7 @@
 import { useMemo, useCallback, useState } from "react";
 import { useRouter } from 'next/router'
+import moment from "moment";
+import Moment from 'react-moment';
 import DataTable from "../components/data-table";
 import Breadcrumb from "../components/breadcrumb";
 import { Epochs } from "../pkg";
@@ -30,7 +32,11 @@ export default (props) => {
     },
     {
       accessor: "timestamp",
-      Header: "Time"
+      Header: "Time",
+      Cell: ({ value }) => 
+        <span title={moment.unix(value).format("L LTS")}>
+          <Moment unix fromNow date={value} />
+        </span>
     },
     {
       accessor: "attestations_count",
