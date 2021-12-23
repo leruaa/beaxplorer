@@ -40,9 +40,9 @@ pub struct EpochView {
     pub average_validator_balance: i64,
     pub total_validator_balance: i64,
     pub finalized: bool,
-    pub eligible_ether: Option<i64>,
-    pub global_participation_rate: Option<f64>,
-    pub voted_ether: Option<i64>,
+    pub eligible_ether: Option<String>,
+    pub global_participation_rate: Option<String>,
+    pub voted_ether: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]

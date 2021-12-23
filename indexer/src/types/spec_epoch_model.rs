@@ -43,9 +43,9 @@ impl<'a, E: EthSpec> TryFrom<SpecEpochModel<'a, E>> for EpochView {
             average_validator_balance: model.inner.average_validator_balance,
             total_validator_balance: model.inner.total_validator_balance,
             finalized: model.inner.finalized.unwrap_or(false),
-            eligible_ether: model.inner.eligible_ether,
-            global_participation_rate: model.inner.global_participation_rate,
-            voted_ether: model.inner.voted_ether,
+            eligible_ether: model.inner.eligible_ether.map(|x| x.to_string()),
+            global_participation_rate: model.inner.global_participation_rate.map(|x| x.to_string()),
+            voted_ether: model.inner.voted_ether.map(|x| x.to_string()),
         };
 
         Ok(view)
