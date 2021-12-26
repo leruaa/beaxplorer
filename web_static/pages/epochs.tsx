@@ -3,6 +3,8 @@ import { useRouter } from 'next/router'
 import moment from "moment";
 import Moment from 'react-moment';
 import DataTable from "../components/data-table";
+import Ethers from "../components/ethers";
+import Percentage from "../components/percentage";
 import Breadcrumb from "../components/breadcrumb";
 import { Epochs } from "../pkg";
 
@@ -57,15 +59,18 @@ export default (props) => {
     },
     {
       accessor: "eligible_ether",
-      Header: "Eligible"
+      Header: "Eligible",
+      Cell: ({ value }) => <Ethers value={value} />
     },
     {
       accessor: "voted_ether",
-      Header: "Voted"
+      Header: "Voted",
+      Cell: ({ value }) => <Ethers value={value} />
     },
     {
       accessor: "global_participation_rate",
-      Header: "Rate"
+      Header: "Rate",
+      Cell: ({ value }) => <Percentage value={value} />
     }
   ];
 
