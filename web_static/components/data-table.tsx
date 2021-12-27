@@ -110,7 +110,6 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
           <input
             className="w-20"
             type="number"
-            defaultValue={pageIndex + 1}
             value={pageIndex + 1}
             onChange={e => {
               const page = e.target.value ? Number(e.target.value) - 1 : 0
