@@ -49,7 +49,7 @@ export default (props) => {
       Header: "Deposits",
     },
     {
-      accessor: "attester_slashings_count",
+      accessor: (row, rowIndex) => `${row.proposer_slashings_count} / ${row.attester_slashings_count}`,
       Header: "Slashings P / A",
     },
     {
