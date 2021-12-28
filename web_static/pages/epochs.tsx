@@ -6,7 +6,7 @@ import DataTable from "../components/data-table";
 import Ethers from "../components/ethers";
 import Percentage from "../components/percentage";
 import Breadcrumb from "../components/breadcrumb";
-import { Epochs } from "../pkg";
+import { Epochs, SortBy } from "../pkg";
 
 
 export async function getServerSideProps(context) {
@@ -86,13 +86,19 @@ export default (props) => {
   const [pageCount, setPageCount] = useState(100);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async ({ pageSize, pageIndex }) => {
+  const fetchData = useCallback(async ({ pageSize, pageIndex, sortBy }) => {
     if (pageIndex == props.pageIndex) {
       setData(props.epochs);
     }
     else {
       const epochs = await epochsMemo;
-      setData(await epochs.page(pageIndex, pageSize));
+      setData(
+        await epochs.page(
+          pageIndex,
+          pageSize,
+          sortBy.length == 0 ? null : new SortBy(sortBy[0].id, sortBy[0].desc)
+        )
+      );
       setPageCount(Math.ceil(await getEpochsCount / pageSize));
     }
   }, []);

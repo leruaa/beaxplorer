@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useTable, usePagination } from "react-table";
+import { useTable, usePagination, useSortBy } from "react-table";
 
 export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex, pageCount: controlledPageCount}) => {
   const {
@@ -16,7 +16,7 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
     nextPage,
     previousPage,
     setPageSize,
-    state: { pageIndex, pageSize },
+    state: { pageIndex, pageSize, sortBy },
   } = useTable(
     {
       columns,
@@ -24,13 +24,15 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
       initialState: { pageIndex: initialPageIndex },
       manualPagination: true, 
       pageCount: controlledPageCount,
+      manualSortBy: true,
     },
+    useSortBy,
     usePagination
   )
 
   useEffect(() => {
-    fetchData({ pageIndex, pageSize })
-  }, [fetchData, pageIndex, pageSize]);
+    fetchData({ pageIndex, pageSize, sortBy })
+  }, [fetchData, pageIndex, pageSize, sortBy]);
 
   return (
     // apply the table props
@@ -64,9 +66,16 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
               {// Loop over the headers in each row
               headerGroup.headers.map(column => (
                 // Apply the header cell props
-                <th {...column.getHeaderProps()}>
+                <th {...column.getHeaderProps(column.getSortByToggleProps())}>
                   {// Render the header
                   column.render('Header')}
+                  <span>
+                    {column.isSorted
+                      ? column.isSortedDesc
+                        ? ' 🔽'
+                        : ' 🔼'
+                      : ''}
+                  </span>
                 </th>
               ))}
             </tr>
