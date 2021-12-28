@@ -1,6 +1,7 @@
 use thiserror::Error;
 
 pub mod epochs;
+pub mod sort;
 
 #[derive(Error, Debug)]
 pub enum DeserializeError {

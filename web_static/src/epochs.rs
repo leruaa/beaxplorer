@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::{cmp::min, ops::Range};
 
 use bytes::Buf;
 use futures::future::try_join_all;
@@ -7,7 +7,7 @@ use types::{meta::EpochsMeta, views::EpochView};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
-use crate::DeserializeError;
+use crate::{sort::SortBy, DeserializeError};
 
 #[wasm_bindgen]
 pub struct Epochs {
@@ -51,31 +51,59 @@ impl Epochs {
         JsValue::from_serde(&epoch).map_err(Into::into)
     }
 
-    pub fn page(&self, page_index: i32, page_size: i32) -> Promise {
+    pub fn page(&self, page_index: i32, page_size: i32, sort_by: Option<SortBy>) -> Promise {
         let base_url = self.base_url.clone();
         let count = self.meta.count.clone();
 
         future_to_promise(async move {
-            let result = Self::get_paginated_epochs(base_url, page_index, page_size, count).await;
+            let epochs_range = match sort_by {
+                Some(sort_by) => {
+                    Self::get_sorted_epochs(base_url.clone(), page_index, sort_by).await
+                }
+                None => {
+                    let start_epoch = page_index * page_size + 1;
+                    let end_epoch = min(start_epoch + page_size, count as i32 - 1);
+                    Ok((start_epoch..end_epoch).map(|x| x as i64).collect())
+                }
+            };
 
-            match result {
+            match epochs_range {
+                Ok(epochs_range) => {
+                    let result = Self::get_paginated_epochs(base_url, epochs_range).await;
+
+                    match result {
+                        Ok(epoch) => Ok(epoch),
+                        Err(err) => Err(Error::new(&err.to_string()).into()),
+                    }
+                }
                 Err(err) => Err(Error::new(&err.to_string()).into()),
-                Ok(epoch) => Ok(epoch),
             }
         })
     }
 
-    async fn get_paginated_epochs(
+    async fn get_sorted_epochs(
         base_url: String,
         page_index: i32,
-        page_size: i32,
-        count: usize,
+        sort_by: SortBy,
+    ) -> Result<Vec<i64>, DeserializeError> {
+        let response = reqwest::get(format!(
+            "{}/data/epochs/s/{}/{}.msg",
+            base_url,
+            sort_by.id(),
+            page_index + 1
+        ))
+        .await?;
+
+        rmp_serde::from_read::<_, _>(response.bytes().await?.reader()).map_err(Into::into)
+    }
+
+    async fn get_paginated_epochs(
+        base_url: String,
+        range: Vec<i64>,
     ) -> Result<JsValue, DeserializeError> {
         let mut futures = vec![];
-        let start_epoch = page_index * page_size + 1;
-        let end_epoch = min(start_epoch + page_size, count as i32 - 1);
 
-        for epoch in start_epoch..end_epoch {
+        for epoch in range {
             futures.push(Self::get_epoch(base_url.clone(), epoch.to_string()));
         }
 
