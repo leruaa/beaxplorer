@@ -58,7 +58,20 @@ impl Epochs {
         future_to_promise(async move {
             let epochs_range = match sort_by {
                 Some(sort_by) => {
-                    Self::get_sorted_epochs(base_url.clone(), page_index, sort_by).await
+                    let mut futures = vec![];
+                    let page_count = page_size / 10;
+
+                    for i in 0..page_count {
+                        futures.push(Self::get_sorted_epochs(
+                            base_url.clone(),
+                            page_index * page_count + i,
+                            sort_by.clone(),
+                        ));
+                    }
+
+                    try_join_all(futures)
+                        .await
+                        .map(|x| x.into_iter().flatten().collect())
                 }
                 None => {
                     let start_epoch = page_index * page_size + 1;
