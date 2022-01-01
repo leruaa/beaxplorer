@@ -1,4 +1,4 @@
-use std::{cmp::min, ops::Range};
+use std::cmp::min;
 
 use bytes::Buf;
 use futures::future::try_join_all;
@@ -7,7 +7,10 @@ use types::{meta::EpochsMeta, views::EpochView};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
-use crate::{sort::SortBy, DeserializeError};
+use crate::{
+    sort::{Paginate, SortBy},
+    DeserializeError,
+};
 
 #[wasm_bindgen]
 pub struct Epochs {
@@ -53,29 +56,46 @@ impl Epochs {
 
     pub fn page(&self, page_index: i32, page_size: i32, sort_by: Option<SortBy>) -> Promise {
         let base_url = self.base_url.clone();
-        let count = self.meta.count.clone();
+        let total_count = self.meta.count.clone() as i32;
 
         future_to_promise(async move {
             let epochs_range = match sort_by {
                 Some(sort_by) => {
                     let mut futures = vec![];
-                    let page_count = page_size / 10;
-
-                    for i in 0..page_count {
+                    for page_number in
+                        Paginate::new(total_count, page_index + 1, page_size, &sort_by)
+                    {
                         futures.push(Self::get_sorted_epochs(
                             base_url.clone(),
-                            page_index * page_count + i,
+                            page_number,
                             sort_by.clone(),
                         ));
                     }
 
-                    try_join_all(futures)
+                    let range = try_join_all(futures)
                         .await
-                        .map(|x| x.into_iter().flatten().collect())
+                        .map(|x| x.into_iter().flatten().collect());
+
+                    if sort_by.desc {
+                        let skip = if page_index == 0 {
+                            0 as usize
+                        } else {
+                            10 - total_count as usize % 10
+                        };
+                        range.map(|x: Vec<i64>| {
+                            x.into_iter()
+                                .rev()
+                                .skip(skip)
+                                .take(page_size as usize)
+                                .collect()
+                        })
+                    } else {
+                        range
+                    }
                 }
                 None => {
                     let start_epoch = page_index * page_size + 1;
-                    let end_epoch = min(start_epoch + page_size, count as i32 - 1);
+                    let end_epoch = min(start_epoch + page_size, total_count);
                     Ok((start_epoch..end_epoch).map(|x| x as i64).collect())
                 }
             };
@@ -96,14 +116,14 @@ impl Epochs {
 
     async fn get_sorted_epochs(
         base_url: String,
-        page_index: i32,
+        page_number: i32,
         sort_by: SortBy,
     ) -> Result<Vec<i64>, DeserializeError> {
         let response = reqwest::get(format!(
             "{}/data/epochs/s/{}/{}.msg",
             base_url,
             sort_by.id(),
-            page_index + 1
+            page_number
         ))
         .await?;
 
