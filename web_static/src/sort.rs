@@ -31,14 +31,19 @@ impl SortBy {
 }
 
 pub struct Paginate<'a> {
-    total_count: i32,
-    page_number: i32,
-    page_size: i32,
+    total_count: usize,
+    page_number: usize,
+    page_size: usize,
     sort_by: &'a SortBy,
 }
 
 impl<'a> Paginate<'a> {
-    pub fn new(total_count: i32, page_number: i32, page_size: i32, sort_by: &'a SortBy) -> Self {
+    pub fn new(
+        total_count: usize,
+        page_number: usize,
+        page_size: usize,
+        sort_by: &'a SortBy,
+    ) -> Self {
         Paginate {
             total_count,
             page_number,
@@ -49,9 +54,9 @@ impl<'a> Paginate<'a> {
 }
 
 impl<'a> IntoIterator for Paginate<'a> {
-    type Item = i32;
+    type Item = usize;
 
-    type IntoIter = Range<i32>;
+    type IntoIter = Range<usize>;
 
     fn into_iter(self) -> Self::IntoIter {
         let page_count = self.page_size / 10;

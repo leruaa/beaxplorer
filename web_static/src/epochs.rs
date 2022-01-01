@@ -54,9 +54,9 @@ impl Epochs {
         JsValue::from_serde(&epoch).map_err(Into::into)
     }
 
-    pub fn page(&self, page_index: i32, page_size: i32, sort_by: Option<SortBy>) -> Promise {
+    pub fn page(&self, page_index: usize, page_size: usize, sort_by: Option<SortBy>) -> Promise {
         let base_url = self.base_url.clone();
-        let total_count = self.meta.count.clone() as i32;
+        let total_count = self.meta.count.clone();
 
         future_to_promise(async move {
             let epochs_range = match sort_by {
@@ -116,7 +116,7 @@ impl Epochs {
 
     async fn get_sorted_epochs(
         base_url: String,
-        page_number: i32,
+        page_number: usize,
         sort_by: SortBy,
     ) -> Result<Vec<i64>, DeserializeError> {
         let response = reqwest::get(format!(
