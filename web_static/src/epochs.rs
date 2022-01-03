@@ -58,9 +58,16 @@ impl Epochs {
         let base_url = self.base_url.clone();
         let total_count = self.meta.count.clone();
 
+        let sort_by = sort_by.unwrap_or(SortBy::new("epoch".to_string(), false));
+
         future_to_promise(async move {
-            let epochs_range = match sort_by {
-                Some(sort_by) => {
+            let epochs_range = match sort_by.id().as_str() {
+                "epoch" => {
+                    let start_epoch = page_index * page_size + 1;
+                    let end_epoch = min(start_epoch + page_size, total_count);
+                    Ok((start_epoch..end_epoch).map(|x| x as i64).collect())
+                }
+                _ => {
                     let mut futures = vec![];
                     for page_number in
                         Paginate::new(total_count, page_index + 1, page_size, &sort_by)
@@ -92,11 +99,6 @@ impl Epochs {
                     } else {
                         range
                     }
-                }
-                None => {
-                    let start_epoch = page_index * page_size + 1;
-                    let end_epoch = min(start_epoch + page_size, total_count);
-                    Ok((start_epoch..end_epoch).map(|x| x as i64).collect())
                 }
             };
 
