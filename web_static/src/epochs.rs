@@ -63,9 +63,23 @@ impl Epochs {
         future_to_promise(async move {
             let epochs_range = match sort_by.id().as_str() {
                 "epoch" => {
-                    let start_epoch = page_index * page_size + 1;
-                    let end_epoch = min(start_epoch + page_size, total_count);
-                    Ok((start_epoch..end_epoch).map(|x| x as i64).collect())
+                    let range = if sort_by.desc {
+                        let end_epoch = total_count - page_index * page_size;
+                        let start_epoch = end_epoch.checked_sub(page_size).unwrap_or(0);
+                        start_epoch..end_epoch
+                    } else {
+                        let start_epoch = page_index * page_size;
+                        let end_epoch = min(start_epoch + page_size, total_count);
+                        start_epoch..end_epoch
+                    };
+
+                    let result = if sort_by.desc {
+                        range.map(|x| x as i64).rev().collect()
+                    } else {
+                        range.map(|x| x as i64).collect()
+                    };
+
+                    Ok(result)
                 }
                 _ => {
                     let mut futures = vec![];
