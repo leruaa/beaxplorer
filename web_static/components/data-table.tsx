@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useTable, usePagination, useSortBy } from "react-table";
 
-export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex, pageCount: controlledPageCount}) => {
+export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex, pageCount: controlledPageCount, sortBy: initialSortBy}) => {
   const {
     getTableProps,
     getTableBodyProps,
@@ -21,10 +21,11 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
     {
       columns,
       data,
-      initialState: { pageIndex: initialPageIndex },
+      initialState: { pageIndex: initialPageIndex, sortBy: initialSortBy },
       manualPagination: true, 
       pageCount: controlledPageCount,
       manualSortBy: true,
+      disableSortRemove: true
     },
     useSortBy,
     usePagination

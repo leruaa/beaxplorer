@@ -115,6 +115,7 @@ export default (props) => {
             loading={loading}
             pageIndex={page ? parseInt(page as string, 10) - 1 : 0}
             pageCount={pageCount}
+            sortBy={useMemo(() => [{id: "epoch", desc: false}], [])}
           />
         </div>
       </section>
