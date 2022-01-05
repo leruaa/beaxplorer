@@ -70,12 +70,7 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
                 <th {...column.getHeaderProps(column.getSortByToggleProps())}>
                   {// Render the header
                   column.render('Header')}
-                  <span>
-                    {column.isSorted
-                      ? column.isSortedDesc
-                        ? ' 🔽'
-                        : ' 🔼'
-                      : ''}
+                  <span className={`sort ${column.isSorted ? (column.isSortedDesc ? 'desc' : 'asc') : 'neutral'}`}>
                   </span>
                 </th>
               ))}
