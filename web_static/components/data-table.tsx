@@ -67,7 +67,7 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
               {// Loop over the headers in each row
               headerGroup.headers.map(column => (
                 // Apply the header cell props
-                <th {...column.getHeaderProps(column.getSortByToggleProps())}>
+                <th className={column.isSorted && "sorting"} {...column.getHeaderProps(column.getSortByToggleProps())}>
                   {// Render the header
                   column.render('Header')}
                   <span className={`sort ${column.isSorted ? (column.isSortedDesc ? 'desc' : 'asc') : 'neutral'}`}>
@@ -90,7 +90,7 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
                 row.cells.map(cell => {
                   // Apply the cell props
                   return (
-                    <td {...cell.getCellProps()}>
+                    <td className={cell.column.isSorted && "sorting"} {...cell.getCellProps()}>
                       {// Render the cell contents
                       cell.render('Cell')}
                     </td>

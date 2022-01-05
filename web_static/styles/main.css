@@ -90,10 +90,14 @@
     }
 
     table {
-      @apply w-full;
+      @apply w-full table-fixed;
 
       th {
         @apply text-xs text-right px-1.5 py-2 text-gray-600 uppercase bg-gray-100;
+
+        &.sorting {
+          @apply text-black;
+        }
 
         .sort {
           @apply inline-block align-bottom w-4 h-4 px-3;
@@ -119,6 +123,10 @@
 
       td {
         @apply text-right text-gray-800 py-1.5 pr-4 border-b rounded border-gray-200;
+
+        &.sorting {
+          @apply bg-gray-50;
+        }
       }
     }
 
