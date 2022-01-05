@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import moment from "moment";
 import Moment from 'react-moment';
 import DataTable from "../components/data-table";
+import Number from "../components/number";
 import Ethers from "../components/ethers";
 import Percentage from "../components/percentage";
 import Breadcrumb from "../components/breadcrumb";
@@ -30,7 +31,7 @@ export default (props) => {
     {
       accessor: "epoch",
       Header: "Epoch",
-      Cell: ({ value }) => <a href={`/epoch/${value}`}>{value}</a>
+      Cell: ({ value }) => <a href={`/epoch/${value}`}><Number value={value} /></a>
     },
     {
       accessor: "timestamp",
@@ -42,15 +43,21 @@ export default (props) => {
     },
     {
       accessor: "attestations_count",
-      Header: "Attestations"
+      Header: "Attestations",
+      Cell: ({ value }) => <Number value={value} />
     },
     {
       accessor: "deposits_count",
       Header: "Deposits",
+      Cell: ({ value }) => <Number value={value} />
     },
     {
-      accessor: (row, rowIndex) => `${row.proposer_slashings_count} / ${row.attester_slashings_count}`,
+      accessor: (row, rowIndex) => { return { p: row.proposer_slashings_count, a: row.attester_slashings_count } },
       Header: "Slashings P / A",
+      Cell: ( {value} ) => 
+      <>
+        <Number value={value.p} /> / <Number value={value.a} />
+      </>
     },
     {
       accessor: "finalized",
