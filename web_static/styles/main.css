@@ -122,7 +122,7 @@
       }
 
       td {
-        @apply text-right text-gray-800 py-1.5 pr-4 border-b rounded border-gray-200;
+        @apply text-right text-gray-800 tabular-nums py-1.5 pr-4 border-b rounded border-gray-200;
 
         &.sorting {
           @apply bg-gray-50;

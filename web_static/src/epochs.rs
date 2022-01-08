@@ -54,14 +54,20 @@ impl Epochs {
         JsValue::from_serde(&epoch).map_err(Into::into)
     }
 
-    pub fn page(&self, page_index: usize, page_size: usize, sort_by: Option<SortBy>) -> Promise {
+    pub fn page(
+        &self,
+        page_index: usize,
+        page_size: usize,
+        sort_id: String,
+        sort_desc: bool,
+    ) -> Promise {
         let base_url = self.base_url.clone();
         let total_count = self.meta.count.clone();
 
-        let sort_by = sort_by.unwrap_or(SortBy::new("epoch".to_string(), false));
+        let sort_by = SortBy::new(sort_id, sort_desc);
 
         future_to_promise(async move {
-            let epochs_range = match sort_by.id().as_str() {
+            let epochs_range = match sort_by.id.as_str() {
                 "epoch" => {
                     let range = if sort_by.desc {
                         let end_epoch = total_count - page_index * page_size;
@@ -137,9 +143,7 @@ impl Epochs {
     ) -> Result<Vec<i64>, DeserializeError> {
         let response = reqwest::get(format!(
             "{}/data/epochs/s/{}/{}.msg",
-            base_url,
-            sort_by.id(),
-            page_number
+            base_url, sort_by.id, page_number
         ))
         .await?;
 

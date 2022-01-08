@@ -7,7 +7,7 @@ import Number from "../components/number";
 import Ethers from "../components/ethers";
 import Percentage from "../components/percentage";
 import Breadcrumb from "../components/breadcrumb";
-import { Epochs, SortBy } from "../pkg";
+import { Epochs } from "../pkg";
 
 
 export async function getServerSideProps(context) {
@@ -15,7 +15,7 @@ export async function getServerSideProps(context) {
   const pageIndex = parseInt(context.query.page, 10) - 1;
   return {
     props: {
-      epochs: await epochs.page(pageIndex || 0, 10),
+      epochs: await epochs.page(pageIndex || 0, 10, "epoch", false),
       pageIndex
     }
   }
@@ -99,11 +99,17 @@ export default (props) => {
     }
     else {
       const epochs = await epochsMemo;
+      let sort_id = sortBy.length > 0 ? sortBy[0].id : "epoch";
+      let sort_desc = sortBy.length > 0 ? sortBy[0].desc : false;
+
+      if (sort_id === "timestamp") sort_id = "epoch";
+
       setData(
         await epochs.page(
           pageIndex,
           pageSize,
-          sortBy.length == 0 ? null : new SortBy(sortBy[0].id, sortBy[0].desc)
+          sort_id,
+          sort_desc
         )
       );
       setPageCount(Math.ceil(await getEpochsCount / pageSize));
