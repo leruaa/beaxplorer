@@ -5,10 +5,11 @@ use eth2::types::{BlockId, ProposerData};
 use lighthouse_types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 use shared::utils::convert::{IntoClampedI32, IntoClampedI64};
 use tokio::sync::RwLock;
+use types::views::BlockView;
 
 use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError, persistable::Persistable};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ConsolidatedBlock<E: EthSpec> {
     pub epoch: Epoch,
     pub slot: Slot,
@@ -19,7 +20,7 @@ pub struct ConsolidatedBlock<E: EthSpec> {
     pub proposer: u64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BlockStatus {
     Scheduled = 0,
     Proposed = 1,
@@ -203,5 +204,56 @@ impl<E: EthSpec> Persistable for ConsolidatedBlock<E> {
             .execute(db_connection)?;
 
         Ok(())
+    }
+}
+
+impl<E: EthSpec> From<ConsolidatedBlock<E>> for BlockView {
+    fn from(value: ConsolidatedBlock<E>) -> Self {
+        match value.block.clone() {
+            Some(block) => BlockView {
+                epoch: value.epoch.as_u64(),
+                slot: value.slot.as_u64(),
+                block_root: value.block_root.as_bytes().to_vec(),
+                parent_root: block.parent_root().as_bytes().to_vec(),
+                state_root: block.state_root().as_bytes().to_vec(),
+                randao_reveal: Some(block.body().randao_reveal().to_string().as_bytes().to_vec()),
+                signature: value.signature.to_string().as_bytes().to_vec(),
+                graffiti: Some(block.body().graffiti().to_string().as_bytes().to_vec()),
+                graffiti_text: Some(block.body().graffiti().to_string()),
+                eth1data_deposit_root: Some(
+                    block.body().eth1_data().deposit_root.as_bytes().to_vec(),
+                ),
+                eth1data_deposit_count: block.body().eth1_data().deposit_count,
+                eth1data_block_hash: Some(block.body().eth1_data().block_hash.as_bytes().to_vec()),
+                proposer_slashings_count: block.body().proposer_slashings().len(),
+                attester_slashings_count: block.body().attester_slashings().len(),
+                attestations_count: block.body().attestations().len(),
+                deposits_count: block.body().deposits().len(),
+                voluntary_exits_count: block.body().voluntary_exits().len(),
+                proposer: value.proposer,
+                status: value.status.to_string(),
+            },
+            None => BlockView {
+                epoch: value.epoch.as_u64(),
+                slot: value.slot.as_u64(),
+                block_root: value.block_root.as_bytes().to_vec(),
+                parent_root: vec![],
+                state_root: vec![],
+                randao_reveal: None,
+                signature: vec![],
+                graffiti: None,
+                graffiti_text: None,
+                eth1data_deposit_root: None,
+                eth1data_deposit_count: 0,
+                eth1data_block_hash: None,
+                proposer_slashings_count: 0,
+                attester_slashings_count: 0,
+                attestations_count: 0,
+                deposits_count: 0,
+                voluntary_exits_count: 0,
+                proposer: value.proposer,
+                status: value.status.to_string(),
+            },
+        }
     }
 }

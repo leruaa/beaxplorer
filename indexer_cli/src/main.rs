@@ -3,13 +3,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
-use db::{ConnectionManager, PgConnection, Pool};
 use dotenv::dotenv;
 use simple_logger::SimpleLogger;
 use tokio::sync::oneshot;
 
-pub mod db_to_files;
 pub mod node_to_db;
+pub mod node_to_files;
 
 #[tokio::main]
 async fn main() {
@@ -19,12 +18,7 @@ async fn main() {
         .init()
         .ok();
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let endpoint_url = env::var("LIGHTHOUSE_ENDPOINT_URL").unwrap();
-    let db_pool = Arc::new(
-        Pool::new(ConnectionManager::<PgConnection>::new(&database_url))
-            .expect(&format!("Error connecting to {}", database_url)),
-    );
     let start = Instant::now();
 
     let running = Arc::new(AtomicBool::new(true));
@@ -39,7 +33,7 @@ async fn main() {
 
     tokio::spawn(async move {
         //node_to_db::process(endpoint_url, db_pool, running).await;
-        db_to_files::process(db_pool);
+        node_to_files::process(endpoint_url, running).await;
 
         sender.send(()).unwrap();
     });

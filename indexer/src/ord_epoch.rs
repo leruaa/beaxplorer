@@ -1,10 +1,8 @@
 use std::cmp::Ordering;
 
-use db::models::EpochModel;
-
 #[derive(Eq)]
 pub struct OrderableEpoch<O: Ord + Eq> {
-    pub epoch: i64,
+    pub epoch: u64,
     pub ordering: O,
 }
 
@@ -26,10 +24,10 @@ impl<O: Ord> PartialEq for OrderableEpoch<O> {
     }
 }
 
-impl<O: Ord> From<(&EpochModel, O)> for OrderableEpoch<O> {
-    fn from(from: (&EpochModel, O)) -> Self {
+impl<O: Ord> From<(u64, O)> for OrderableEpoch<O> {
+    fn from(from: (u64, O)) -> Self {
         OrderableEpoch {
-            epoch: from.0.epoch,
+            epoch: from.0,
             ordering: from.1,
         }
     }
