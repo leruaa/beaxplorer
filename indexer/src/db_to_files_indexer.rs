@@ -7,7 +7,7 @@ use rmp_serde::Serializer;
 use serde::Serialize;
 use types::{meta::EpochsMeta, views::EpochView};
 
-use crate::{ord_epoch::EpochWithAttestationsCount, types::spec_epoch_model::SpecEpochModel};
+use crate::{ord_epoch::OrderableEpoch, types::spec_epoch_model::SpecEpochModel};
 
 pub struct Indexer {}
 
@@ -21,7 +21,8 @@ impl Indexer {
         let mut epochs_by_attestations_count = BinaryHeap::new();
 
         for model in &epochs {
-            epochs_by_attestations_count.push(EpochWithAttestationsCount::from(model));
+            epochs_by_attestations_count
+                .push(OrderableEpoch::from((model, model.attestations_count)));
 
             let view = EpochView::try_from(SpecEpochModel::<MainnetEthSpec>::new(model)).unwrap();
             let mut f = BufWriter::new(

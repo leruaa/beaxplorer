@@ -3,34 +3,34 @@ use std::cmp::Ordering;
 use db::models::EpochModel;
 
 #[derive(Eq)]
-pub struct EpochWithAttestationsCount {
+pub struct OrderableEpoch<O: Ord + Eq> {
     pub epoch: i64,
-    pub attestations_count: i32,
+    pub ordering: O,
 }
 
-impl Ord for EpochWithAttestationsCount {
+impl<O: Ord> Ord for OrderableEpoch<O> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.attestations_count.cmp(&other.attestations_count)
+        self.ordering.cmp(&other.ordering)
     }
 }
 
-impl PartialOrd for EpochWithAttestationsCount {
+impl<O: Ord> PartialOrd for OrderableEpoch<O> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl PartialEq for EpochWithAttestationsCount {
+impl<O: Ord> PartialEq for OrderableEpoch<O> {
     fn eq(&self, other: &Self) -> bool {
         self.epoch == other.epoch
     }
 }
 
-impl From<&EpochModel> for EpochWithAttestationsCount {
-    fn from(model: &EpochModel) -> Self {
-        EpochWithAttestationsCount {
-            epoch: model.epoch,
-            attestations_count: model.attestations_count,
+impl<O: Ord> From<(&EpochModel, O)> for OrderableEpoch<O> {
+    fn from(from: (&EpochModel, O)) -> Self {
+        OrderableEpoch {
+            epoch: from.0.epoch,
+            ordering: from.1,
         }
     }
 }
