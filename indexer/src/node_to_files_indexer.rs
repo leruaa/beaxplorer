@@ -1,9 +1,9 @@
-use std::{collections::BinaryHeap, fs::File, io::BufWriter};
+use std::{fs::File, io::BufWriter};
 
 use crate::{
     beacon_node_client::BeaconNodeClient,
     errors::IndexerError,
-    orderable::Orderable,
+    field_binary_heap::FieldBinaryHeap,
     types::{consolidated_epoch::ConsolidatedEpoch, consolidated_validator::ConsolidatedValidator},
 };
 use eth2::types::StateId;
@@ -14,14 +14,16 @@ use types::views::{BlockView, EpochView};
 
 pub struct Indexer {
     beacon_client: BeaconNodeClient,
-    epochs_by_attestations_count: BinaryHeap<Orderable<usize>>,
+    epochs_by_attestations_count: FieldBinaryHeap<usize, EpochView>,
 }
 
 impl Indexer {
     pub fn new(endpoint_url: String) -> Self {
         Indexer {
             beacon_client: BeaconNodeClient::new(endpoint_url),
-            epochs_by_attestations_count: BinaryHeap::new(),
+            epochs_by_attestations_count: FieldBinaryHeap::new(|e: &EpochView| {
+                e.attestations_count
+            }),
         }
     }
 
@@ -40,10 +42,7 @@ impl Indexer {
 
         let view = EpochView::from(epoch);
 
-        self.epochs_by_attestations_count.push(Orderable::from((
-            view.epoch.clone(),
-            view.attestations_count.clone(),
-        )));
+        self.epochs_by_attestations_count.push(&view);
 
         self.persist_epoch(view)?;
 
