@@ -26,6 +26,8 @@ pub async fn process(endpoint_url: String, running: Arc<AtomicBool>) -> () {
         }
     }
 
+    indexer.finalize();
+
     /*
         if let Err(err) = indexer.index_validators().await {
         log::warn!("Error while indexing validators: {:?}", err);

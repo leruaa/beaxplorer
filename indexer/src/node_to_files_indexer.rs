@@ -83,6 +83,26 @@ impl Indexer {
         Ok(())
     }
 
+    pub fn finalize(self) {
+        // sorted pages
+        for (i, chunk) in self
+            .epochs_by_attestations_count
+            .into_sorted_vec()
+            .chunks(10)
+            .enumerate()
+        {
+            let indexes: Vec<u64> = chunk.into_iter().map(|x| x.epoch).collect();
+            let mut f = BufWriter::new(
+                File::create(format!(
+                    "../web_static/public/data/epochs/s/attestations_count/{}.msg",
+                    i + 1
+                ))
+                .unwrap(),
+            );
+            indexes.serialize(&mut Serializer::new(&mut f)).unwrap();
+        }
+    }
+
     pub async fn index_validators(&self) -> Result<(), IndexerError> {
         log::info!("Indexing validators");
 

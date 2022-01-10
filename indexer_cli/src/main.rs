@@ -32,7 +32,6 @@ async fn main() {
     .expect("Error setting Ctrl-C handler");
 
     tokio::spawn(async move {
-        //node_to_db::process(endpoint_url, db_pool, running).await;
         node_to_files::process(endpoint_url, running).await;
 
         sender.send(()).unwrap();
