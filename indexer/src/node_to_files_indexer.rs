@@ -3,7 +3,7 @@ use std::{collections::BinaryHeap, fs::File, io::BufWriter};
 use crate::{
     beacon_node_client::BeaconNodeClient,
     errors::IndexerError,
-    ord_epoch::OrderableEpoch,
+    orderable::Orderable,
     types::{consolidated_epoch::ConsolidatedEpoch, consolidated_validator::ConsolidatedValidator},
 };
 use eth2::types::StateId;
@@ -14,7 +14,7 @@ use types::views::{BlockView, EpochView};
 
 pub struct Indexer {
     beacon_client: BeaconNodeClient,
-    epochs_by_attestations_count: BinaryHeap<OrderableEpoch<usize>>,
+    epochs_by_attestations_count: BinaryHeap<Orderable<usize>>,
 }
 
 impl Indexer {
@@ -40,11 +40,10 @@ impl Indexer {
 
         let view = EpochView::from(epoch);
 
-        self.epochs_by_attestations_count
-            .push(OrderableEpoch::from((
-                view.epoch.clone(),
-                view.attestations_count.clone(),
-            )));
+        self.epochs_by_attestations_count.push(Orderable::from((
+            view.epoch.clone(),
+            view.attestations_count.clone(),
+        )));
 
         self.persist_epoch(view)?;
 
