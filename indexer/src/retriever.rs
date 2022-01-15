@@ -42,7 +42,7 @@ impl Retriever {
     }
 
     pub async fn retrieve_validators(&mut self) -> Result<(), IndexerError> {
-        log::info!("Indexing validators");
+        log::info!("Retrieving validators");
 
         self.validators.extend(
             ConsolidatedValidator::from_state(StateId::Head, self.beacon_client.clone())

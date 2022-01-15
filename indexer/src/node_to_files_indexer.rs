@@ -19,7 +19,7 @@ impl Indexer {
     pub fn index(self, base_dir: &str) -> Result<(), IndexerError> {
         for mut persistable in self.sorted_epochs_by_fields {
             persistable.append(&self.epochs);
-            persistable.persist(base_dir)
+            persistable.persist(&format!("{}/epochs", base_dir))
         }
 
         EpochsMeta::new(self.epochs.len()).persist(base_dir);

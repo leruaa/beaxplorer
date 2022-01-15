@@ -23,7 +23,7 @@ pub async fn process(endpoint_url: String, running: Arc<AtomicBool>) -> () {
             }
             Err(err) => {
                 running.store(false, Ordering::SeqCst);
-                log::error!("Error while indexing epoch {}: {:?}", n, err);
+                log::error!("Error while retrieving epoch {}: {:?}", n, err);
             }
         }
     }
@@ -31,13 +31,13 @@ pub async fn process(endpoint_url: String, running: Arc<AtomicBool>) -> () {
     match retriever.retrieve_validators().await {
         Ok(_) => (),
         Err(err) => {
-            log::error!("Error while indexing validators: {:?}", err);
+            log::error!("Error while retrieving validators: {:?}", err);
         }
     }
 
     let indexer = Indexer::from(retriever);
 
-    indexer.index("").unwrap();
+    indexer.index("../web_static/public/data").unwrap();
 
     /*
         if let Err(err) = indexer.index_validators().await {
