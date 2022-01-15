@@ -1,14 +1,10 @@
 use std::convert::TryInto;
 
-use db::{
-    models::ValidatorModel,
-    schema::validators::{self, validator_index},
-    Connection, RunQueryDsl,
-};
+use db::models::ValidatorModel;
 use eth2::types::{StateId, ValidatorData};
 use shared::utils::convert::{IntoClampedI32, IntoClampedI64};
 
-use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError, persistable::Persistable};
+use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError};
 
 #[derive(Debug)]
 pub struct ConsolidatedValidator(pub ValidatorData);
@@ -49,25 +45,5 @@ impl ConsolidatedValidator {
         };
 
         Ok(model)
-    }
-}
-
-impl Persistable for Vec<ConsolidatedValidator> {
-    fn persist(&self, db_connection: &db::PgConnection) -> Result<(), IndexerError> {
-        db_connection.transaction::<_, IndexerError, _>(|| {
-            for v in self {
-                let model = v.as_model()?;
-                db::insert_into(validators::table)
-                    .values(&model)
-                    .on_conflict(validator_index)
-                    .do_update()
-                    .set(&model)
-                    .execute(db_connection)?;
-            }
-
-            Ok(())
-        })?;
-
-        Ok(())
     }
 }

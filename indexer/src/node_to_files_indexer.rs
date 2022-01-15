@@ -1,112 +1,47 @@
-use std::{fs::File, io::BufWriter};
-
 use crate::{
-    beacon_node_client::BeaconNodeClient,
     errors::IndexerError,
-    field_binary_heap::FieldBinaryHeap,
-    types::{consolidated_epoch::ConsolidatedEpoch, consolidated_validator::ConsolidatedValidator},
+    persistable::Persistable,
+    persistable_collection::{PersistableCollection, PersistableEpochField},
+    retriever::Retriever,
 };
-use eth2::types::StateId;
-use lighthouse_types::{Epoch, MainnetEthSpec};
-use rmp_serde::Serializer;
-use serde::Serialize;
-use types::views::{BlockView, EpochView};
+use types::{
+    meta::EpochsMeta,
+    views::{BlockView, EpochView},
+};
 
 pub struct Indexer {
-    beacon_client: BeaconNodeClient,
-    epochs_by_attestations_count: FieldBinaryHeap<usize, EpochView>,
+    epochs: Vec<EpochView>,
+    blocks: Vec<BlockView>,
+    sorted_epochs_by_fields: Vec<PersistableEpochField>,
 }
 
 impl Indexer {
-    pub fn new(endpoint_url: String) -> Self {
+    pub async fn index(self, base_dir: &str) -> Result<(), IndexerError> {
+        for mut persistable in self.sorted_epochs_by_fields {
+            persistable.append(&self.epochs);
+            persistable.persist(base_dir)
+        }
+
+        EpochsMeta::new(self.epochs.len()).persist(base_dir);
+
+        for epoch in self.epochs {
+            epoch.persist(base_dir);
+        }
+
+        for block in self.blocks {
+            block.persist(base_dir);
+        }
+
+        Ok(())
+    }
+}
+
+impl From<Retriever> for Indexer {
+    fn from(retriever: Retriever) -> Self {
         Indexer {
-            beacon_client: BeaconNodeClient::new(endpoint_url),
-            epochs_by_attestations_count: FieldBinaryHeap::new(|e: &EpochView| {
-                e.attestations_count
-            }),
+            epochs: retriever.epochs,
+            blocks: retriever.blocks,
+            sorted_epochs_by_fields: PersistableEpochField::build(),
         }
-    }
-
-    pub async fn index_epoch(&mut self, number: u64) -> Result<(), IndexerError> {
-        log::info!("Indexing epoch {}", number);
-
-        let epoch = ConsolidatedEpoch::<MainnetEthSpec>::new(
-            Epoch::new(number),
-            self.beacon_client.clone(),
-        )
-        .await?;
-
-        for block in &epoch.blocks {
-            self.index_block(block.clone().into()).await?
-        }
-
-        let view = EpochView::from(epoch);
-
-        self.epochs_by_attestations_count.push(&view);
-
-        self.persist_epoch(view)?;
-
-        Ok(())
-    }
-
-    pub fn persist_epoch(&self, view: EpochView) -> Result<(), IndexerError> {
-        let mut f = BufWriter::new(
-            File::create(format!(
-                "../web_static/public/data/epochs/{}.msg",
-                view.epoch
-            ))
-            .unwrap(),
-        );
-        view.serialize(&mut Serializer::new(&mut f)).unwrap();
-
-        Ok(())
-    }
-
-    pub async fn index_block(&mut self, view: BlockView) -> Result<(), IndexerError> {
-        self.persist_block(view)?;
-
-        Ok(())
-    }
-
-    pub fn persist_block(&self, view: BlockView) -> Result<(), IndexerError> {
-        let mut f = BufWriter::new(
-            File::create(format!(
-                "../web_static/public/data/blocks/{}.msg",
-                view.slot
-            ))
-            .unwrap(),
-        );
-        view.serialize(&mut Serializer::new(&mut f)).unwrap();
-
-        Ok(())
-    }
-
-    pub fn finalize(self) {
-        // sorted pages
-        for (i, chunk) in self
-            .epochs_by_attestations_count
-            .into_sorted_vec()
-            .chunks(10)
-            .enumerate()
-        {
-            let indexes: Vec<u64> = chunk.into_iter().map(|x| x.epoch).collect();
-            let mut f = BufWriter::new(
-                File::create(format!(
-                    "../web_static/public/data/epochs/s/attestations_count/{}.msg",
-                    i + 1
-                ))
-                .unwrap(),
-            );
-            indexes.serialize(&mut Serializer::new(&mut f)).unwrap();
-        }
-    }
-
-    pub async fn index_validators(&self) -> Result<(), IndexerError> {
-        log::info!("Indexing validators");
-
-        let validators =
-            ConsolidatedValidator::from_state(StateId::Head, self.beacon_client.clone()).await?;
-
-        Ok(())
     }
 }

@@ -1,13 +1,13 @@
 use std::{sync::Arc, time::Instant};
 
-use db::{models::BlockModel, schema::blocks, PgConnection, RunQueryDsl};
+use db::models::BlockModel;
 use eth2::types::{BlockId, ProposerData};
 use lighthouse_types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 use shared::utils::convert::{IntoClampedI32, IntoClampedI64};
 use tokio::sync::RwLock;
 use types::views::BlockView;
 
-use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError, persistable::Persistable};
+use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError};
 
 #[derive(Debug, Clone)]
 pub struct ConsolidatedBlock<E: EthSpec> {
@@ -196,20 +196,9 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
     }
 }
 
-impl<E: EthSpec> Persistable for ConsolidatedBlock<E> {
-    fn persist(&self, db_connection: &PgConnection) -> Result<(), IndexerError> {
-        let block_model = self.as_model()?;
-        db::insert_into(blocks::table)
-            .values(block_model)
-            .execute(db_connection)?;
-
-        Ok(())
-    }
-}
-
 impl<E: EthSpec> From<ConsolidatedBlock<E>> for BlockView {
     fn from(value: ConsolidatedBlock<E>) -> Self {
-        match value.block.clone() {
+        match value.block {
             Some(block) => BlockView {
                 epoch: value.epoch.as_u64(),
                 slot: value.slot.as_u64(),

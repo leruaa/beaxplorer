@@ -2,8 +2,6 @@ use std::ops::Div;
 use std::sync::Arc;
 
 use db::models::EpochModel;
-use db::schema::epochs;
-use db::{PgConnection, RunQueryDsl};
 use eth2::lighthouse::GlobalValidatorInclusionData;
 use eth2::types::{ProposerData, StateId, ValidatorBalanceData};
 use futures::future::try_join_all;
@@ -15,7 +13,6 @@ use types::views::EpochView;
 
 use crate::beacon_node_client::BeaconNodeClient;
 use crate::errors::IndexerError;
-use crate::persistable::Persistable;
 
 use super::consolidated_block::ConsolidatedBlock;
 
@@ -123,22 +120,6 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
 
     pub fn get_total_validator_balance(&self) -> u64 {
         self.validator_balances.iter().map(|v| v.balance).sum()
-    }
-}
-
-impl<E: EthSpec> Persistable for ConsolidatedEpoch<E> {
-    fn persist(&self, db_connection: &PgConnection) -> Result<(), IndexerError> {
-        let epoch_model = self.as_model()?;
-
-        db::insert_into(epochs::table)
-            .values(epoch_model)
-            .execute(db_connection)?;
-
-        for consolidated_block in &self.blocks {
-            consolidated_block.persist(db_connection)?;
-        }
-
-        Ok(())
     }
 }
 

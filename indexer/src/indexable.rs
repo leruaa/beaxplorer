@@ -1,6 +1,6 @@
 use types::views::EpochView;
 
-pub trait Indexable {
+pub trait Indexable: Send {
     fn get_id(&self) -> u64;
 }
 

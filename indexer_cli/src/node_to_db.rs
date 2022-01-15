@@ -4,7 +4,6 @@ use std::sync::{
 };
 
 use db::{ConnectionManager, PgConnection, Pool};
-use indexer::node_to_db_indexer::Indexer;
 
 pub async fn process(
     endpoint_url: String,

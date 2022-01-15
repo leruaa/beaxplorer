@@ -7,7 +7,6 @@ use lighthouse_types::{Epoch, MainnetEthSpec};
 use crate::{
     beacon_node_client::BeaconNodeClient,
     errors::IndexerError,
-    persistable::Persistable,
     types::{consolidated_epoch::ConsolidatedEpoch, consolidated_validator::ConsolidatedValidator},
 };
 
@@ -49,8 +48,6 @@ impl Indexer {
         )
         .await?;
 
-        epoch.persist(&db_connection)?;
-
         Ok(())
     }
 
@@ -64,8 +61,6 @@ impl Indexer {
 
         let validators =
             ConsolidatedValidator::from_state(StateId::Head, self.beacon_client.clone()).await?;
-
-        validators.persist(&db_connection)?;
 
         Ok(())
     }
