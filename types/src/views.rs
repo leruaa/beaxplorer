@@ -45,17 +45,17 @@ pub struct EpochView {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ValidatorView {
-    pub validator_index: i32,
+    pub validator_index: u64,
     pub pubkey: Vec<u8>,
     pub pubkey_hex: String,
-    pub withdrawable_epoch: i64,
+    pub withdrawable_epoch: u64,
     pub withdrawal_credentials: Vec<u8>,
-    pub balance: i64,
+    pub balance: u64,
     pub balance_activation: Option<i64>,
-    pub effective_balance: i64,
+    pub effective_balance: u64,
     pub slashed: bool,
-    pub activation_eligibility_epoch: i64,
-    pub activation_epoch: i64,
-    pub exit_epoch: i64,
+    pub activation_eligibility_epoch: u64,
+    pub activation_epoch: u64,
+    pub exit_epoch: u64,
     pub status: String,
 }

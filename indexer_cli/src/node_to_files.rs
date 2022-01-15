@@ -28,9 +28,16 @@ pub async fn process(endpoint_url: String, running: Arc<AtomicBool>) -> () {
         }
     }
 
+    match retriever.retrieve_validators().await {
+        Ok(_) => (),
+        Err(err) => {
+            log::error!("Error while indexing validators: {:?}", err);
+        }
+    }
+
     let indexer = Indexer::from(retriever);
 
-    indexer.index("").await.unwrap();
+    indexer.index("").unwrap();
 
     /*
         if let Err(err) = indexer.index_validators().await {

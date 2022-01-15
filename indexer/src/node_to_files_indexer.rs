@@ -16,7 +16,7 @@ pub struct Indexer {
 }
 
 impl Indexer {
-    pub async fn index(self, base_dir: &str) -> Result<(), IndexerError> {
+    pub fn index(self, base_dir: &str) -> Result<(), IndexerError> {
         for mut persistable in self.sorted_epochs_by_fields {
             persistable.append(&self.epochs);
             persistable.persist(base_dir)
