@@ -8,6 +8,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
 use crate::{
+    get::get,
     sort::{Paginate, SortBy},
     DeserializeError,
 };
@@ -34,16 +35,7 @@ impl Epochs {
     }
 
     pub fn get(&self, epoch: String) -> Promise {
-        let base_url = self.base_url.clone();
-
-        future_to_promise(async move {
-            let result = Self::get_epoch(base_url, epoch).await;
-
-            match result {
-                Err(err) => Err(Error::new(&err.to_string()).into()),
-                Ok(epoch) => Ok(epoch),
-            }
-        })
+        get::<EpochView>(self.base_url.clone(), epoch)
     }
 
     async fn get_epoch(base_url: String, epoch: String) -> Result<JsValue, DeserializeError> {
