@@ -1,7 +1,8 @@
 import { useEffect } from "react";
+import cx from 'classnames';
 import { useTable, usePagination, useSortBy } from "react-table";
 
-export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex, pageCount: controlledPageCount, sortBy: initialSortBy}) => {
+export default ({ columns, data, fetchData, loading, pageIndex: initialPageIndex, pageCount: controlledPageCount, sortBy: initialSortBy }) => {
   const {
     getTableProps,
     getTableBodyProps,
@@ -22,7 +23,7 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
       columns,
       data,
       initialState: { pageIndex: initialPageIndex, sortBy: initialSortBy },
-      manualPagination: true, 
+      manualPagination: true,
       pageCount: controlledPageCount,
       manualSortBy: true,
       disableSortRemove: true
@@ -61,44 +62,44 @@ export default ({columns, data, fetchData, loading, pageIndex: initialPageIndex,
       <table {...getTableProps()}>
         <thead>
           {// Loop over the header rows
-          headerGroups.map(headerGroup => (
-            // Apply the header row props
-            <tr {...headerGroup.getHeaderGroupProps()}>
-              {// Loop over the headers in each row
-              headerGroup.headers.map(column => (
-                // Apply the header cell props
-                <th className={column.isSorted && "sorting"} {...column.getHeaderProps(column.getSortByToggleProps())}>
-                  {// Render the header
-                  column.render('Header')}
-                  <span className={`sort ${column.isSorted ? (column.isSortedDesc ? 'desc' : 'asc') : 'neutral'}`}>
-                  </span>
-                </th>
-              ))}
-            </tr>
-          ))}
+            headerGroups.map(headerGroup => (
+              // Apply the header row props
+              <tr {...headerGroup.getHeaderGroupProps()}>
+                {// Loop over the headers in each row
+                  headerGroup.headers.map(column => (
+                    // Apply the header cell props
+                    <th className={cx({ sorting: column.isSorted })} {...column.getHeaderProps(column.getSortByToggleProps())}>
+                      {// Render the header
+                        column.render('Header')}
+                      <span className={`sort ${column.isSorted ? (column.isSortedDesc ? 'desc' : 'asc') : 'neutral'}`}>
+                      </span>
+                    </th>
+                  ))}
+              </tr>
+            ))}
         </thead>
         {/* Apply the table body props */}
         <tbody {...getTableBodyProps()}>
           {// Loop over the table rows
-          page.map(row => {
-            // Prepare the row for display
-            prepareRow(row)
-            return (
-              // Apply the row props
-              <tr {...row.getRowProps()}>
-                {// Loop over the rows cells
-                row.cells.map(cell => {
-                  // Apply the cell props
-                  return (
-                    <td className={cell.column.isSorted && "sorting"} {...cell.getCellProps()}>
-                      {// Render the cell contents
-                      cell.render('Cell')}
-                    </td>
-                  )
-                })}
-              </tr>
-            )
-          })}
+            page.map(row => {
+              // Prepare the row for display
+              prepareRow(row)
+              return (
+                // Apply the row props
+                <tr {...row.getRowProps()}>
+                  {// Loop over the rows cells
+                    row.cells.map(cell => {
+                      // Apply the cell props
+                      return (
+                        <td className={cx({ sorting: cell.column.isSorted })} {...cell.getCellProps()}>
+                          {// Render the cell contents
+                            cell.render('Cell')}
+                        </td>
+                      )
+                    })}
+                </tr>
+              )
+            })}
         </tbody>
       </table>
 
