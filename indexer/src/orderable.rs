@@ -8,7 +8,10 @@ pub struct Orderable<O: Ord + Eq> {
 
 impl<O: Ord> Ord for Orderable<O> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.ordering.cmp(&other.ordering)
+        match self.ordering.cmp(&other.ordering) {
+            Ordering::Equal => self.epoch.cmp(&other.epoch),
+            o => o,
+        }
     }
 }
 
