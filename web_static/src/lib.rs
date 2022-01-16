@@ -1,5 +1,6 @@
+use js_sys::Error;
 use thiserror::Error;
-use wasm_bindgen::prelude::wasm_bindgen;
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 pub mod epochs;
 mod fetcher;
@@ -22,5 +23,15 @@ pub enum DeserializeError {
     SerdeRmp(#[from] rmp_serde::decode::Error),
 
     #[error(transparent)]
-    SerdeJson(#[from] serde_json::error::Error),
+    SerdeJson(#[from] serde_wasm_bindgen::Error),
+}
+
+impl From<DeserializeError> for JsValue {
+    fn from(err: DeserializeError) -> Self {
+        Error::new(&err.to_string()).into()
+    }
+}
+
+pub fn to_js<T: types::Serialize + ?Sized>(value: &T) -> Result<JsValue, DeserializeError> {
+    serde_wasm_bindgen::to_value(value).map_err(Into::into)
 }

@@ -1,8 +1,8 @@
-use js_sys::{Error, Promise};
+use js_sys::Promise;
 use types::{meta::EpochsMeta, views::EpochView};
 use wasm_bindgen::prelude::*;
 
-use crate::{fetcher::fetch, get::by_id, page::page};
+use crate::{fetcher::fetch, get::by_id, page::page, to_js};
 
 #[wasm_bindgen]
 pub struct Epochs {
@@ -19,9 +19,7 @@ impl Epochs {
     #[wasm_bindgen]
     pub async fn build(base_url: String) -> Result<Epochs, JsValue> {
         let url = base_url + "/data/epochs";
-        let meta = fetch(format!("{}/meta.msg", url))
-            .await
-            .map_err(|err| Error::new(&err.to_string()))?;
+        let meta = fetch(format!("{}/meta.msg", url)).await?;
 
         Ok(Epochs::new(url, meta).into())
     }
@@ -48,6 +46,6 @@ impl Epochs {
     }
 
     pub fn meta(&self) -> Result<JsValue, JsValue> {
-        return JsValue::from_serde(&self.meta).map_err(|err| Error::new(&err.to_string()).into());
+        return to_js(&self.meta).map_err(Into::into);
     }
 }

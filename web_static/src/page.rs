@@ -1,7 +1,7 @@
 use std::cmp::min;
 
 use futures::future::try_join_all;
-use js_sys::{Array, Error, Promise};
+use js_sys::{Array, Promise};
 use types::{DeserializeOwned, Serialize};
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::future_to_promise;
@@ -9,7 +9,7 @@ use wasm_bindgen_futures::future_to_promise;
 use crate::{
     fetcher::{fetch, fetch_all},
     sort::{Paginate, SortBy},
-    DeserializeError,
+    to_js, DeserializeError,
 };
 
 pub fn page<V: DeserializeOwned + Serialize>(
@@ -76,20 +76,11 @@ pub fn page<V: DeserializeOwned + Serialize>(
                     range
                 }
             }
-        };
+        }?;
 
-        match range {
-            Ok(range) => {
-                let url = base_url + "/{}.msg";
-                let result = get_paginated::<V>(url, range).await;
-
-                match result {
-                    Ok(value) => Ok(value),
-                    Err(err) => Err(Error::new(&err.to_string()).into()),
-                }
-            }
-            Err(err) => Err(Error::new(&err.to_string()).into()),
-        }
+        get_paginated::<V>(base_url + "/{}.msg", range)
+            .await
+            .map_err(Into::into)
     })
 }
 
@@ -100,7 +91,7 @@ async fn get_paginated<V: DeserializeOwned + Serialize>(
     fetch_all::<V, u64>(base_url, range)
         .await?
         .into_iter()
-        .map(|v| JsValue::from_serde(&v).map_err(|err| DeserializeError::SerdeJson(err)))
+        .map(|v| to_js(&v))
         .collect::<Result<Vec<JsValue>, DeserializeError>>()
         .map(|x| x.into_iter().collect::<Array>().into())
 }

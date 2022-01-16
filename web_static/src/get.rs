@@ -1,25 +1,14 @@
-use js_sys::{Error, Promise};
+use js_sys::Promise;
 use types::{DeserializeOwned, Serialize};
-use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::future_to_promise;
 
-use crate::fetcher::fetch;
+use crate::{fetcher::fetch, to_js};
 
-pub fn by_id<V: DeserializeOwned + Serialize>(base_url: String, id: String) -> Promise {
+pub fn by_id<V: DeserializeOwned + Serialize + ?Sized>(base_url: String, id: String) -> Promise {
     let base_url = format!("{}/{}.msg", base_url, id);
 
     future_to_promise(async move {
-        let result = fetch::<V>(base_url).await;
-
-        match result {
-            Ok(result) => {
-                let t = JsValue::from_serde(&result);
-                match t {
-                    Ok(t) => Ok(t),
-                    Err(err) => Err(Error::new(&err.to_string()).into()),
-                }
-            }
-            Err(err) => Err(Error::new(&err.to_string()).into()),
-        }
+        let view = fetch::<V>(base_url).await?;
+        to_js(&view).map_err(Into::into)
     })
 }
