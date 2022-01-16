@@ -1,15 +1,16 @@
 import { useRouter } from 'next/router'
 import Breadcrumb from "../../components/breadcrumb";
+import { Epochs } from "../../pkg";
 
 export async function getServerSideProps(context) {
   const wasmModule = await import('../../pkg');
-
+  const epochs = await Epochs.build("http://localhost:3000");
   return {
-    props: await wasmModule.get_epoch("http://localhost:3000", context.params.epoch)
+    props: await epochs.get(context.params.epoch)
   }
 }
 
-export default (props) => { 
+export default (props) => {
   const router = useRouter()
   const { epoch } = router.query
 
