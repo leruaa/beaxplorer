@@ -3,6 +3,7 @@ use thiserror::Error;
 pub mod epochs;
 mod fetcher;
 mod get;
+mod page;
 pub mod sort;
 
 #[derive(Error, Debug)]

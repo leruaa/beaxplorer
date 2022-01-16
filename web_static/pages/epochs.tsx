@@ -15,7 +15,7 @@ export async function getServerSideProps(context) {
   const pageIndex = parseInt(context.query.page, 10) - 1;
   return {
     props: {
-      epochs: await epochs.page(pageIndex || 0, 10, "epoch", false),
+      epochs: await epochs.page(pageIndex || 0, 10, "default", false),
       pageIndex
     }
   }
@@ -36,7 +36,7 @@ export default (props) => {
     {
       accessor: "timestamp",
       Header: "Time",
-      Cell: ({ value }) => 
+      Cell: ({ value }) =>
         <span title={moment.unix(value).format("L LTS")}>
           <Moment unix fromNow date={value} />
         </span>
@@ -54,10 +54,10 @@ export default (props) => {
     {
       accessor: (row, rowIndex) => { return { p: row.proposer_slashings_count, a: row.attester_slashings_count } },
       Header: "Slashings P / A",
-      Cell: ( {value} ) => 
-      <>
-        <Number value={value.p} /> / <Number value={value.a} />
-      </>
+      Cell: ({ value }) =>
+        <>
+          <Number value={value.p} /> / <Number value={value.a} />
+        </>
     },
     {
       accessor: "finalized",
@@ -99,17 +99,17 @@ export default (props) => {
     }
     else {
       const epochs = await epochsMemo;
-      let sort_id = sortBy.length > 0 ? sortBy[0].id : "epoch";
-      let sort_desc = sortBy.length > 0 ? sortBy[0].desc : false;
+      let sortId = sortBy.length > 0 ? sortBy[0].id : "epoch";
+      let sortDesc = sortBy.length > 0 ? sortBy[0].desc : false;
 
-      if (sort_id === "timestamp") sort_id = "epoch";
+      if (["epoch", "timestamp"].indexOf(sortId) > -1) sortId = "default";
 
       setData(
         await epochs.page(
           pageIndex,
           pageSize,
-          sort_id,
-          sort_desc
+          sortId,
+          sortDesc
         )
       );
       setPageCount(Math.ceil(await getEpochsCount / pageSize));
@@ -121,18 +121,17 @@ export default (props) => {
       <Breadcrumb breadcrumb={{ parts: [{ text: "Epochs", icon: "clock" }] }} />
       <section className="container mx-auto">
         <div className="tabular-data">
-          <DataTable 
+          <DataTable
             columns={useMemo(() => columns, [])}
             data={data}
             fetchData={fetchData}
             loading={loading}
             pageIndex={page ? parseInt(page as string, 10) - 1 : 0}
             pageCount={pageCount}
-            sortBy={useMemo(() => [{id: "epoch", desc: false}], [])}
+            sortBy={useMemo(() => [{ id: "epoch", desc: false }], [])}
           />
         </div>
       </section>
     </>
   )
 }
-  
