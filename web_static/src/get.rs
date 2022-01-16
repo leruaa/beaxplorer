@@ -5,7 +5,7 @@ use wasm_bindgen_futures::future_to_promise;
 
 use crate::fetcher::fetch;
 
-pub fn get<V: DeserializeOwned + Serialize>(base_url: String, id: String) -> Promise {
+pub fn by_id<V: DeserializeOwned + Serialize>(base_url: String, id: String) -> Promise {
     let base_url = format!("{}/{}.msg", base_url, id);
 
     future_to_promise(async move {

@@ -7,7 +7,6 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::future_to_promise;
 
 use crate::{
-    epochs::log,
     fetcher::{fetch, fetch_all},
     sort::{Paginate, SortBy},
     DeserializeError,
@@ -53,7 +52,6 @@ pub fn page<V: DeserializeOwned + Serialize>(
                         sort_by.clone().id,
                         page_number
                     );
-                    log(&url);
                     futures.push(fetch::<Vec<u64>>(url));
                 }
 
