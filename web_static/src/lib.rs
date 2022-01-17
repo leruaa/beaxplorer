@@ -2,6 +2,7 @@ use js_sys::Error;
 use thiserror::Error;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
+pub mod blocks;
 pub mod epochs;
 mod fetcher;
 mod get;
