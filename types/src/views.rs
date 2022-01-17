@@ -9,12 +9,12 @@ pub struct BlockView {
     pub parent_root: Vec<u8>,
     pub state_root: Vec<u8>,
     pub signature: Vec<u8>,
-    pub randao_reveal: Option<Vec<u8>>,
-    pub graffiti: Option<Vec<u8>>,
-    pub graffiti_text: Option<String>,
-    pub eth1data_deposit_root: Option<Vec<u8>>,
+    pub randao_reveal: Vec<u8>,
+    pub graffiti: Vec<u8>,
+    pub graffiti_text: String,
+    pub eth1data_deposit_root: Vec<u8>,
     pub eth1data_deposit_count: u64,
-    pub eth1data_block_hash: Option<Vec<u8>>,
+    pub eth1data_block_hash: Vec<u8>,
     pub proposer_slashings_count: usize,
     pub attester_slashings_count: usize,
     pub attestations_count: usize,
@@ -38,9 +38,9 @@ pub struct EpochView {
     pub average_validator_balance: u64,
     pub total_validator_balance: u64,
     pub finalized: bool,
-    pub eligible_ether: Option<u64>,
-    pub global_participation_rate: Option<f64>,
-    pub voted_ether: Option<u64>,
+    pub eligible_ether: u64,
+    pub global_participation_rate: f64,
+    pub voted_ether: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -51,6 +51,8 @@ pub struct ValidatorView {
     pub withdrawable_epoch: u64,
     pub withdrawal_credentials: Vec<u8>,
     pub balance: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub balance_activation: Option<i64>,
     pub effective_balance: u64,
     pub slashed: bool,

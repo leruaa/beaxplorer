@@ -153,9 +153,9 @@ impl<E: EthSpec> From<ConsolidatedEpoch<E>> for EpochView {
                 .div(value.validator_balances.len() as u64),
             total_validator_balance: value.get_total_validator_balance(),
             finalized: global_participation_rate >= 2f64 / 3f64,
-            eligible_ether: Some(eligible_ether),
-            global_participation_rate: Some(global_participation_rate),
-            voted_ether: Some(voted_ether),
+            eligible_ether: eligible_ether,
+            global_participation_rate: global_participation_rate,
+            voted_ether: voted_ether,
         }
     }
 }
