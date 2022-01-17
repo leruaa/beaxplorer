@@ -5,7 +5,7 @@ use crate::{
     retriever::Retriever,
 };
 use types::{
-    meta::EpochsMeta,
+    meta::{BlocksMeta, EpochsMeta},
     views::{BlockView, EpochView},
 };
 
@@ -27,6 +27,8 @@ impl Indexer {
         for epoch in self.epochs {
             epoch.persist(base_dir);
         }
+
+        BlocksMeta::new(self.blocks.len()).persist(base_dir);
 
         for block in self.blocks {
             block.persist(base_dir);

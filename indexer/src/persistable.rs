@@ -3,7 +3,7 @@ use std::{fs::File, io::BufWriter};
 use rmp_serde::Serializer;
 use serde::Serialize;
 use types::{
-    meta::EpochsMeta,
+    meta::{BlocksMeta, EpochsMeta},
     views::{BlockView, EpochView},
 };
 
@@ -31,6 +31,13 @@ impl Persistable<BlockView> for BlockView {
 impl Persistable<EpochsMeta> for EpochsMeta {
     fn persist(self, base_dir: &str) -> () {
         let mut f = BufWriter::new(File::create(format!("{}/epochs/meta.msg", base_dir)).unwrap());
+        self.serialize(&mut Serializer::new(&mut f)).unwrap();
+    }
+}
+
+impl Persistable<BlocksMeta> for BlocksMeta {
+    fn persist(self, base_dir: &str) -> () {
+        let mut f = BufWriter::new(File::create(format!("{}/blocks/meta.msg", base_dir)).unwrap());
         self.serialize(&mut Serializer::new(&mut f)).unwrap();
     }
 }

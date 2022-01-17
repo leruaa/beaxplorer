@@ -11,3 +11,14 @@ impl EpochsMeta {
         EpochsMeta { count }
     }
 }
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct BlocksMeta {
+    pub count: usize,
+}
+
+impl BlocksMeta {
+    pub fn new(count: usize) -> Self {
+        BlocksMeta { count }
+    }
+}
