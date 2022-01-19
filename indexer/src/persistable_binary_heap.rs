@@ -28,7 +28,7 @@ impl<I: Indexable, T: Ord + Eq + Clone + Send> PersistableCollection<I>
     }
 }
 
-impl<I: Indexable, T: Ord + Eq + Clone + Send> Persistable<I> for PersistableBinaryHeap<I, T> {
+impl<I: Indexable, T: Ord + Eq + Clone + Send> Persistable for PersistableBinaryHeap<I, T> {
     fn persist(self, base_dir: &str) -> () {
         for (i, chunk) in self.inner.into_sorted_vec().chunks(10).enumerate() {
             let indexes: Vec<u64> = chunk.into_iter().map(|x| x.epoch).collect();

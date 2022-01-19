@@ -2,7 +2,7 @@ use types::views::EpochView;
 
 use crate::{persistable::Persistable, persistable_binary_heap::PersistableBinaryHeap};
 
-pub trait PersistableCollection<I>: Persistable<I> {
+pub trait PersistableCollection<I>: Persistable {
     fn insert(&mut self, indexable: &I) -> ();
 
     fn append(&mut self, indexables: &Vec<I>) -> () {
@@ -31,7 +31,7 @@ impl PersistableEpochField {
     }
 }
 
-impl Persistable<EpochView> for PersistableEpochField {
+impl Persistable for PersistableEpochField {
     fn persist(self, base_dir: &str) -> () {
         match self {
             PersistableEpochField::AsUsize(p) => p.persist(base_dir),
