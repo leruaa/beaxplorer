@@ -1,4 +1,4 @@
-use std::cmp::min;
+use std::{cmp::min, fmt::Debug};
 
 use futures::future::try_join_all;
 use js_sys::{Array, Promise};
@@ -8,11 +8,12 @@ use wasm_bindgen_futures::future_to_promise;
 
 use crate::{
     fetcher::{fetch, fetch_all},
+    log,
     sort::{Paginate, SortBy},
     to_js, DeserializeError,
 };
 
-pub fn page<V: DeserializeOwned + Serialize>(
+pub fn page<V: DeserializeOwned + Serialize + Debug>(
     base_url: String,
     page_index: usize,
     page_size: usize,
@@ -84,7 +85,7 @@ pub fn page<V: DeserializeOwned + Serialize>(
     })
 }
 
-async fn get_paginated<V: DeserializeOwned + Serialize>(
+async fn get_paginated<V: DeserializeOwned + Serialize + Debug>(
     base_url: String,
     range: Vec<u64>,
 ) -> Result<JsValue, DeserializeError> {

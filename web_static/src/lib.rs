@@ -8,6 +8,7 @@ mod fetcher;
 mod get;
 mod page;
 pub mod sort;
+pub mod validators;
 
 #[wasm_bindgen]
 extern "C" {
@@ -34,5 +35,9 @@ impl From<DeserializeError> for JsValue {
 }
 
 pub fn to_js<T: types::Serialize + ?Sized>(value: &T) -> Result<JsValue, DeserializeError> {
-    serde_wasm_bindgen::to_value(value).map_err(Into::into)
+    value
+        .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
+        .map_err(Into::into)
+
+    //serde_wasm_bindgen::to_value(value).map_err(Into::into)
 }

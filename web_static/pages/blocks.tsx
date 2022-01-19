@@ -92,7 +92,7 @@ export default (props) => {
       let sortId = sortBy.length > 0 ? sortBy[0].id : "slot";
       let sortDesc = sortBy.length > 0 ? sortBy[0].desc : false;
 
-      if (["slot", "timestamp"].indexOf(sortId) > -1) sortId = "default";
+      if (["epoch", "slot", "timestamp"].indexOf(sortId) > -1) sortId = "default";
 
       setData(await blocks.page(
         pageIndex,
@@ -106,7 +106,7 @@ export default (props) => {
 
   return (
     <>
-      <Breadcrumb breadcrumb={{ parts: [{ text: "Blocks", icon: "clock" }] }} />
+      <Breadcrumb breadcrumb={{ parts: [{ text: "Blocks", icon: "cube" }] }} />
       <section className="container mx-auto">
         <div className="tabular-data">
           <DataTable
