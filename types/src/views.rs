@@ -1,7 +1,8 @@
 use serde::Deserialize;
+use serde::Deserializer;
 use serde::Serialize;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BlockView {
     pub epoch: u64,
     pub slot: u64,
@@ -24,7 +25,7 @@ pub struct BlockView {
     pub status: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EpochView {
     pub epoch: u64,
     pub timestamp: u64,
@@ -43,21 +44,19 @@ pub struct EpochView {
     pub voted_ether: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ValidatorView {
     pub validator_index: u64,
     pub pubkey: Vec<u8>,
     pub pubkey_hex: String,
-    pub withdrawable_epoch: u64,
+    pub withdrawable_epoch: Option<u64>,
     pub withdrawal_credentials: Vec<u8>,
     pub balance: u64,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub balance_activation: Option<i64>,
+    pub balance_activation: u64,
     pub effective_balance: u64,
     pub slashed: bool,
     pub activation_eligibility_epoch: u64,
     pub activation_epoch: u64,
-    pub exit_epoch: u64,
+    pub exit_epoch: Option<u64>,
     pub status: String,
 }

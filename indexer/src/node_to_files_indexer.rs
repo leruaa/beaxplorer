@@ -5,13 +5,14 @@ use crate::{
     retriever::Retriever,
 };
 use types::{
-    meta::{BlocksMeta, EpochsMeta},
-    views::{BlockView, EpochView},
+    meta::{BlocksMeta, EpochsMeta, ValidatorsMeta},
+    views::{BlockView, EpochView, ValidatorView},
 };
 
 pub struct Indexer {
     epochs: Vec<EpochView>,
     blocks: Vec<BlockView>,
+    validators: Vec<ValidatorView>,
     sorted_epochs_by_fields: Vec<PersistableEpochField>,
 }
 
@@ -34,6 +35,10 @@ impl Indexer {
             block.persist(base_dir);
         }
 
+        ValidatorsMeta::new(self.validators.len()).persist(base_dir);
+
+        self.validators.persist(base_dir);
+
         Ok(())
     }
 }
@@ -43,6 +48,7 @@ impl From<Retriever> for Indexer {
         Indexer {
             epochs: retriever.epochs,
             blocks: retriever.blocks,
+            validators: retriever.validators,
             sorted_epochs_by_fields: PersistableEpochField::build(),
         }
     }

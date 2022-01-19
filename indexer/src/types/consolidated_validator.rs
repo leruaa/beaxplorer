@@ -55,15 +55,21 @@ impl From<ConsolidatedValidator> for ValidatorView {
             validator_index: value.0.index,
             pubkey: value.0.validator.pubkey.as_serialized().to_vec(),
             pubkey_hex: value.0.validator.pubkey.to_string(),
-            withdrawable_epoch: value.0.validator.withdrawable_epoch.as_u64(),
+            withdrawable_epoch: match value.0.validator.withdrawable_epoch.as_u64() {
+                u64::MAX => None,
+                x => Some(x),
+            },
             withdrawal_credentials: value.0.validator.withdrawal_credentials.as_bytes().to_vec(),
             balance: value.0.balance,
-            balance_activation: value.0.validator.activation_epoch.as_u64().try_into().ok(),
+            balance_activation: value.0.validator.activation_epoch.as_u64(),
             effective_balance: value.0.validator.effective_balance,
             slashed: value.0.validator.slashed,
             activation_eligibility_epoch: value.0.validator.activation_eligibility_epoch.as_u64(),
             activation_epoch: value.0.validator.activation_epoch.as_u64(),
-            exit_epoch: value.0.validator.exit_epoch.as_u64(),
+            exit_epoch: match value.0.validator.exit_epoch.as_u64() {
+                u64::MAX => None,
+                x => Some(x),
+            },
             status: value.0.status.to_string(),
         }
     }
