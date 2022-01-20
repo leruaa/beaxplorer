@@ -64,7 +64,15 @@ impl From<ConsolidatedValidator> for ValidatorView {
             balance_activation: value.0.validator.activation_epoch.as_u64(),
             effective_balance: value.0.validator.effective_balance,
             slashed: value.0.validator.slashed,
-            activation_eligibility_epoch: value.0.validator.activation_eligibility_epoch.as_u64(),
+            activation_eligibility_epoch: match value
+                .0
+                .validator
+                .activation_eligibility_epoch
+                .as_u64()
+            {
+                u64::MAX => None,
+                x => Some(x),
+            },
             activation_epoch: value.0.validator.activation_epoch.as_u64(),
             exit_epoch: match value.0.validator.exit_epoch.as_u64() {
                 u64::MAX => None,

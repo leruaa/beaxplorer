@@ -39,13 +39,21 @@ export default (props) => {
       Cell: ({ value }) => <a href={`/validator/${value}`}><Number value={value} /></a>
     },
     {
+      accessor: "balance",
+      Header: "Balance",
+      Cell: ({ value }) => <Ethers value={value} />
+    },
+    {
       accessor: "activation_epoch",
       Header: "Activation"
     },
     {
-      accessor: "balance",
-      Header: "Balance",
-      Cell: ({ value }) => <Ethers value={value} />
+      accessor: "exit_epoch",
+      Header: "Exit"
+    },
+    {
+      accessor: "withdrawable_epoch",
+      Header: "Withdrawable"
     }
   ];
 

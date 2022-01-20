@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use serde::Deserializer;
 use serde::Serialize;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -55,7 +54,7 @@ pub struct ValidatorView {
     pub balance_activation: u64,
     pub effective_balance: u64,
     pub slashed: bool,
-    pub activation_eligibility_epoch: u64,
+    pub activation_eligibility_epoch: Option<u64>,
     pub activation_epoch: u64,
     pub exit_epoch: Option<u64>,
     pub status: String,

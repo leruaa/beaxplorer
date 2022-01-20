@@ -2,7 +2,7 @@ use js_sys::Promise;
 use types::{meta::ValidatorsMeta, views::ValidatorView};
 use wasm_bindgen::prelude::*;
 
-use crate::{fetcher::fetch, get::by_id, log, page::page, to_js};
+use crate::{fetcher::fetch, get::by_id, page::page, to_js};
 
 #[wasm_bindgen]
 pub struct Validators {
