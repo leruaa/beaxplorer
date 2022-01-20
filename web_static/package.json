@@ -3,7 +3,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "wasm": "wasm-pack build",
+    "start": "next start",
+    "reindex": "cd ../indexer_cli && cargo run -- --reset"
   },
   "devDependencies": {
     "@types/react": "^17.0.35",
