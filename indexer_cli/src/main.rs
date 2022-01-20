@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use clap::StructOpt;
+use dotenv::dotenv;
 use simple_logger::SimpleLogger;
 use tokio::sync::oneshot;
 
@@ -14,6 +15,7 @@ pub mod node_to_files;
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
     SimpleLogger::new()
         .with_level(log::LevelFilter::Info)
         .init()

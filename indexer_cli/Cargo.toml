@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 clap = { version = "3.0.10", features = ["derive", "env"] }
+dotenv = "0.15.0"
 tokio = { version = "1", features = ["full"] }
 log = "0.4.14"
 simple_logger = "1.11.0"
