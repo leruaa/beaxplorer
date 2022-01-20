@@ -1,24 +1,26 @@
-use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
-use dotenv::dotenv;
+use clap::StructOpt;
 use simple_logger::SimpleLogger;
 use tokio::sync::oneshot;
 
+use crate::cli::Cli;
+
 //pub mod node_to_db;
+mod cli;
 pub mod node_to_files;
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
     SimpleLogger::new()
         .with_level(log::LevelFilter::Info)
         .init()
         .ok();
 
-    let endpoint_url = env::var("LIGHTHOUSE_ENDPOINT_URL").unwrap();
+    let cli = Cli::parse();
+
     let start = Instant::now();
 
     let running = Arc::new(AtomicBool::new(true));
@@ -32,7 +34,7 @@ async fn main() {
     .expect("Error setting Ctrl-C handler");
 
     tokio::spawn(async move {
-        node_to_files::process(endpoint_url, running).await;
+        node_to_files::process(cli, running).await;
 
         sender.send(()).unwrap();
     });

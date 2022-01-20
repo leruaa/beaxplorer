@@ -8,13 +8,19 @@ use std::sync::{
 use indexer::node_to_files_indexer::Indexer;
 use indexer::retriever::Retriever;
 
-pub async fn process(endpoint_url: String, running: Arc<AtomicBool>) -> () {
+use crate::cli::Cli;
+
+pub async fn process(cli: Cli, running: Arc<AtomicBool>) -> () {
+    if cli.reset {
+        fs::remove_dir_all("../web_static/public/data").unwrap();
+    }
+
     fs::create_dir_all("../web_static/public/data/epochs/s/attestations_count/").unwrap();
     fs::create_dir_all("../web_static/public/data/epochs/s/deposits_count/").unwrap();
     fs::create_dir_all("../web_static/public/data/blocks").unwrap();
     fs::create_dir_all("../web_static/public/data/validators").unwrap();
 
-    let mut retriever = Retriever::new(endpoint_url);
+    let mut retriever = Retriever::new(cli.endpoint_url);
     let mut n = 0;
 
     while running.load(Ordering::SeqCst) {
