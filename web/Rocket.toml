@@ -1,2 +1,0 @@
-[global.databases]
-node = { url = "postgres://beaxplorer@localhost/beaxplorer" }
