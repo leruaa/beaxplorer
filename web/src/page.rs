@@ -1,4 +1,4 @@
-use std::{cmp::min, fmt::Debug};
+use std::cmp::min;
 
 use futures::future::try_join_all;
 use js_sys::{Array, Promise};
@@ -12,7 +12,7 @@ use crate::{
     to_js, DeserializeError,
 };
 
-pub fn page<V: DeserializeOwned + Serialize + Debug>(
+pub fn page<M: DeserializeOwned + Into<V>, V: Serialize>(
     base_url: String,
     page_index: usize,
     page_size: usize,
@@ -78,20 +78,20 @@ pub fn page<V: DeserializeOwned + Serialize + Debug>(
             }
         }?;
 
-        get_paginated::<V>(base_url + "/{}.msg", range)
+        get_paginated::<M, V>(base_url + "/{}.msg", range)
             .await
             .map_err(Into::into)
     })
 }
 
-async fn get_paginated<V: DeserializeOwned + Serialize + Debug>(
+async fn get_paginated<M: DeserializeOwned + Into<V>, V: Serialize>(
     base_url: String,
     range: Vec<u64>,
 ) -> Result<JsValue, DeserializeError> {
-    fetch_all::<V, u64>(base_url, range)
+    fetch_all::<M, u64>(base_url, range)
         .await?
         .into_iter()
-        .map(|v| to_js(&v))
+        .map(|v| to_js(&v.into()))
         .collect::<Result<Vec<JsValue>, DeserializeError>>()
         .map(|x| x.into_iter().collect::<Array>().into())
 }

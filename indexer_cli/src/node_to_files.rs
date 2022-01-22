@@ -44,7 +44,7 @@ pub async fn process(cli: Cli, running: Arc<AtomicBool>) -> () {
 
     let indexer = Indexer::from(retriever);
 
-    indexer.index("../web_static/public/data").unwrap();
+    indexer.index("../web/public/data").unwrap();
 
     /*
         if let Err(err) = indexer.index_validators().await {
