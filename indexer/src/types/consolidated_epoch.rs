@@ -7,7 +7,7 @@ use futures::future::try_join_all;
 use lighthouse_types::{Epoch, EthSpec};
 use shared::utils::clock::Clock;
 use tokio::sync::RwLock;
-use types::epoch::EpochModel;
+use types::epoch::{EpochExtendedModel, EpochModel};
 
 use crate::beacon_node_client::BeaconNodeClient;
 use crate::errors::IndexerError;
@@ -84,8 +84,8 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
     }
 }
 
-impl<E: EthSpec> From<ConsolidatedEpoch<E>> for EpochModel {
-    fn from(value: ConsolidatedEpoch<E>) -> Self {
+impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochModel {
+    fn from(value: &ConsolidatedEpoch<E>) -> Self {
         let start_slot = value.epoch.start_slot(E::slots_per_epoch());
         let spec = E::default_spec();
         let clock = Clock::new(spec);
@@ -94,29 +94,29 @@ impl<E: EthSpec> From<ConsolidatedEpoch<E>> for EpochModel {
         let voted_ether = value
             .validator_inclusion
             .previous_epoch_target_attesting_gwei;
-        let global_participation_rate = (value
-            .validator_inclusion
-            .previous_epoch_target_attesting_gwei as f64)
-            .div(value.validator_inclusion.previous_epoch_active_gwei as f64);
 
         EpochModel {
             epoch: value.epoch.as_u64(),
             timestamp: clock.timestamp(start_slot).unwrap_or(0),
-            blocks_count: value.blocks.len(),
             proposer_slashings_count: value.get_proposer_slashings_count(),
             attester_slashings_count: value.get_attester_slashings_count(),
             attestations_count: value.get_attestations_count(),
             deposits_count: value.get_deposits_count(),
+            eligible_ether: eligible_ether,
+            voted_ether: voted_ether,
+        }
+    }
+}
+
+impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochExtendedModel {
+    fn from(value: &ConsolidatedEpoch<E>) -> Self {
+        EpochExtendedModel {
             voluntary_exits_count: value.get_voluntary_exits_count(),
             validators_count: value.validator_balances.len(),
             average_validator_balance: value
                 .get_total_validator_balance()
                 .div(value.validator_balances.len() as u64),
             total_validator_balance: value.get_total_validator_balance(),
-            finalized: global_participation_rate >= 2f64 / 3f64,
-            eligible_ether: eligible_ether,
-            global_participation_rate: global_participation_rate,
-            voted_ether: voted_ether,
         }
     }
 }

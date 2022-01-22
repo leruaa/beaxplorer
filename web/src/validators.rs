@@ -1,5 +1,5 @@
 use js_sys::Promise;
-use types::validator::{ValidatorModel, ValidatorsMeta};
+use types::validator::{ValidatorModel, ValidatorView, ValidatorsMeta};
 use wasm_bindgen::prelude::*;
 
 use crate::{fetcher::fetch, get::by_id, page::page, to_js};
@@ -25,7 +25,7 @@ impl Validators {
     }
 
     pub fn get(&self, validator: String) -> Promise {
-        by_id::<ValidatorModel>(self.base_url.clone(), validator)
+        by_id::<ValidatorModel, ValidatorView>(self.base_url.clone(), validator)
     }
 
     pub fn page(
@@ -35,7 +35,7 @@ impl Validators {
         sort_id: String,
         sort_desc: bool,
     ) -> Promise {
-        page::<ValidatorModel>(
+        page::<ValidatorModel, ValidatorView>(
             self.base_url.clone(),
             page_index,
             page_size,

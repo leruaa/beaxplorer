@@ -1,5 +1,5 @@
 use js_sys::Promise;
-use types::epoch::{EpochModel, EpochsMeta};
+use types::epoch::{EpochModel, EpochView, EpochsMeta};
 use wasm_bindgen::prelude::*;
 
 use crate::{fetcher::fetch, get::by_id, page::page, to_js};
@@ -25,7 +25,7 @@ impl Epochs {
     }
 
     pub fn get(&self, epoch: String) -> Promise {
-        by_id::<EpochModel>(self.base_url.clone(), epoch)
+        by_id::<EpochModel, EpochView>(self.base_url.clone(), epoch)
     }
 
     pub fn page(
@@ -35,7 +35,7 @@ impl Epochs {
         sort_id: String,
         sort_desc: bool,
     ) -> Promise {
-        page::<EpochModel>(
+        page::<EpochModel, EpochView>(
             self.base_url.clone(),
             page_index,
             page_size,

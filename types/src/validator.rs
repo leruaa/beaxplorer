@@ -18,6 +18,18 @@ pub struct ValidatorModel {
     pub status: String,
 }
 
+#[derive(Serialize, Debug, Clone)]
+pub struct ValidatorView {
+    #[serde(flatten)]
+    pub model: ValidatorModel,
+}
+
+impl From<ValidatorModel> for ValidatorView {
+    fn from(model: ValidatorModel) -> Self {
+        ValidatorView { model }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ValidatorsMeta {
     pub count: usize,

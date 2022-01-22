@@ -41,7 +41,7 @@ impl Retriever {
                 .into_iter()
                 .map(|x| BlockModel::from(x)),
         );
-        self.epochs.push(EpochModel::from(epoch));
+        self.epochs.push(EpochModel::from(&epoch));
 
         Ok(())
     }

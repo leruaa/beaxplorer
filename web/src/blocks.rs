@@ -1,5 +1,5 @@
 use js_sys::Promise;
-use types::block::{BlockModel, BlocksMeta};
+use types::block::{BlockModel, BlockView, BlocksMeta};
 use wasm_bindgen::prelude::*;
 
 use crate::{fetcher::fetch, get::by_id, page::page, to_js};
@@ -25,7 +25,7 @@ impl Blocks {
     }
 
     pub fn get(&self, block: String) -> Promise {
-        by_id::<BlockModel>(self.base_url.clone(), block)
+        by_id::<BlockModel, BlockView>(self.base_url.clone(), block)
     }
 
     pub fn page(
@@ -35,7 +35,7 @@ impl Blocks {
         sort_id: String,
         sort_desc: bool,
     ) -> Promise {
-        page::<BlockModel>(
+        page::<BlockModel, BlockView>(
             self.base_url.clone(),
             page_index,
             page_size,

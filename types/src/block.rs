@@ -24,6 +24,18 @@ pub struct BlockModel {
     pub status: String,
 }
 
+#[derive(Serialize, Debug, Clone)]
+pub struct BlockView {
+    #[serde(flatten)]
+    pub model: BlockModel,
+}
+
+impl From<BlockModel> for BlockView {
+    fn from(model: BlockModel) -> Self {
+        BlockView { model }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BlocksMeta {
     pub count: usize,
