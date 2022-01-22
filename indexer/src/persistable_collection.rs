@@ -1,4 +1,4 @@
-use types::views::EpochView;
+use types::epoch::EpochModel;
 
 use crate::{persistable::Persistable, persistable_binary_heap::PersistableBinaryHeap};
 
@@ -13,7 +13,7 @@ pub trait PersistableCollection<I>: Persistable {
 }
 
 pub enum PersistableEpochField {
-    AsUsize(PersistableBinaryHeap<EpochView, usize>),
+    AsUsize(PersistableBinaryHeap<EpochModel, usize>),
 }
 
 impl PersistableEpochField {
@@ -21,11 +21,11 @@ impl PersistableEpochField {
         vec![
             PersistableEpochField::AsUsize(PersistableBinaryHeap::new(
                 "attestations_count".to_string(),
-                |e: &EpochView| e.attestations_count,
+                |e: &EpochModel| e.attestations_count,
             )),
             PersistableEpochField::AsUsize(PersistableBinaryHeap::new(
                 "deposits_count".to_string(),
-                |e: &EpochView| e.deposits_count,
+                |e: &EpochModel| e.deposits_count,
             )),
         ]
     }
@@ -39,8 +39,8 @@ impl Persistable for PersistableEpochField {
     }
 }
 
-impl PersistableCollection<EpochView> for PersistableEpochField {
-    fn insert(&mut self, indexable: &EpochView) -> () {
+impl PersistableCollection<EpochModel> for PersistableEpochField {
+    fn insert(&mut self, indexable: &EpochModel) -> () {
         match self {
             PersistableEpochField::AsUsize(p) => p.insert(indexable),
         }

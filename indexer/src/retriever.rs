@@ -1,6 +1,6 @@
 use eth2::types::StateId;
 use lighthouse_types::{Epoch, MainnetEthSpec};
-use types::views::{BlockView, EpochView, ValidatorView};
+use types::{block::BlockModel, epoch::EpochModel, validator::ValidatorModel};
 
 use crate::{
     beacon_node_client::BeaconNodeClient,
@@ -10,9 +10,9 @@ use crate::{
 
 pub struct Retriever {
     beacon_client: BeaconNodeClient,
-    pub epochs: Vec<EpochView>,
-    pub blocks: Vec<BlockView>,
-    pub validators: Vec<ValidatorView>,
+    pub epochs: Vec<EpochModel>,
+    pub blocks: Vec<BlockModel>,
+    pub validators: Vec<ValidatorModel>,
 }
 
 impl Retriever {
@@ -34,9 +34,14 @@ impl Retriever {
         )
         .await?;
 
-        self.blocks
-            .extend(epoch.blocks.clone().into_iter().map(|x| BlockView::from(x)));
-        self.epochs.push(EpochView::from(epoch));
+        self.blocks.extend(
+            epoch
+                .blocks
+                .clone()
+                .into_iter()
+                .map(|x| BlockModel::from(x)),
+        );
+        self.epochs.push(EpochModel::from(epoch));
 
         Ok(())
     }
@@ -48,8 +53,8 @@ impl Retriever {
             ConsolidatedValidator::from_state(StateId::Head, self.beacon_client.clone())
                 .await?
                 .into_iter()
-                .map(|x| ValidatorView::from(x))
-                .collect::<Vec<ValidatorView>>(),
+                .map(|x| ValidatorModel::from(x))
+                .collect::<Vec<ValidatorModel>>(),
         );
 
         Ok(())

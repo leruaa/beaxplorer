@@ -3,15 +3,16 @@ use std::{fs::File, io::BufWriter};
 use rmp_serde::Serializer;
 use serde::Serialize;
 use types::{
-    meta::{BlocksMeta, EpochsMeta, ValidatorsMeta},
-    views::{BlockView, EpochView, ValidatorView},
+    block::{BlockModel, BlocksMeta},
+    epoch::{EpochModel, EpochsMeta},
+    validator::{ValidatorModel, ValidatorsMeta},
 };
 
 pub trait Persistable: Send {
     fn persist(self, base_dir: &str) -> ();
 }
 
-impl Persistable for EpochView {
+impl Persistable for EpochModel {
     fn persist(self, base_dir: &str) -> () {
         let mut f = BufWriter::new(
             File::create(format!("{}/epochs/{}.msg", base_dir, self.epoch)).unwrap(),
@@ -20,7 +21,7 @@ impl Persistable for EpochView {
     }
 }
 
-impl Persistable for BlockView {
+impl Persistable for BlockModel {
     fn persist(self, base_dir: &str) -> () {
         let mut f =
             BufWriter::new(File::create(format!("{}/blocks/{}.msg", base_dir, self.slot)).unwrap());
@@ -28,7 +29,7 @@ impl Persistable for BlockView {
     }
 }
 
-impl Persistable for Vec<ValidatorView> {
+impl Persistable for Vec<ValidatorModel> {
     fn persist(self, base_dir: &str) -> () {
         for v in self {
             let mut f = BufWriter::new(

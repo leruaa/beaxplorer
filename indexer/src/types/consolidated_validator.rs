@@ -1,5 +1,5 @@
 use eth2::types::{StateId, ValidatorData};
-use types::views::ValidatorView;
+use types::validator::ValidatorModel;
 
 use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError};
 
@@ -20,9 +20,9 @@ impl ConsolidatedValidator {
     }
 }
 
-impl From<ConsolidatedValidator> for ValidatorView {
+impl From<ConsolidatedValidator> for ValidatorModel {
     fn from(value: ConsolidatedValidator) -> Self {
-        ValidatorView {
+        ValidatorModel {
             validator_index: value.0.index,
             pubkey: value.0.validator.pubkey.as_serialized().to_vec(),
             pubkey_hex: value.0.validator.pubkey.to_string(),

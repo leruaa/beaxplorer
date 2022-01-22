@@ -1,18 +1,20 @@
+use types::{
+    block::{BlockModel, BlocksMeta},
+    epoch::{EpochModel, EpochsMeta},
+    validator::{ValidatorModel, ValidatorsMeta},
+};
+
 use crate::{
     errors::IndexerError,
     persistable::Persistable,
     persistable_collection::{PersistableCollection, PersistableEpochField},
     retriever::Retriever,
 };
-use types::{
-    meta::{BlocksMeta, EpochsMeta, ValidatorsMeta},
-    views::{BlockView, EpochView, ValidatorView},
-};
 
 pub struct Indexer {
-    epochs: Vec<EpochView>,
-    blocks: Vec<BlockView>,
-    validators: Vec<ValidatorView>,
+    epochs: Vec<EpochModel>,
+    blocks: Vec<BlockModel>,
+    validators: Vec<ValidatorModel>,
     sorted_epochs_by_fields: Vec<PersistableEpochField>,
 }
 

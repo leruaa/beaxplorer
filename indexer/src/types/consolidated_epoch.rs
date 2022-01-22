@@ -7,7 +7,7 @@ use futures::future::try_join_all;
 use lighthouse_types::{Epoch, EthSpec};
 use shared::utils::clock::Clock;
 use tokio::sync::RwLock;
-use types::views::EpochView;
+use types::epoch::EpochModel;
 
 use crate::beacon_node_client::BeaconNodeClient;
 use crate::errors::IndexerError;
@@ -84,7 +84,7 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
     }
 }
 
-impl<E: EthSpec> From<ConsolidatedEpoch<E>> for EpochView {
+impl<E: EthSpec> From<ConsolidatedEpoch<E>> for EpochModel {
     fn from(value: ConsolidatedEpoch<E>) -> Self {
         let start_slot = value.epoch.start_slot(E::slots_per_epoch());
         let spec = E::default_spec();
@@ -99,7 +99,7 @@ impl<E: EthSpec> From<ConsolidatedEpoch<E>> for EpochView {
             .previous_epoch_target_attesting_gwei as f64)
             .div(value.validator_inclusion.previous_epoch_active_gwei as f64);
 
-        EpochView {
+        EpochModel {
             epoch: value.epoch.as_u64(),
             timestamp: clock.timestamp(start_slot).unwrap_or(0),
             blocks_count: value.blocks.len(),

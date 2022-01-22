@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "web_static",
+    "web",
     "indexer",
     "indexer_cli",
     "types",
