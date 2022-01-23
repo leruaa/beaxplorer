@@ -1,14 +1,14 @@
 use std::{collections::BinaryHeap, marker::PhantomData};
 
-use crate::{indexable::Indexable, orderable::Orderable};
+use crate::orderable::Orderable;
 
-pub struct FieldBinaryHeap<I: Indexable, T: Ord + Eq + Clone> {
+pub struct FieldBinaryHeap<I, T: Ord + Eq + Clone> {
     inner: BinaryHeap<Orderable<T>>,
     get_field_value_fn: Box<dyn Fn(&I) -> T + Send>,
     phantom: PhantomData<I>,
 }
 
-impl<I: Indexable, T: Ord + Eq + Clone> FieldBinaryHeap<I, T> {
+impl<I, T: Ord + Eq + Clone> FieldBinaryHeap<I, T> {
     pub fn new<F: Fn(&I) -> T + Send + 'static>(get_field_value_fn: F) -> Self {
         FieldBinaryHeap {
             inner: BinaryHeap::new(),
@@ -17,9 +17,9 @@ impl<I: Indexable, T: Ord + Eq + Clone> FieldBinaryHeap<I, T> {
         }
     }
 
-    pub fn push(&mut self, view: &I) {
+    pub fn push(&mut self, view: &I, id: &u64) {
         self.inner.push(Orderable::from((
-            view.get_id().clone(),
+            id.clone(),
             (self.get_field_value_fn)(view).clone(),
         )))
     }

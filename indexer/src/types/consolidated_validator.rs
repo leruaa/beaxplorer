@@ -1,5 +1,5 @@
 use eth2::types::{StateId, ValidatorData};
-use types::validator::ValidatorModel;
+use types::validator::{ValidatorModel, ValidatorModelWithId};
 
 use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError};
 
@@ -20,10 +20,9 @@ impl ConsolidatedValidator {
     }
 }
 
-impl From<&ConsolidatedValidator> for ValidatorModel {
+impl From<&ConsolidatedValidator> for ValidatorModelWithId {
     fn from(value: &ConsolidatedValidator) -> Self {
-        ValidatorModel {
-            validator_index: value.0.index,
+        let model = ValidatorModel {
             pubkey: value.0.validator.pubkey.as_serialized().to_vec(),
             pubkey_hex: value.0.validator.pubkey.to_string(),
             withdrawable_epoch: match value.0.validator.withdrawable_epoch.as_u64() {
@@ -50,6 +49,8 @@ impl From<&ConsolidatedValidator> for ValidatorModel {
                 x => Some(x),
             },
             status: value.0.status.to_string(),
-        }
+        };
+
+        (value.0.index, model)
     }
 }

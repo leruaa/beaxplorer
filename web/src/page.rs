@@ -12,14 +12,19 @@ use crate::{
     to_js, DeserializeError,
 };
 
-pub fn page<M: DeserializeOwned + Into<V>, V: Serialize>(
+pub fn page<M, V>(
     base_url: String,
     page_index: usize,
     page_size: usize,
     sort_id: String,
     sort_desc: bool,
     total_count: usize,
-) -> Promise {
+) -> Promise
+where
+    M: DeserializeOwned,
+    V: Serialize,
+    (u64, M): Into<V>,
+{
     let sort_by = SortBy::new(sort_id, sort_desc);
 
     future_to_promise(async move {
@@ -84,11 +89,13 @@ pub fn page<M: DeserializeOwned + Into<V>, V: Serialize>(
     })
 }
 
-async fn get_paginated<M: DeserializeOwned + Into<V>, V: Serialize>(
-    base_url: String,
-    range: Vec<u64>,
-) -> Result<JsValue, DeserializeError> {
-    fetch_all::<M, u64>(base_url, range)
+async fn get_paginated<M, V>(base_url: String, range: Vec<u64>) -> Result<JsValue, DeserializeError>
+where
+    M: DeserializeOwned,
+    V: Serialize,
+    (u64, M): Into<V>,
+{
+    fetch_all::<M>(base_url, range)
         .await?
         .into_iter()
         .map(|v| to_js(&v.into()))

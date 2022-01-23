@@ -4,7 +4,6 @@ use serde::Serialize;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BlockModel {
     pub epoch: u64,
-    pub slot: u64,
     pub block_root: Vec<u8>,
     pub parent_root: Vec<u8>,
     pub state_root: Vec<u8>,
@@ -24,15 +23,18 @@ pub struct BlockModel {
     pub status: String,
 }
 
+pub type BlockModelWithId = (u64, BlockModel);
+
 #[derive(Serialize, Debug, Clone)]
 pub struct BlockView {
+    pub slot: u64,
     #[serde(flatten)]
     pub model: BlockModel,
 }
 
-impl From<BlockModel> for BlockView {
-    fn from(model: BlockModel) -> Self {
-        BlockView { model }
+impl From<(u64, BlockModel)> for BlockView {
+    fn from((slot, model): (u64, BlockModel)) -> Self {
+        BlockView { slot, model }
     }
 }
 

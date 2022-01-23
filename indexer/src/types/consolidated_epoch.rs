@@ -7,7 +7,7 @@ use futures::future::try_join_all;
 use lighthouse_types::{Epoch, EthSpec};
 use shared::utils::clock::Clock;
 use tokio::sync::RwLock;
-use types::epoch::{EpochExtendedModel, EpochModel};
+use types::epoch::{EpochExtendedModel, EpochModel, EpochModelWithId};
 
 use crate::beacon_node_client::BeaconNodeClient;
 use crate::errors::IndexerError;
@@ -84,7 +84,7 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
     }
 }
 
-impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochModel {
+impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochModelWithId {
     fn from(value: &ConsolidatedEpoch<E>) -> Self {
         let start_slot = value.epoch.start_slot(E::slots_per_epoch());
         let spec = E::default_spec();
@@ -95,8 +95,7 @@ impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochModel {
             .validator_inclusion
             .previous_epoch_target_attesting_gwei;
 
-        EpochModel {
-            epoch: value.epoch.as_u64(),
+        let model = EpochModel {
             timestamp: clock.timestamp(start_slot).unwrap_or(0),
             proposer_slashings_count: value.get_proposer_slashings_count(),
             attester_slashings_count: value.get_attester_slashings_count(),
@@ -104,7 +103,9 @@ impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochModel {
             deposits_count: value.get_deposits_count(),
             eligible_ether: eligible_ether,
             voted_ether: voted_ether,
-        }
+        };
+
+        (value.epoch.as_u64(), model)
     }
 }
 

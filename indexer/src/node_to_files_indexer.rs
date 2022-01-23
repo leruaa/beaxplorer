@@ -1,8 +1,8 @@
 use lighthouse_types::MainnetEthSpec;
 use types::{
-    block::{BlockModel, BlocksMeta},
-    epoch::{EpochExtendedModel, EpochModel, EpochsMeta},
-    validator::{ValidatorModel, ValidatorsMeta},
+    block::{BlockModelWithId, BlocksMeta},
+    epoch::{EpochExtendedModel, EpochModelWithId, EpochsMeta},
+    validator::{ValidatorModelWithId, ValidatorsMeta},
 };
 
 use crate::{
@@ -27,8 +27,8 @@ impl Indexer {
         let (epochs, _extended_epochs) = self
             .epochs
             .iter()
-            .map(|x| (EpochModel::from(x), EpochExtendedModel::from(x)))
-            .unzip::<EpochModel, EpochExtendedModel, Vec<EpochModel>, Vec<EpochExtendedModel>>();
+            .map(|x| (EpochModelWithId::from(x), EpochExtendedModel::from(x)))
+            .unzip::<EpochModelWithId, EpochExtendedModel, Vec<EpochModelWithId>, Vec<EpochExtendedModel>>();
 
         let all_blocks = self
             .epochs
@@ -38,14 +38,14 @@ impl Indexer {
 
         let blocks = all_blocks
             .iter()
-            .map(BlockModel::from)
-            .collect::<Vec<BlockModel>>();
+            .map(BlockModelWithId::from)
+            .collect::<Vec<BlockModelWithId>>();
 
         let validators = self
             .validators
             .iter()
-            .map(ValidatorModel::from)
-            .collect::<Vec<ValidatorModel>>();
+            .map(ValidatorModelWithId::from)
+            .collect::<Vec<ValidatorModelWithId>>();
 
         for mut persistable in self.sorted_epochs_by_fields {
             persistable.append(&epochs);

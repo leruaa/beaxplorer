@@ -1,23 +1,12 @@
+use serde::Serialize;
 use types::{block::BlocksMeta, epoch::EpochsMeta, validator::ValidatorsMeta};
 
-pub trait Meta: Send {
-    fn get_path() -> &'static str;
-}
+use crate::persisting_path::PersistingPath;
 
-impl Meta for EpochsMeta {
-    fn get_path() -> &'static str {
-        "epochs"
-    }
-}
+pub trait Meta: PersistingPath + Serialize + Send {}
 
-impl Meta for BlocksMeta {
-    fn get_path() -> &'static str {
-        "blocks"
-    }
-}
+impl Meta for EpochsMeta {}
 
-impl Meta for ValidatorsMeta {
-    fn get_path() -> &'static str {
-        "validators"
-    }
-}
+impl Meta for BlocksMeta {}
+
+impl Meta for ValidatorsMeta {}

@@ -10,14 +10,15 @@ pub async fn fetch<T: DeserializeOwned>(url: String) -> Result<T, DeserializeErr
     rmp_serde::from_read::<_, T>(response.bytes().await?.reader()).map_err(Into::into)
 }
 
-pub async fn fetch_all<T: DeserializeOwned, S: ToString>(
+pub async fn fetch_all<T: DeserializeOwned>(
     url: String,
-    range: Vec<S>,
-) -> Result<Vec<T>, DeserializeError> {
+    range: Vec<u64>,
+) -> Result<Vec<(u64, T)>, DeserializeError> {
     let mut futures = vec![];
 
     for id in range {
-        futures.push(fetch::<T>(url.replace("{}", &id.to_string())));
+        let url = url.replace("{}", &id.to_string());
+        futures.push(async move { fetch::<T>(url).await.map(|x| (id, x)) });
     }
 
     try_join_all(futures).await

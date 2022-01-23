@@ -3,7 +3,7 @@ use std::{sync::Arc, time::Instant};
 use eth2::types::{BlockId, ProposerData};
 use lighthouse_types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 use tokio::sync::RwLock;
-use types::block::BlockModel;
+use types::block::{BlockModel, BlockModelWithId};
 
 use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError};
 
@@ -130,12 +130,11 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
     }
 }
 
-impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockModel {
+impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockModelWithId {
     fn from(value: &ConsolidatedBlock<E>) -> Self {
-        match &value.block {
+        let model = match &value.block {
             Some(block) => BlockModel {
                 epoch: value.epoch.as_u64(),
-                slot: value.slot.as_u64(),
                 block_root: value.block_root.as_bytes().to_vec(),
                 parent_root: block.parent_root().as_bytes().to_vec(),
                 state_root: block.state_root().as_bytes().to_vec(),
@@ -156,7 +155,6 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockModel {
             },
             None => BlockModel {
                 epoch: value.epoch.as_u64(),
-                slot: value.slot.as_u64(),
                 block_root: value.block_root.as_bytes().to_vec(),
                 parent_root: vec![],
                 state_root: vec![],
@@ -175,6 +173,8 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockModel {
                 proposer: value.proposer,
                 status: value.status.to_string(),
             },
-        }
+        };
+
+        (value.slot.as_u64(), model)
     }
 }

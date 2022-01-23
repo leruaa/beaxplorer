@@ -24,7 +24,7 @@ impl Blocks {
         Ok(Blocks::new(url, meta).into())
     }
 
-    pub fn get(&self, block: String) -> Promise {
+    pub fn get(&self, block: u64) -> Promise {
         by_id::<BlockModel, BlockView>(self.base_url.clone(), block)
     }
 

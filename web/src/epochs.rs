@@ -24,7 +24,7 @@ impl Epochs {
         Ok(Epochs::new(url, meta).into())
     }
 
-    pub fn get(&self, epoch: String) -> Promise {
+    pub fn get(&self, epoch: u64) -> Promise {
         by_id::<EpochModel, EpochView>(self.base_url.clone(), epoch)
     }
 

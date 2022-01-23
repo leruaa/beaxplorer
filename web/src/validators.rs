@@ -24,7 +24,7 @@ impl Validators {
         Ok(Validators::new(url, meta).into())
     }
 
-    pub fn get(&self, validator: String) -> Promise {
+    pub fn get(&self, validator: u64) -> Promise {
         by_id::<ValidatorModel, ValidatorView>(self.base_url.clone(), validator)
     }
 

@@ -3,11 +3,11 @@ use types::epoch::EpochModel;
 use crate::{persistable::Persistable, persistable_binary_heap::PersistableBinaryHeap};
 
 pub trait PersistableCollection<I>: Persistable {
-    fn insert(&mut self, indexable: &I) -> ();
+    fn insert(&mut self, indexable: &I, id: &u64) -> ();
 
-    fn append(&mut self, indexables: &Vec<I>) -> () {
-        for i in indexables {
-            self.insert(i)
+    fn append(&mut self, indexables: &Vec<(u64, I)>) -> () {
+        for (id, indexable) in indexables {
+            self.insert(indexable, id)
         }
     }
 }
@@ -40,9 +40,9 @@ impl Persistable for PersistableEpochField {
 }
 
 impl PersistableCollection<EpochModel> for PersistableEpochField {
-    fn insert(&mut self, indexable: &EpochModel) -> () {
+    fn insert(&mut self, indexable: &EpochModel, id: &u64) -> () {
         match self {
-            PersistableEpochField::AsUsize(p) => p.insert(indexable),
+            PersistableEpochField::AsUsize(p) => p.insert(indexable, id),
         }
     }
 }

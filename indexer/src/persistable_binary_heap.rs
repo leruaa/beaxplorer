@@ -1,17 +1,17 @@
 use crate::{
-    field_binary_heap::FieldBinaryHeap, indexable::Indexable, persistable::Persistable,
+    field_binary_heap::FieldBinaryHeap, persistable::Persistable,
     persistable_collection::PersistableCollection,
 };
 use rmp_serde::Serializer;
 use serde::Serialize;
 use std::{fs::File, io::BufWriter};
 
-pub struct PersistableBinaryHeap<I: Indexable, T: Ord + Eq + Clone> {
+pub struct PersistableBinaryHeap<I: Send, T: Ord + Eq + Clone> {
     inner: FieldBinaryHeap<I, T>,
     field_name: String,
 }
 
-impl<I: Indexable, T: Ord + Eq + Clone> PersistableBinaryHeap<I, T> {
+impl<I: Send, T: Ord + Eq + Clone> PersistableBinaryHeap<I, T> {
     pub fn new<F: Fn(&I) -> T + Send + 'static>(field_name: String, get_field_value_fn: F) -> Self {
         PersistableBinaryHeap {
             inner: FieldBinaryHeap::new(get_field_value_fn),
@@ -20,15 +20,13 @@ impl<I: Indexable, T: Ord + Eq + Clone> PersistableBinaryHeap<I, T> {
     }
 }
 
-impl<I: Indexable, T: Ord + Eq + Clone + Send> PersistableCollection<I>
-    for PersistableBinaryHeap<I, T>
-{
-    fn insert(&mut self, indexable: &I) {
-        self.inner.push(indexable)
+impl<I: Send, T: Ord + Eq + Clone + Send> PersistableCollection<I> for PersistableBinaryHeap<I, T> {
+    fn insert(&mut self, indexable: &I, id: &u64) {
+        self.inner.push(indexable, id)
     }
 }
 
-impl<I: Indexable, T: Ord + Eq + Clone + Send> Persistable for PersistableBinaryHeap<I, T> {
+impl<I: Send, T: Ord + Eq + Clone + Send> Persistable for PersistableBinaryHeap<I, T> {
     fn persist(self, base_dir: &str) -> () {
         for (i, chunk) in self.inner.into_sorted_vec().chunks(10).enumerate() {
             let indexes: Vec<u64> = chunk.into_iter().map(|x| x.epoch).collect();
