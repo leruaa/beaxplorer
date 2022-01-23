@@ -1,6 +1,5 @@
 use eth2::types::StateId;
 use lighthouse_types::{Epoch, MainnetEthSpec};
-use types::{block::BlockModel, epoch::EpochModel, validator::ValidatorModel};
 
 use crate::{
     beacon_node_client::BeaconNodeClient,
@@ -10,9 +9,8 @@ use crate::{
 
 pub struct Retriever {
     beacon_client: BeaconNodeClient,
-    pub epochs: Vec<EpochModel>,
-    pub blocks: Vec<BlockModel>,
-    pub validators: Vec<ValidatorModel>,
+    pub epochs: Vec<ConsolidatedEpoch<MainnetEthSpec>>,
+    pub validators: Vec<ConsolidatedValidator>,
 }
 
 impl Retriever {
@@ -20,7 +18,6 @@ impl Retriever {
         Retriever {
             beacon_client: BeaconNodeClient::new(endpoint_url),
             epochs: Vec::new(),
-            blocks: Vec::new(),
             validators: Vec::new(),
         }
     }
@@ -28,20 +25,13 @@ impl Retriever {
     pub async fn retrieve_epoch(&mut self, number: u64) -> Result<(), IndexerError> {
         log::info!("Retrieving epoch {}", number);
 
-        let epoch = ConsolidatedEpoch::<MainnetEthSpec>::new(
-            Epoch::new(number),
-            self.beacon_client.clone(),
-        )
-        .await?;
-
-        self.blocks.extend(
-            epoch
-                .blocks
-                .clone()
-                .into_iter()
-                .map(|x| BlockModel::from(x)),
+        self.epochs.push(
+            ConsolidatedEpoch::<MainnetEthSpec>::new(
+                Epoch::new(number),
+                self.beacon_client.clone(),
+            )
+            .await?,
         );
-        self.epochs.push(EpochModel::from(&epoch));
 
         Ok(())
     }
@@ -50,11 +40,7 @@ impl Retriever {
         log::info!("Retrieving validators");
 
         self.validators.extend(
-            ConsolidatedValidator::from_state(StateId::Head, self.beacon_client.clone())
-                .await?
-                .into_iter()
-                .map(|x| ValidatorModel::from(x))
-                .collect::<Vec<ValidatorModel>>(),
+            ConsolidatedValidator::from_state(StateId::Head, self.beacon_client.clone()).await?,
         );
 
         Ok(())

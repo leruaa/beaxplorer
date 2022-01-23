@@ -130,9 +130,9 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
     }
 }
 
-impl<E: EthSpec> From<ConsolidatedBlock<E>> for BlockModel {
-    fn from(value: ConsolidatedBlock<E>) -> Self {
-        match value.block {
+impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockModel {
+    fn from(value: &ConsolidatedBlock<E>) -> Self {
+        match &value.block {
             Some(block) => BlockModel {
                 epoch: value.epoch.as_u64(),
                 slot: value.slot.as_u64(),

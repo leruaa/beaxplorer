@@ -20,8 +20,8 @@ impl ConsolidatedValidator {
     }
 }
 
-impl From<ConsolidatedValidator> for ValidatorModel {
-    fn from(value: ConsolidatedValidator) -> Self {
+impl From<&ConsolidatedValidator> for ValidatorModel {
+    fn from(value: &ConsolidatedValidator) -> Self {
         ValidatorModel {
             validator_index: value.0.index,
             pubkey: value.0.validator.pubkey.as_serialized().to_vec(),
