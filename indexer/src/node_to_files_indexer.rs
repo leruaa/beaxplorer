@@ -1,7 +1,7 @@
 use lighthouse_types::MainnetEthSpec;
 use types::{
     block::{BlockModelWithId, BlocksMeta},
-    epoch::{EpochExtendedModel, EpochModelWithId, EpochsMeta},
+    epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
     validator::{ValidatorModelWithId, ValidatorsMeta},
 };
 
@@ -24,11 +24,11 @@ pub struct Indexer {
 
 impl Indexer {
     pub fn index(self, base_dir: &str) -> Result<(), IndexerError> {
-        let (epochs, _extended_epochs) = self
+        let (epochs, extended_epochs) = self
             .epochs
             .iter()
-            .map(|x| (EpochModelWithId::from(x), EpochExtendedModel::from(x)))
-            .unzip::<EpochModelWithId, EpochExtendedModel, Vec<EpochModelWithId>, Vec<EpochExtendedModel>>();
+            .map(|x| (EpochModelWithId::from(x), EpochExtendedModelWithId::from(x)))
+            .unzip::<EpochModelWithId, EpochExtendedModelWithId, Vec<EpochModelWithId>, Vec<EpochExtendedModelWithId>>();
 
         let all_blocks = self
             .epochs
@@ -55,6 +55,7 @@ impl Indexer {
         EpochsMeta::new(epochs.len()).persist(base_dir);
 
         epochs.persist(base_dir);
+        extended_epochs.persist(base_dir);
 
         BlocksMeta::new(blocks.len()).persist(base_dir);
 

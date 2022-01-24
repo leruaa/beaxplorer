@@ -7,7 +7,7 @@ use futures::future::try_join_all;
 use lighthouse_types::{Epoch, EthSpec};
 use shared::utils::clock::Clock;
 use tokio::sync::RwLock;
-use types::epoch::{EpochExtendedModel, EpochModel, EpochModelWithId};
+use types::epoch::{EpochExtendedModel, EpochExtendedModelWithId, EpochModel, EpochModelWithId};
 
 use crate::beacon_node_client::BeaconNodeClient;
 use crate::errors::IndexerError;
@@ -109,15 +109,17 @@ impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochModelWithId {
     }
 }
 
-impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochExtendedModel {
+impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochExtendedModelWithId {
     fn from(value: &ConsolidatedEpoch<E>) -> Self {
-        EpochExtendedModel {
+        let model = EpochExtendedModel {
             voluntary_exits_count: value.get_voluntary_exits_count(),
             validators_count: value.validator_balances.len(),
             average_validator_balance: value
                 .get_total_validator_balance()
                 .div(value.validator_balances.len() as u64),
             total_validator_balance: value.get_total_validator_balance(),
-        }
+        };
+
+        (value.epoch.as_u64(), model)
     }
 }

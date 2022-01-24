@@ -48,6 +48,31 @@ pub struct EpochExtendedModel {
 
 pub type EpochExtendedModelWithId = (u64, EpochExtendedModel);
 
+#[derive(Serialize, Debug, Clone)]
+pub struct EpochExtendedView {
+    pub epoch: u64,
+    #[serde(flatten)]
+    pub model: EpochModel,
+    pub finalized: bool,
+    pub global_participation_rate: f64,
+    #[serde(flatten)]
+    pub extended_model: EpochExtendedModel,
+}
+
+impl From<(u64, EpochModel, EpochExtendedModel)> for EpochExtendedView {
+    fn from((epoch, model, extended_model): (u64, EpochModel, EpochExtendedModel)) -> Self {
+        let global_participation_rate = (model.voted_ether as f64).div(model.eligible_ether as f64);
+
+        EpochExtendedView {
+            epoch,
+            model,
+            finalized: global_participation_rate >= 2f64 / 3f64,
+            global_participation_rate: global_participation_rate,
+            extended_model,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EpochsMeta {
     pub count: usize,
