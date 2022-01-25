@@ -1,8 +1,9 @@
 use js_sys::Promise;
-use types::epoch::{EpochModel, EpochView, EpochsMeta};
+use types::epoch::{EpochExtendedModel, EpochExtendedView, EpochModel, EpochView, EpochsMeta};
 use wasm_bindgen::prelude::*;
+use wasm_bindgen_futures::future_to_promise;
 
-use crate::{fetcher::fetch, get::by_id, page::page, to_js};
+use crate::{fetcher::fetch, page::page, to_js};
 
 #[wasm_bindgen]
 pub struct Epochs {
@@ -25,7 +26,14 @@ impl Epochs {
     }
 
     pub fn get(&self, epoch: u64) -> Promise {
-        by_id::<EpochModel, EpochView>(self.base_url.clone(), epoch)
+        let epoch_url = format!("{}/{}.msg", self.base_url.clone(), epoch);
+        let extended_epoch_url = format!("{}/e/{}.msg", self.base_url.clone(), epoch);
+
+        future_to_promise(async move {
+            let model = fetch::<EpochModel>(epoch_url).await?;
+            let extended_model = fetch::<EpochExtendedModel>(extended_epoch_url).await?;
+            to_js::<EpochExtendedView>(&(epoch, model, extended_model).into()).map_err(Into::into)
+        })
     }
 
     pub fn page(
