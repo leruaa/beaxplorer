@@ -16,6 +16,7 @@ pub struct ConsolidatedBlock<E: EthSpec> {
     pub signature: Signature,
     pub status: BlockStatus,
     pub proposer: u64,
+    pub sync_participation_rate: Option<f64>,
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +51,13 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
             let start = Instant::now();
             let block_root = client.get_block_root(block).await?;
             let duration = start.elapsed();
+            let sync_participation_rate = match beacon_block.body().sync_aggregate() {
+                Some(sync_aggregate) => Some(
+                    sync_aggregate.num_set_bits() as f64
+                        / sync_aggregate.sync_committee_bits.len() as f64,
+                ),
+                None => None,
+            };
             log::trace!("get_block_root duration: {:?}", duration);
             let consolidated_block = ConsolidatedBlock {
                 epoch,
@@ -59,6 +67,7 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
                 signature: signature,
                 status: BlockStatus::Proposed,
                 proposer: beacon_block.proposer_index(),
+                sync_participation_rate,
             };
 
             return Ok(consolidated_block);
@@ -83,6 +92,7 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
                             signature: Signature::empty(),
                             status: BlockStatus::Missed,
                             proposer: proposer.validator_index,
+                            sync_participation_rate: None,
                         };
 
                         return Ok(consolidated_block);
