@@ -1,5 +1,5 @@
 use types::{
-    block::{BlockModelWithId, BlocksMeta},
+    block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
     validator::{ValidatorModelWithId, ValidatorsMeta},
 };
@@ -29,6 +29,12 @@ impl PersistingPath for EpochsMeta {
 impl PersistingPath for BlockModelWithId {
     fn to_path(&self) -> String {
         format!("blocks/{}.msg", self.0)
+    }
+}
+
+impl PersistingPath for BlockExtendedModelWithId {
+    fn to_path(&self) -> String {
+        format!("blocks/e/{}.msg", self.0)
     }
 }
 

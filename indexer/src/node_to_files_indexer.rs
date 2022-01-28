@@ -1,6 +1,6 @@
 use lighthouse_types::MainnetEthSpec;
 use types::{
-    block::{BlockModelWithId, BlocksMeta},
+    block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
     validator::{ValidatorModelWithId, ValidatorsMeta},
 };
@@ -36,10 +36,10 @@ impl Indexer {
             .flat_map(|x| x.blocks)
             .collect::<Vec<ConsolidatedBlock<MainnetEthSpec>>>();
 
-        let blocks = all_blocks
+        let (blocks, extended_blocks) = all_blocks
             .iter()
-            .map(BlockModelWithId::from)
-            .collect::<Vec<BlockModelWithId>>();
+            .map(|x| (BlockModelWithId::from(x), BlockExtendedModelWithId::from(x)))
+            .unzip::<BlockModelWithId, BlockExtendedModelWithId, Vec<BlockModelWithId>, Vec<BlockExtendedModelWithId>>();
 
         let validators = self
             .validators
@@ -60,6 +60,7 @@ impl Indexer {
         BlocksMeta::new(blocks.len()).persist(base_dir);
 
         blocks.persist(base_dir);
+        extended_blocks.persist(base_dir);
 
         ValidatorsMeta::new(self.validators.len()).persist(base_dir);
 
