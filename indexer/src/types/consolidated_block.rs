@@ -3,7 +3,7 @@ use std::{sync::Arc, time::Instant};
 use eth2::types::{BlockId, ProposerData};
 use lighthouse_types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 use tokio::sync::RwLock;
-use types::block::{BlockModel, BlockModelWithId};
+use types::block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId};
 
 use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError};
 
@@ -145,16 +145,6 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockModelWithId {
         let model = match &value.block {
             Some(block) => BlockModel {
                 epoch: value.epoch.as_u64(),
-                block_root: value.block_root.as_bytes().to_vec(),
-                parent_root: block.parent_root().as_bytes().to_vec(),
-                state_root: block.state_root().as_bytes().to_vec(),
-                randao_reveal: block.body().randao_reveal().to_string().as_bytes().to_vec(),
-                signature: value.signature.to_string().as_bytes().to_vec(),
-                graffiti: block.body().graffiti().to_string().as_bytes().to_vec(),
-                graffiti_text: block.body().graffiti().to_string(),
-                eth1data_deposit_root: block.body().eth1_data().deposit_root.as_bytes().to_vec(),
-                eth1data_deposit_count: block.body().eth1_data().deposit_count,
-                eth1data_block_hash: block.body().eth1_data().block_hash.as_bytes().to_vec(),
                 proposer_slashings_count: block.body().proposer_slashings().len(),
                 attester_slashings_count: block.body().attester_slashings().len(),
                 attestations_count: block.body().attestations().len(),
@@ -165,6 +155,36 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockModelWithId {
             },
             None => BlockModel {
                 epoch: value.epoch.as_u64(),
+                proposer_slashings_count: 0,
+                attester_slashings_count: 0,
+                attestations_count: 0,
+                deposits_count: 0,
+                voluntary_exits_count: 0,
+                proposer: value.proposer,
+                status: value.status.to_string(),
+            },
+        };
+
+        (value.slot.as_u64(), model)
+    }
+}
+
+impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockExtendedModelWithId {
+    fn from(value: &ConsolidatedBlock<E>) -> Self {
+        let model = match &value.block {
+            Some(block) => BlockExtendedModel {
+                block_root: value.block_root.as_bytes().to_vec(),
+                parent_root: block.parent_root().as_bytes().to_vec(),
+                state_root: block.state_root().as_bytes().to_vec(),
+                randao_reveal: block.body().randao_reveal().to_string().as_bytes().to_vec(),
+                signature: value.signature.to_string().as_bytes().to_vec(),
+                graffiti: block.body().graffiti().to_string().as_bytes().to_vec(),
+                graffiti_text: block.body().graffiti().to_string(),
+                eth1data_deposit_root: block.body().eth1_data().deposit_root.as_bytes().to_vec(),
+                eth1data_deposit_count: block.body().eth1_data().deposit_count,
+                eth1data_block_hash: block.body().eth1_data().block_hash.as_bytes().to_vec(),
+            },
+            None => BlockExtendedModel {
                 block_root: value.block_root.as_bytes().to_vec(),
                 parent_root: vec![],
                 state_root: vec![],
@@ -175,13 +195,6 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockModelWithId {
                 eth1data_deposit_root: vec![],
                 eth1data_deposit_count: 0,
                 eth1data_block_hash: vec![],
-                proposer_slashings_count: 0,
-                attester_slashings_count: 0,
-                attestations_count: 0,
-                deposits_count: 0,
-                voluntary_exits_count: 0,
-                proposer: value.proposer,
-                status: value.status.to_string(),
             },
         };
 
