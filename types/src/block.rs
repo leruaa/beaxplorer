@@ -44,6 +44,25 @@ impl From<(u64, BlockModel)> for BlockView {
     }
 }
 
+#[derive(Serialize, Debug, Clone)]
+pub struct BlockExtendedView {
+    pub slot: u64,
+    #[serde(flatten)]
+    pub model: BlockModel,
+    #[serde(flatten)]
+    pub extended_model: BlockExtendedModel,
+}
+
+impl From<(u64, BlockModel, BlockExtendedModel)> for BlockExtendedView {
+    fn from((slot, model, extended_model): (u64, BlockModel, BlockExtendedModel)) -> Self {
+        BlockExtendedView {
+            slot,
+            model,
+            extended_model,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BlocksMeta {
     pub count: usize,

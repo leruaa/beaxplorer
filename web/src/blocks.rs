@@ -1,8 +1,9 @@
 use js_sys::Promise;
-use types::block::{BlockModel, BlockView, BlocksMeta};
+use types::block::{BlockExtendedModel, BlockExtendedView, BlockModel, BlockView, BlocksMeta};
 use wasm_bindgen::prelude::*;
+use wasm_bindgen_futures::future_to_promise;
 
-use crate::{fetcher::fetch, get::by_id, page::page, to_js};
+use crate::{fetcher::fetch, page::page, to_js};
 
 #[wasm_bindgen]
 pub struct Blocks {
@@ -25,7 +26,14 @@ impl Blocks {
     }
 
     pub fn get(&self, block: u64) -> Promise {
-        by_id::<BlockModel, BlockView>(self.base_url.clone(), block)
+        let block_url = format!("{}/{}.msg", self.base_url.clone(), block);
+        let extended_block_url = format!("{}/e/{}.msg", self.base_url.clone(), block);
+
+        future_to_promise(async move {
+            let model = fetch::<BlockModel>(block_url).await?;
+            let extended_model = fetch::<BlockExtendedModel>(extended_block_url).await?;
+            to_js::<BlockExtendedView>(&(block, model, extended_model).into()).map_err(Into::into)
+        })
     }
 
     pub fn page(
