@@ -1,5 +1,6 @@
 use js_sys::Promise;
-use types::validator::{ValidatorModel, ValidatorView, ValidatorsMeta};
+use types::persisting_path::PersistingPathWithId;
+use types::validator::{ValidatorModel, ValidatorModelWithId, ValidatorView, ValidatorsMeta};
 use wasm_bindgen::prelude::*;
 
 use crate::{fetcher::fetch, get::by_id, page::page, to_js};
@@ -25,7 +26,12 @@ impl Validators {
     }
 
     pub fn get(&self, validator: u64) -> Promise {
-        by_id::<ValidatorModel, ValidatorView>(self.base_url.clone(), validator)
+        let validator_url = format!(
+            "{}/{}",
+            self.base_url.clone(),
+            ValidatorModelWithId::to_path(validator)
+        );
+        by_id::<ValidatorModel, ValidatorView>(validator_url, validator)
     }
 
     pub fn page(
