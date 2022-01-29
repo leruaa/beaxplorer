@@ -23,8 +23,8 @@ impl Blocks {
 
     #[wasm_bindgen]
     pub async fn build(base_url: String) -> Result<Blocks, JsValue> {
-        let url = base_url + "/data/blocks";
-        let meta = fetch(format!("{}/meta.msg", url)).await?;
+        let url = base_url + "/data";
+        let meta = fetch(format!("{}/blocks/meta.msg", url)).await?;
 
         Ok(Blocks::new(url, meta).into())
     }

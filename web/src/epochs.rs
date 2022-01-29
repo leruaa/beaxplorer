@@ -23,8 +23,8 @@ impl Epochs {
 
     #[wasm_bindgen]
     pub async fn build(base_url: String) -> Result<Epochs, JsValue> {
-        let url = base_url + "/data/epochs";
-        let meta = fetch(format!("{}/meta.msg", url)).await?;
+        let url = base_url + "/data";
+        let meta = fetch(format!("{}/epochs/meta.msg", url)).await?;
 
         Ok(Epochs::new(url, meta).into())
     }
