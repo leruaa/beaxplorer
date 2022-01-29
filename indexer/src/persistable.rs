@@ -1,6 +1,6 @@
 use std::{fs::File, io::BufWriter};
 
-use crate::{persisting_path::PersistingPath, types::meta::Meta};
+use crate::{persisting_path::PersistingPathWithId, types::meta::Meta};
 use rmp_serde::Serializer;
 use serde::Serialize;
 
@@ -13,8 +13,7 @@ where
     T: Meta,
 {
     fn persist(self, base_dir: &str) -> () {
-        let mut f =
-            BufWriter::new(File::create(format!("{}/{}", base_dir, self.to_path())).unwrap());
+        let mut f = BufWriter::new(File::create(format!("{}/{}", base_dir, T::to_path())).unwrap());
         self.serialize(&mut Serializer::new(&mut f)).unwrap();
     }
 }
@@ -22,11 +21,12 @@ where
 impl<M> Persistable for (u64, M)
 where
     M: Serialize + Send,
-    (u64, M): PersistingPath,
+    (u64, M): PersistingPathWithId<u64>,
 {
     fn persist(self, base_dir: &str) -> () {
-        let mut f =
-            BufWriter::new(File::create(format!("{}/{}", base_dir, self.to_path())).unwrap());
+        let mut f = BufWriter::new(
+            File::create(format!("{}/{}", base_dir, Self::to_path(self.0))).unwrap(),
+        );
         self.1.serialize(&mut Serializer::new(&mut f)).unwrap();
     }
 }
@@ -34,7 +34,7 @@ where
 impl<M> Persistable for Vec<(u64, M)>
 where
     M: Serialize + Send,
-    (u64, M): PersistingPath,
+    (u64, M): PersistingPathWithId<u64>,
 {
     fn persist(self, base_dir: &str) -> () {
         for m in self {

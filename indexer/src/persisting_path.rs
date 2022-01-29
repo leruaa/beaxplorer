@@ -5,53 +5,57 @@ use types::{
 };
 
 pub trait PersistingPath {
-    fn to_path(&self) -> String;
+    fn to_path() -> String;
 }
 
-impl PersistingPath for EpochModelWithId {
-    fn to_path(&self) -> String {
-        format!("epochs/{}.msg", self.0)
+pub trait PersistingPathWithId<Id: ToString> {
+    fn to_path(id: Id) -> String;
+}
+
+impl PersistingPathWithId<u64> for EpochModelWithId {
+    fn to_path(id: u64) -> String {
+        format!("epochs/{}.msg", id)
     }
 }
 
-impl PersistingPath for EpochExtendedModelWithId {
-    fn to_path(&self) -> String {
-        format!("epochs/e/{}.msg", self.0)
+impl PersistingPathWithId<u64> for EpochExtendedModelWithId {
+    fn to_path(id: u64) -> String {
+        format!("epochs/e/{}.msg", id)
     }
 }
 
 impl PersistingPath for EpochsMeta {
-    fn to_path(&self) -> String {
+    fn to_path() -> String {
         "epochs/meta.msg".to_string()
     }
 }
 
-impl PersistingPath for BlockModelWithId {
-    fn to_path(&self) -> String {
-        format!("blocks/{}.msg", self.0)
+impl PersistingPathWithId<u64> for BlockModelWithId {
+    fn to_path(id: u64) -> String {
+        format!("blocks/{}.msg", id)
     }
 }
 
-impl PersistingPath for BlockExtendedModelWithId {
-    fn to_path(&self) -> String {
-        format!("blocks/e/{}.msg", self.0)
+impl PersistingPathWithId<u64> for BlockExtendedModelWithId {
+    fn to_path(id: u64) -> String {
+        format!("blocks/e/{}.msg", id)
     }
 }
 
 impl PersistingPath for BlocksMeta {
-    fn to_path(&self) -> String {
+    fn to_path() -> String {
         "blocks/meta.msg".to_string()
     }
 }
 
-impl PersistingPath for ValidatorModelWithId {
-    fn to_path(&self) -> String {
-        format!("validators/{}.msg", self.0)
+impl PersistingPathWithId<u64> for ValidatorModelWithId {
+    fn to_path(id: u64) -> String {
+        format!("validators/{}.msg", id)
     }
 }
 
 impl PersistingPath for ValidatorsMeta {
-    fn to_path(&self) -> String {
+    fn to_path() -> String {
         "validators/meta.msg".to_string()
     }
 }
