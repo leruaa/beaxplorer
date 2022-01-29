@@ -3,14 +3,14 @@ use std::time::Duration;
 use eth2::{
     lighthouse::GlobalValidatorInclusionData,
     types::{
-        BlockId, ForkVersionedResponse, GenericResponse, ProposerData, RootData, StateId,
-        ValidatorBalanceData, ValidatorData,
+        BlockId, CommitteeData, ForkVersionedResponse, GenericResponse, ProposerData, RootData,
+        StateId, ValidatorBalanceData, ValidatorData,
     },
     BeaconNodeHttpClient, Timeouts,
 };
 use futures::Future;
-use sensitive_url::SensitiveUrl;
 use lighthouse_types::{Epoch, EthSpec, SignedBeaconBlock};
+use sensitive_url::SensitiveUrl;
 
 use crate::errors::IndexerError;
 
@@ -117,6 +117,23 @@ impl BeaconNodeClient {
             client
                 .get_validator_duties_proposer(epoch)
                 .await
+                .map(|response| response.data)
+                .map_err(|inner_error| IndexerError::NodeError { inner_error })
+        }
+    }
+
+    pub fn get_committees(
+        &self,
+        epoch: Epoch,
+    ) -> impl Future<Output = Result<Vec<CommitteeData>, IndexerError>> {
+        let client = self.client.clone();
+
+        async move {
+            client
+                .get_beacon_states_committees(StateId::Head, None, None, Some(epoch))
+                .await
+                .transpose()
+                .ok_or(IndexerError::ElementNotFound(epoch.to_string()))?
                 .map(|response| response.data)
                 .map_err(|inner_error| IndexerError::NodeError { inner_error })
         }

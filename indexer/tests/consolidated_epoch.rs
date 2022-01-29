@@ -9,7 +9,7 @@ use dotenv::dotenv;
 async fn get_consolidated_epoch() {
     dotenv().ok();
 
-    let endpoint = env::var("LIGHTHOUSE_ENDPOINT_URL").unwrap();
+    let endpoint = env::var("ENDPOINT_URL").unwrap();
     let client = BeaconNodeClient::new(endpoint);
 
     let consolidated_epoch = ConsolidatedEpoch::<MainnetEthSpec>::new(Epoch::new(45000), client)
@@ -19,4 +19,17 @@ async fn get_consolidated_epoch() {
     assert!(consolidated_epoch.epoch.as_u64() == 45000);
     assert!(consolidated_epoch.blocks.len() == MainnetEthSpec::slots_per_epoch() as usize);
     assert!(consolidated_epoch.validator_balances.len() > 0);
+}
+
+#[tokio::test]
+async fn get_committees() {
+    dotenv().ok();
+
+    let endpoint = env::var("ENDPOINT_URL").unwrap();
+    let client = BeaconNodeClient::new(endpoint);
+
+    let committees = client.get_committees(Epoch::new(100)).await.unwrap();
+
+    print!("0: {:?}", committees[0]);
+    print!("1: {:?}", committees[1]);
 }

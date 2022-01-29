@@ -2,7 +2,7 @@ use std::ops::Div;
 use std::sync::Arc;
 
 use eth2::lighthouse::GlobalValidatorInclusionData;
-use eth2::types::{ProposerData, StateId, ValidatorBalanceData};
+use eth2::types::{CommitteeData, ProposerData, StateId, ValidatorBalanceData};
 use futures::future::try_join_all;
 use lighthouse_types::{Epoch, EthSpec};
 use shared::utils::clock::Clock;
@@ -20,6 +20,7 @@ pub struct ConsolidatedEpoch<E: EthSpec> {
     pub blocks: Vec<ConsolidatedBlock<E>>,
     pub validator_balances: Vec<ValidatorBalanceData>,
     pub validator_inclusion: GlobalValidatorInclusionData,
+    pub committees: Vec<CommitteeData>,
 }
 
 impl<E: EthSpec> ConsolidatedEpoch<E> {
@@ -32,6 +33,8 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
         );
 
         let get_validator_inclusion_handle = tokio::spawn(client.get_validator_inclusion(epoch));
+
+        let get_committees_handle = tokio::spawn(client.get_committees(epoch));
 
         for slot in epoch.slot_iter(E::slots_per_epoch()) {
             build_consolidated_block_futures.push(ConsolidatedBlock::new(
@@ -47,6 +50,7 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
             blocks: try_join_all(build_consolidated_block_futures).await?,
             validator_balances: get_validator_balances_handle.await??,
             validator_inclusion: get_validator_inclusion_handle.await??,
+            committees: get_committees_handle.await??,
         })
     }
 
