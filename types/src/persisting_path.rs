@@ -1,4 +1,4 @@
-use types::{
+use crate::{
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
     validator::{ValidatorModelWithId, ValidatorsMeta},

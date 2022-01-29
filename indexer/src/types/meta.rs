@@ -1,7 +1,8 @@
 use serde::Serialize;
-use types::{block::BlocksMeta, epoch::EpochsMeta, validator::ValidatorsMeta};
-
-use crate::persisting_path::PersistingPath;
+use types::{
+    block::BlocksMeta, epoch::EpochsMeta, persisting_path::PersistingPath,
+    validator::ValidatorsMeta,
+};
 
 pub trait Meta: PersistingPath + Serialize + Send {}
 

@@ -6,6 +6,5 @@ pub mod orderable;
 pub mod persistable;
 pub mod persistable_binary_heap;
 pub mod persistable_collection;
-mod persisting_path;
 pub mod retriever;
 pub mod types;

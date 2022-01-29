@@ -1,8 +1,9 @@
 use std::{fs::File, io::BufWriter};
 
-use crate::{persisting_path::PersistingPathWithId, types::meta::Meta};
+use crate::types::meta::Meta;
 use rmp_serde::Serializer;
 use serde::Serialize;
+use types::persisting_path::PersistingPathWithId;
 
 pub trait Persistable: Send {
     fn persist(self, base_dir: &str) -> ();
