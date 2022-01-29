@@ -1,5 +1,9 @@
 use js_sys::Promise;
-use types::epoch::{EpochExtendedModel, EpochExtendedView, EpochModel, EpochView, EpochsMeta};
+use types::epoch::{
+    EpochExtendedModel, EpochExtendedModelWithId, EpochExtendedView, EpochModel, EpochModelWithId,
+    EpochView, EpochsMeta,
+};
+use types::persisting_path::PersistingPathWithId;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
@@ -26,8 +30,16 @@ impl Epochs {
     }
 
     pub fn get(&self, epoch: u64) -> Promise {
-        let epoch_url = format!("{}/{}.msg", self.base_url.clone(), epoch);
-        let extended_epoch_url = format!("{}/e/{}.msg", self.base_url.clone(), epoch);
+        let epoch_url = format!(
+            "{}/{}",
+            self.base_url.clone(),
+            EpochModelWithId::to_path(epoch)
+        );
+        let extended_epoch_url = format!(
+            "{}/{}",
+            self.base_url.clone(),
+            EpochExtendedModelWithId::to_path(epoch)
+        );
 
         future_to_promise(async move {
             let model = fetch::<EpochModel>(epoch_url).await?;

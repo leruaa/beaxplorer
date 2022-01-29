@@ -1,5 +1,9 @@
 use js_sys::Promise;
-use types::block::{BlockExtendedModel, BlockExtendedView, BlockModel, BlockView, BlocksMeta};
+use types::block::{
+    BlockExtendedModel, BlockExtendedModelWithId, BlockExtendedView, BlockModel, BlockModelWithId,
+    BlockView, BlocksMeta,
+};
+use types::persisting_path::PersistingPathWithId;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
@@ -26,8 +30,16 @@ impl Blocks {
     }
 
     pub fn get(&self, block: u64) -> Promise {
-        let block_url = format!("{}/{}.msg", self.base_url.clone(), block);
-        let extended_block_url = format!("{}/e/{}.msg", self.base_url.clone(), block);
+        let block_url = format!(
+            "{}/{}",
+            self.base_url.clone(),
+            BlockModelWithId::to_path(block)
+        );
+        let extended_block_url = format!(
+            "{}/{}",
+            self.base_url.clone(),
+            BlockExtendedModelWithId::to_path(block)
+        );
 
         future_to_promise(async move {
             let model = fetch::<BlockModel>(block_url).await?;
