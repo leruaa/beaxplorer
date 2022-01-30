@@ -30,16 +30,8 @@ impl Epochs {
     }
 
     pub fn get(&self, epoch: u64) -> Promise {
-        let epoch_url = format!(
-            "{}/{}",
-            self.base_url.clone(),
-            EpochModelWithId::to_path(epoch)
-        );
-        let extended_epoch_url = format!(
-            "{}/{}",
-            self.base_url.clone(),
-            EpochExtendedModelWithId::to_path(epoch)
-        );
+        let epoch_url = EpochModelWithId::to_path(&*self.base_url, epoch);
+        let extended_epoch_url = EpochExtendedModelWithId::to_path(&*self.base_url, epoch);
 
         future_to_promise(async move {
             let model = fetch::<EpochModel>(epoch_url).await?;

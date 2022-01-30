@@ -5,57 +5,57 @@ use crate::{
 };
 
 pub trait PersistingPath {
-    fn to_path() -> String;
+    fn to_path(base: &str) -> String;
 }
 
 pub trait PersistingPathWithId<Id: ToString> {
-    fn to_path(id: Id) -> String;
+    fn to_path(base: &str, id: Id) -> String;
 }
 
 impl PersistingPathWithId<u64> for EpochModelWithId {
-    fn to_path(id: u64) -> String {
-        format!("epochs/{}.msg", id)
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/epochs/{}.msg", base, id)
     }
 }
 
 impl PersistingPathWithId<u64> for EpochExtendedModelWithId {
-    fn to_path(id: u64) -> String {
-        format!("epochs/e/{}.msg", id)
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/epochs/e/{}.msg", base, id)
     }
 }
 
 impl PersistingPath for EpochsMeta {
-    fn to_path() -> String {
-        "epochs/meta.msg".to_string()
+    fn to_path(base: &str) -> String {
+        format!("{}/epochs/meta.msg", base)
     }
 }
 
 impl PersistingPathWithId<u64> for BlockModelWithId {
-    fn to_path(id: u64) -> String {
-        format!("blocks/{}.msg", id)
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/blocks/{}.msg", base, id)
     }
 }
 
 impl PersistingPathWithId<u64> for BlockExtendedModelWithId {
-    fn to_path(id: u64) -> String {
-        format!("blocks/e/{}.msg", id)
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/blocks/e/{}.msg", base, id)
     }
 }
 
 impl PersistingPath for BlocksMeta {
-    fn to_path() -> String {
-        "blocks/meta.msg".to_string()
+    fn to_path(base: &str) -> String {
+        format!("{}/blocks/meta.msg", base)
     }
 }
 
 impl PersistingPathWithId<u64> for ValidatorModelWithId {
-    fn to_path(id: u64) -> String {
-        format!("validators/{}.msg", id)
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/validators/{}.msg", base, id)
     }
 }
 
 impl PersistingPath for ValidatorsMeta {
-    fn to_path() -> String {
-        "validators/meta.msg".to_string()
+    fn to_path(base: &str) -> String {
+        format!("{}/validators/meta.msg", base)
     }
 }

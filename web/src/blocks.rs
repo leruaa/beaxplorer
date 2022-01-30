@@ -30,16 +30,8 @@ impl Blocks {
     }
 
     pub fn get(&self, block: u64) -> Promise {
-        let block_url = format!(
-            "{}/{}",
-            self.base_url.clone(),
-            BlockModelWithId::to_path(block)
-        );
-        let extended_block_url = format!(
-            "{}/{}",
-            self.base_url.clone(),
-            BlockExtendedModelWithId::to_path(block)
-        );
+        let block_url = BlockModelWithId::to_path(&*self.base_url, block);
+        let extended_block_url = BlockExtendedModelWithId::to_path(&*self.base_url, block);
 
         future_to_promise(async move {
             let model = fetch::<BlockModel>(block_url).await?;

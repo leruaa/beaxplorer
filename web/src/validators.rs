@@ -26,11 +26,7 @@ impl Validators {
     }
 
     pub fn get(&self, validator: u64) -> Promise {
-        let validator_url = format!(
-            "{}/{}",
-            self.base_url.clone(),
-            ValidatorModelWithId::to_path(validator)
-        );
+        let validator_url = ValidatorModelWithId::to_path(&*self.base_url, validator);
         by_id::<ValidatorModel, ValidatorView>(validator_url, validator)
     }
 
