@@ -1,5 +1,5 @@
 use js_sys::Promise;
-use types::persisting_path::PersistingPathWithId;
+use types::persisting_path::{PersistingPath, PersistingPathWithId};
 use types::validator::{ValidatorModel, ValidatorModelWithId, ValidatorView, ValidatorsMeta};
 use wasm_bindgen::prelude::*;
 
@@ -19,8 +19,8 @@ impl Validators {
 
     #[wasm_bindgen]
     pub async fn build(base_url: String) -> Result<Validators, JsValue> {
-        let url = base_url + "/data/validators";
-        let meta = fetch(format!("{}/meta.msg", url)).await?;
+        let url = base_url + "/data";
+        let meta = fetch(ValidatorsMeta::to_path(&*url)).await?;
 
         Ok(Validators::new(url, meta).into())
     }

@@ -3,6 +3,7 @@ use types::block::{
     BlockExtendedModel, BlockExtendedModelWithId, BlockExtendedView, BlockModel, BlockModelWithId,
     BlockView, BlocksMeta,
 };
+use types::persisting_path::PersistingPath;
 use types::persisting_path::PersistingPathWithId;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
@@ -24,7 +25,7 @@ impl Blocks {
     #[wasm_bindgen]
     pub async fn build(base_url: String) -> Result<Blocks, JsValue> {
         let url = base_url + "/data";
-        let meta = fetch(format!("{}/blocks/meta.msg", url)).await?;
+        let meta = fetch(BlocksMeta::to_path(&*url)).await?;
 
         Ok(Blocks::new(url, meta).into())
     }
