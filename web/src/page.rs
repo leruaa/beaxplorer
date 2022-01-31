@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use futures::future::try_join_all;
 use js_sys::{Array, Promise};
-use types::{DeserializeOwned, Serialize};
+use types::{persisting_path::PersistingPathWithId, DeserializeOwned, Serialize};
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::future_to_promise;
 
@@ -14,6 +14,7 @@ use crate::{
 
 pub fn page<M, V>(
     base_url: String,
+    model_plural: String,
     page_index: usize,
     page_size: usize,
     sort_id: String,
@@ -23,7 +24,7 @@ pub fn page<M, V>(
 where
     M: DeserializeOwned,
     V: Serialize,
-    (u64, M): Into<V>,
+    (u64, M): Into<V> + PersistingPathWithId<u64>,
 {
     let sort_by = SortBy::new(sort_id, sort_desc);
 
@@ -52,8 +53,9 @@ where
                 let mut futures = vec![];
                 for page_number in Paginate::new(total_count, page_index + 1, page_size, &sort_by) {
                     let url = format!(
-                        "{}/s/{}/{}.msg",
+                        "{}/{}/s/{}/{}.msg",
                         base_url.clone(),
+                        model_plural.clone(),
                         sort_by.clone().id,
                         page_number
                     );
@@ -83,7 +85,7 @@ where
             }
         }?;
 
-        get_paginated::<M, V>(base_url + "/{}.msg", range)
+        get_paginated::<M, V>(base_url, range)
             .await
             .map_err(Into::into)
     })
@@ -93,7 +95,7 @@ async fn get_paginated<M, V>(base_url: String, range: Vec<u64>) -> Result<JsValu
 where
     M: DeserializeOwned,
     V: Serialize,
-    (u64, M): Into<V>,
+    (u64, M): Into<V> + PersistingPathWithId<u64>,
 {
     fetch_all::<M>(base_url, range)
         .await?

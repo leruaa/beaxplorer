@@ -39,6 +39,7 @@ impl Validators {
     ) -> Promise {
         page::<ValidatorModel, ValidatorView>(
             self.base_url.clone(),
+            "validators".to_string(),
             page_index,
             page_size,
             sort_id,

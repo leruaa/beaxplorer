@@ -50,6 +50,7 @@ impl Epochs {
     ) -> Promise {
         page::<EpochModel, EpochView>(
             self.base_url.clone(),
+            "epochs".to_string(),
             page_index,
             page_size,
             sort_id,

@@ -50,6 +50,7 @@ impl Blocks {
     ) -> Promise {
         page::<BlockModel, BlockView>(
             self.base_url.clone(),
+            "blocks".to_string(),
             page_index,
             page_size,
             sort_id,
