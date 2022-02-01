@@ -1,6 +1,9 @@
+use std::convert::TryFrom;
+
 use lighthouse_types::MainnetEthSpec;
 use types::{
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
+    commitee::CommiteesModelWithId,
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
     validator::{ValidatorModelWithId, ValidatorsMeta},
 };
@@ -41,6 +44,11 @@ impl Indexer {
             .map(|x| (BlockModelWithId::from(x), BlockExtendedModelWithId::from(x)))
             .unzip::<BlockModelWithId, BlockExtendedModelWithId, Vec<BlockModelWithId>, Vec<BlockExtendedModelWithId>>();
 
+        let committees = all_blocks
+            .iter()
+            .map(|x| CommiteesModelWithId::try_from(x))
+            .collect::<Result<Vec<CommiteesModelWithId>, IndexerError>>()?;
+
         let validators = self
             .validators
             .iter()
@@ -61,6 +69,7 @@ impl Indexer {
 
         blocks.persist(base_dir);
         extended_blocks.persist(base_dir);
+        committees.persist(base_dir);
 
         ValidatorsMeta::new(self.validators.len()).persist(base_dir);
 

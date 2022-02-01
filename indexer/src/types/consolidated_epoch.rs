@@ -20,7 +20,7 @@ pub struct ConsolidatedEpoch<E: EthSpec> {
     pub blocks: Vec<ConsolidatedBlock<E>>,
     pub validator_balances: Vec<ValidatorBalanceData>,
     pub validator_inclusion: GlobalValidatorInclusionData,
-    pub committees: Vec<CommitteeData>,
+    pub committees: Arc<RwLock<Vec<CommitteeData>>>,
 }
 
 impl<E: EthSpec> ConsolidatedEpoch<E> {
@@ -36,11 +36,14 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
 
         let get_committees_handle = tokio::spawn(client.get_committees(epoch));
 
+        let committees_lock = Arc::new(RwLock::new(get_committees_handle.await??));
+
         for slot in epoch.slot_iter(E::slots_per_epoch()) {
             build_consolidated_block_futures.push(ConsolidatedBlock::new(
                 epoch,
                 slot,
                 proposer_duties_lock.clone(),
+                committees_lock.clone(),
                 client.clone(),
             ));
         }
@@ -50,7 +53,7 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
             blocks: try_join_all(build_consolidated_block_futures).await?,
             validator_balances: get_validator_balances_handle.await??,
             validator_inclusion: get_validator_inclusion_handle.await??,
-            committees: get_committees_handle.await??,
+            committees: committees_lock,
         })
     }
 

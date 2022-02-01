@@ -10,4 +10,7 @@ pub enum IndexerError {
 
     #[error(transparent)]
     JoinError(#[from] tokio::task::JoinError),
+
+    #[error(transparent)]
+    LockError(tokio::sync::TryLockError),
 }
