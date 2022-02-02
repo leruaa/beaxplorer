@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, sync::Arc, time::Instant};
+use std::{sync::Arc, time::Instant};
 
 use eth2::types::{BlockId, CommitteeData, ProposerData};
 use lighthouse_types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
@@ -20,7 +20,7 @@ pub struct ConsolidatedBlock<E: EthSpec> {
     pub status: BlockStatus,
     pub proposer: u64,
     pub sync_participation_rate: Option<f64>,
-    pub committees: Arc<RwLock<Vec<CommitteeData>>>,
+    pub committees: Arc<Vec<CommitteeData>>,
 }
 
 #[derive(Debug, Clone)]
@@ -42,7 +42,7 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
         epoch: Epoch,
         slot: Slot,
         proposer_duties_lock: Arc<RwLock<Option<Vec<ProposerData>>>>,
-        committees_lock: Arc<RwLock<Vec<CommitteeData>>>,
+        committees: Arc<Vec<CommitteeData>>,
         client: BeaconNodeClient,
     ) -> Result<Self, IndexerError> {
         let start = Instant::now();
@@ -73,7 +73,7 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
                 status: BlockStatus::Proposed,
                 proposer: beacon_block.proposer_index(),
                 sync_participation_rate,
-                committees: committees_lock,
+                committees,
             };
 
             return Ok(consolidated_block);
@@ -99,7 +99,7 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
                             status: BlockStatus::Missed,
                             proposer: proposer.validator_index,
                             sync_participation_rate: None,
-                            committees: committees_lock,
+                            committees,
                         };
 
                         return Ok(consolidated_block);
@@ -209,15 +209,11 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockExtendedModelWithId {
     }
 }
 
-impl<E: EthSpec> TryFrom<&ConsolidatedBlock<E>> for CommiteesModelWithId {
-    type Error = IndexerError;
-
-    fn try_from(value: &ConsolidatedBlock<E>) -> Result<Self, Self::Error> {
+impl<E: EthSpec> From<&ConsolidatedBlock<E>> for CommiteesModelWithId {
+    fn from(value: &ConsolidatedBlock<E>) -> Self {
         let slot = value.slot;
         let r = value
             .committees
-            .try_read()
-            .map_err(|err| IndexerError::LockError(err))?
             .iter()
             .filter_map(|x| {
                 if x.slot == slot {
@@ -232,6 +228,6 @@ impl<E: EthSpec> TryFrom<&ConsolidatedBlock<E>> for CommiteesModelWithId {
             })
             .collect::<Vec<CommiteeModel>>();
 
-        Ok((slot.as_u64(), r))
+        (slot.as_u64(), r)
     }
 }

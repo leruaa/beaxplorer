@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use lighthouse_types::MainnetEthSpec;
 use types::{
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
@@ -46,8 +44,8 @@ impl Indexer {
 
         let committees = all_blocks
             .iter()
-            .map(|x| CommiteesModelWithId::try_from(x))
-            .collect::<Result<Vec<CommiteesModelWithId>, IndexerError>>()?;
+            .map(|x| CommiteesModelWithId::from(x))
+            .collect::<Vec<CommiteesModelWithId>>();
 
         let validators = self
             .validators
