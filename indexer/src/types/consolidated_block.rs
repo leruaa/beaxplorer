@@ -5,7 +5,7 @@ use lighthouse_types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 use tokio::sync::RwLock;
 use types::{
     block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId},
-    commitee::{CommiteeModel, CommiteesModelWithId},
+    committee::{CommitteeModel, CommitteesModelWithId},
 };
 
 use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError};
@@ -209,7 +209,7 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockExtendedModelWithId {
     }
 }
 
-impl<E: EthSpec> From<&ConsolidatedBlock<E>> for CommiteesModelWithId {
+impl<E: EthSpec> From<&ConsolidatedBlock<E>> for CommitteesModelWithId {
     fn from(value: &ConsolidatedBlock<E>) -> Self {
         let slot = value.slot;
         let r = value
@@ -217,7 +217,7 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for CommiteesModelWithId {
             .iter()
             .filter_map(|x| {
                 if x.slot == slot {
-                    let model = CommiteeModel {
+                    let model = CommitteeModel {
                         index: x.index,
                         validators: x.validators.clone(),
                     };
@@ -226,7 +226,7 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for CommiteesModelWithId {
                     None
                 }
             })
-            .collect::<Vec<CommiteeModel>>();
+            .collect::<Vec<CommitteeModel>>();
 
         (slot.as_u64(), r)
     }

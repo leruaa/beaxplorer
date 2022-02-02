@@ -1,6 +1,6 @@
 use crate::{
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
-    commitee::CommiteesModelWithId,
+    committee::CommitteesModelWithId,
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
     validator::{ValidatorModelWithId, ValidatorsMeta},
 };
@@ -43,7 +43,7 @@ impl PersistingPathWithId<u64> for BlockExtendedModelWithId {
     }
 }
 
-impl PersistingPathWithId<u64> for CommiteesModelWithId {
+impl PersistingPathWithId<u64> for CommitteesModelWithId {
     fn to_path(base: &str, id: u64) -> String {
         format!("{}/blocks/c/{}.msg", base, id)
     }
