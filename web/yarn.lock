@@ -1989,6 +1989,11 @@ react-dom@^17.0.2:
     object-assign "^4.1.1"
     scheduler "^0.20.2"
 
+react-headless-tabs@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/react-headless-tabs/-/react-headless-tabs-4.0.1.tgz#bd17f039030ac5a6569da9a1eee6be619c5f94d5"
+  integrity sha512-Be+tQ9JRmVRzQgBbEiaMzaiteKHdsg2Sut+Ge5y9BrWDuLoi+2ykZVqcZZ9/BFdlKEONSjIBu0aTQ4p7zuWeWQ==
+
 react-is@17.0.2:
   version "17.0.2"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"

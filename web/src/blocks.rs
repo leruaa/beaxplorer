@@ -3,6 +3,7 @@ use types::block::{
     BlockExtendedModel, BlockExtendedModelWithId, BlockExtendedView, BlockModel, BlockModelWithId,
     BlockView, BlocksMeta,
 };
+use types::committee::{CommitteeModel, CommitteesModelWithId};
 use types::persisting_path::PersistingPath;
 use types::persisting_path::PersistingPathWithId;
 use wasm_bindgen::prelude::*;
@@ -38,6 +39,15 @@ impl Blocks {
             let model = fetch::<BlockModel>(block_url).await?;
             let extended_model = fetch::<BlockExtendedModel>(extended_block_url).await?;
             to_js::<BlockExtendedView>(&(block, model, extended_model).into()).map_err(Into::into)
+        })
+    }
+
+    pub fn committees(&self, block: u64) -> Promise {
+        let committees_url = CommitteesModelWithId::to_path(&*self.base_url, block);
+
+        future_to_promise(async move {
+            let model = fetch::<Vec<CommitteeModel>>(committees_url).await?;
+            to_js::<Vec<CommitteeModel>>(&model).map_err(Into::into)
         })
     }
 
