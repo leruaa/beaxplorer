@@ -1,5 +1,6 @@
 use lighthouse_types::MainnetEthSpec;
 use types::{
+    attestation::AttestationsModelWithId,
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
     committee::CommitteesModelWithId,
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
@@ -47,6 +48,11 @@ impl Indexer {
             .map(|x| CommitteesModelWithId::from(x))
             .collect::<Vec<CommitteesModelWithId>>();
 
+        let attestations = all_blocks
+            .iter()
+            .map(|x| AttestationsModelWithId::from(x))
+            .collect::<Vec<AttestationsModelWithId>>();
+
         let validators = self
             .validators
             .iter()
@@ -68,6 +74,7 @@ impl Indexer {
         blocks.persist(base_dir);
         extended_blocks.persist(base_dir);
         committees.persist(base_dir);
+        attestations.persist(base_dir);
 
         ValidatorsMeta::new(self.validators.len()).persist(base_dir);
 

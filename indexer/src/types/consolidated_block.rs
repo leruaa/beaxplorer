@@ -4,6 +4,7 @@ use eth2::types::{BlockId, CommitteeData, ProposerData};
 use lighthouse_types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
 use tokio::sync::RwLock;
 use types::{
+    attestation::{AttestationModel, AttestationsModelWithId},
     block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId},
     committee::{CommitteeModel, CommitteesModelWithId},
 };
@@ -227,6 +228,24 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for CommitteesModelWithId {
                 }
             })
             .collect::<Vec<CommitteeModel>>();
+
+        (slot.as_u64(), r)
+    }
+}
+
+impl<E: EthSpec> From<&ConsolidatedBlock<E>> for AttestationsModelWithId {
+    fn from(value: &ConsolidatedBlock<E>) -> Self {
+        let slot = value.slot;
+
+        let r = match &value.block {
+            Some(block) => block
+                .body()
+                .attestations()
+                .iter()
+                .map(AttestationModel::from)
+                .collect::<Vec<AttestationModel>>(),
+            None => Vec::new(),
+        };
 
         (slot.as_u64(), r)
     }

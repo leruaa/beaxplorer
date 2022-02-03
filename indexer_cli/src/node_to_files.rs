@@ -20,6 +20,7 @@ pub async fn process(cli: Cli, running: Arc<AtomicBool>) -> () {
     fs::create_dir_all("../web/public/data/epochs/s/deposits_count/").unwrap();
     fs::create_dir_all("../web/public/data/blocks").unwrap();
     fs::create_dir_all("../web/public/data/blocks/e/").unwrap();
+    fs::create_dir_all("../web/public/data/blocks/a/").unwrap();
     fs::create_dir_all("../web/public/data/blocks/c/").unwrap();
     fs::create_dir_all("../web/public/data/validators").unwrap();
 

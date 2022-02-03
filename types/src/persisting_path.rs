@@ -1,4 +1,5 @@
 use crate::{
+    attestation::AttestationsModelWithId,
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
     committee::CommitteesModelWithId,
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
@@ -46,6 +47,12 @@ impl PersistingPathWithId<u64> for BlockExtendedModelWithId {
 impl PersistingPathWithId<u64> for CommitteesModelWithId {
     fn to_path(base: &str, id: u64) -> String {
         format!("{}/blocks/c/{}.msg", base, id)
+    }
+}
+
+impl PersistingPathWithId<u64> for AttestationsModelWithId {
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/blocks/a/{}.msg", base, id)
     }
 }
 
