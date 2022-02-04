@@ -9,65 +9,70 @@ use types::{
 
 use crate::{
     errors::IndexerError,
+    field_binary_heap::FieldBinaryHeap,
     persistable::Persistable,
-    persistable_collection::{PersistableCollection, PersistableEpochField},
+    persistable_fields::EpochDepositCount,
     retriever::Retriever,
-    types::{
-        consolidated_block::ConsolidatedBlock, consolidated_epoch::ConsolidatedEpoch,
-        consolidated_validator::ConsolidatedValidator,
-    },
+    types::{consolidated_epoch::ConsolidatedEpoch, consolidated_validator::ConsolidatedValidator},
 };
 
 pub struct Indexer {
     epochs: Vec<ConsolidatedEpoch<MainnetEthSpec>>,
     validators: Vec<ConsolidatedValidator>,
-    sorted_epochs_by_fields: Vec<PersistableEpochField>,
 }
 
 impl Indexer {
     pub fn index(self, base_dir: &str) -> Result<(), IndexerError> {
-        let (epochs, extended_epochs) = self
+        let epochs = self
             .epochs
             .iter()
-            .map(|x| (EpochModelWithId::from(x), EpochExtendedModelWithId::from(x)))
-            .unzip::<EpochModelWithId, EpochExtendedModelWithId, Vec<EpochModelWithId>, Vec<EpochExtendedModelWithId>>();
+            .map(EpochModelWithId::from)
+            .collect::<Vec<_>>();
+
+        let epochs_extended = self
+            .epochs
+            .iter()
+            .map(EpochExtendedModelWithId::from)
+            .collect::<Vec<_>>();
 
         let all_blocks = self
             .epochs
             .into_iter()
             .flat_map(|x| x.blocks)
-            .collect::<Vec<ConsolidatedBlock<MainnetEthSpec>>>();
+            .collect::<Vec<_>>();
 
-        let (blocks, extended_blocks) = all_blocks
+        let blocks = all_blocks
             .iter()
-            .map(|x| (BlockModelWithId::from(x), BlockExtendedModelWithId::from(x)))
-            .unzip::<BlockModelWithId, BlockExtendedModelWithId, Vec<BlockModelWithId>, Vec<BlockExtendedModelWithId>>();
+            .map(BlockModelWithId::from)
+            .collect::<Vec<_>>();
+
+        let extended_blocks = all_blocks
+            .iter()
+            .map(BlockExtendedModelWithId::from)
+            .collect::<Vec<_>>();
 
         let committees = all_blocks
             .iter()
-            .map(|x| CommitteesModelWithId::from(x))
-            .collect::<Vec<CommitteesModelWithId>>();
+            .map(CommitteesModelWithId::from)
+            .collect::<Vec<_>>();
 
         let attestations = all_blocks
             .iter()
-            .map(|x| AttestationsModelWithId::from(x))
-            .collect::<Vec<AttestationsModelWithId>>();
+            .map(AttestationsModelWithId::from)
+            .collect::<Vec<_>>();
 
         let validators = self
             .validators
             .iter()
             .map(ValidatorModelWithId::from)
-            .collect::<Vec<ValidatorModelWithId>>();
-
-        for mut persistable in self.sorted_epochs_by_fields {
-            persistable.append(&epochs);
-            persistable.persist(&format!("{}/epochs", base_dir))
-        }
+            .collect::<Vec<_>>();
 
         EpochsMeta::new(epochs.len()).persist(base_dir);
 
+        FieldBinaryHeap::<EpochDepositCount>::from_model(&epochs).persist(base_dir);
+
         epochs.persist(base_dir);
-        extended_epochs.persist(base_dir);
+        epochs_extended.persist(base_dir);
 
         BlocksMeta::new(blocks.len()).persist(base_dir);
 
@@ -89,7 +94,6 @@ impl From<Retriever> for Indexer {
         Indexer {
             epochs: retriever.epochs,
             validators: retriever.validators,
-            sorted_epochs_by_fields: PersistableEpochField::build(),
         }
     }
 }
