@@ -18,6 +18,11 @@ pub async fn process(cli: Cli, running: Arc<AtomicBool>) -> () {
     fs::create_dir_all("../web/public/data/epochs/e/").unwrap();
     fs::create_dir_all("../web/public/data/epochs/s/attestations_count/").unwrap();
     fs::create_dir_all("../web/public/data/epochs/s/deposits_count/").unwrap();
+    fs::create_dir_all("../web/public/data/epochs/s/attester_slashings_count/").unwrap();
+    fs::create_dir_all("../web/public/data/epochs/s/proposer_slashings_count/").unwrap();
+    fs::create_dir_all("../web/public/data/epochs/s/eligible_ether/").unwrap();
+    fs::create_dir_all("../web/public/data/epochs/s/voted_ether/").unwrap();
+    fs::create_dir_all("../web/public/data/epochs/s/global_participation_rate/").unwrap();
     fs::create_dir_all("../web/public/data/blocks").unwrap();
     fs::create_dir_all("../web/public/data/blocks/e/").unwrap();
     fs::create_dir_all("../web/public/data/blocks/a/").unwrap();
