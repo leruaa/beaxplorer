@@ -11,7 +11,11 @@ use crate::{
     errors::IndexerError,
     field_binary_heap::FieldBinaryHeap,
     persistable::Persistable,
-    persistable_fields::{EpochAttestationsCount, EpochDepositsCount},
+    persistable_fields::{
+        EpochAttestationsCount, EpochAttesterSlashingsCount, EpochDepositsCount,
+        EpochEligibleEther, EpochGlobalParticipationRate, EpochProposerSlashingsCount,
+        EpochVotedEther,
+    },
     retriever::Retriever,
     types::{consolidated_epoch::ConsolidatedEpoch, consolidated_validator::ConsolidatedValidator},
 };
@@ -71,6 +75,11 @@ impl Indexer {
 
         FieldBinaryHeap::<EpochAttestationsCount>::from_model(&epochs).persist(base_dir);
         FieldBinaryHeap::<EpochDepositsCount>::from_model(&epochs).persist(base_dir);
+        FieldBinaryHeap::<EpochAttesterSlashingsCount>::from_model(&epochs).persist(base_dir);
+        FieldBinaryHeap::<EpochProposerSlashingsCount>::from_model(&epochs).persist(base_dir);
+        FieldBinaryHeap::<EpochEligibleEther>::from_model(&epochs).persist(base_dir);
+        FieldBinaryHeap::<EpochVotedEther>::from_model(&epochs).persist(base_dir);
+        FieldBinaryHeap::<EpochGlobalParticipationRate>::from_model(&epochs).persist(base_dir);
 
         epochs.persist(base_dir);
         epochs_extended.persist(base_dir);
