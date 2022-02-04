@@ -28,13 +28,7 @@ impl<F: PersistableField> Persistable for FieldBinaryHeap<F> {
         for (i, chunk) in self.inner.into_sorted_vec().chunks(10).enumerate() {
             let indexes: Vec<u64> = chunk.into_iter().map(|x| x.id).collect();
             let mut f = BufWriter::new(
-                File::create(format!(
-                    "{}/s/{}/{}.msg",
-                    base_dir,
-                    F::get_field_name(),
-                    i + 1
-                ))
-                .unwrap(),
+                File::create(format!("{}/s/{}/{}.msg", base_dir, F::FIELD_NAME, i + 1)).unwrap(),
             );
             indexes.serialize(&mut Serializer::new(&mut f)).unwrap();
         }

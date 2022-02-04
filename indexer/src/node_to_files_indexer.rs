@@ -11,7 +11,7 @@ use crate::{
     errors::IndexerError,
     field_binary_heap::FieldBinaryHeap,
     persistable::Persistable,
-    persistable_fields::EpochDepositCount,
+    persistable_fields::{EpochAttestationsCount, EpochDepositsCount},
     retriever::Retriever,
     types::{consolidated_epoch::ConsolidatedEpoch, consolidated_validator::ConsolidatedValidator},
 };
@@ -69,7 +69,8 @@ impl Indexer {
 
         EpochsMeta::new(epochs.len()).persist(base_dir);
 
-        FieldBinaryHeap::<EpochDepositCount>::from_model(&epochs).persist(base_dir);
+        FieldBinaryHeap::<EpochAttestationsCount>::from_model(&epochs).persist(base_dir);
+        FieldBinaryHeap::<EpochDepositsCount>::from_model(&epochs).persist(base_dir);
 
         epochs.persist(base_dir);
         epochs_extended.persist(base_dir);
