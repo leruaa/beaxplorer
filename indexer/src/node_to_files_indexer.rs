@@ -27,6 +27,8 @@ pub struct Indexer {
 
 impl Indexer {
     pub fn index(self, base_dir: &str) -> Result<(), IndexerError> {
+        let epochs_dir = format!("{}/epochs", base_dir);
+
         let epochs = self
             .epochs
             .iter()
@@ -73,13 +75,13 @@ impl Indexer {
 
         EpochsMeta::new(epochs.len()).persist(base_dir);
 
-        FieldBinaryHeap::<EpochAttestationsCount>::from_model(&epochs).persist(base_dir);
-        FieldBinaryHeap::<EpochDepositsCount>::from_model(&epochs).persist(base_dir);
-        FieldBinaryHeap::<EpochAttesterSlashingsCount>::from_model(&epochs).persist(base_dir);
-        FieldBinaryHeap::<EpochProposerSlashingsCount>::from_model(&epochs).persist(base_dir);
-        FieldBinaryHeap::<EpochEligibleEther>::from_model(&epochs).persist(base_dir);
-        FieldBinaryHeap::<EpochVotedEther>::from_model(&epochs).persist(base_dir);
-        FieldBinaryHeap::<EpochGlobalParticipationRate>::from_model(&epochs).persist(base_dir);
+        FieldBinaryHeap::<EpochAttestationsCount>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochDepositsCount>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochAttesterSlashingsCount>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochProposerSlashingsCount>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochEligibleEther>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochVotedEther>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochGlobalParticipationRate>::from_model(&epochs).persist(&epochs_dir);
 
         epochs.persist(base_dir);
         epochs_extended.persist(base_dir);
