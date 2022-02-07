@@ -2,7 +2,9 @@ use std::cmp::min;
 
 use futures::future::try_join_all;
 use js_sys::{Array, Promise};
-use types::{persisting_path::PersistingPathWithId, DeserializeOwned, Serialize};
+use types::{
+    model::ModelWithId, persisting_path::PersistingPathWithId, DeserializeOwned, Serialize,
+};
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::future_to_promise;
 
@@ -22,9 +24,9 @@ pub fn page<M, V>(
     total_count: usize,
 ) -> Promise
 where
-    M: DeserializeOwned,
+    M: DeserializeOwned + Serialize + Send,
     V: Serialize,
-    (u64, M): Into<V> + PersistingPathWithId<u64>,
+    ModelWithId<M>: Into<V> + PersistingPathWithId<u64>,
 {
     let sort_by = SortBy::new(sort_id, sort_desc);
 
@@ -93,9 +95,9 @@ where
 
 async fn get_paginated<M, V>(base_url: String, range: Vec<u64>) -> Result<JsValue, DeserializeError>
 where
-    M: DeserializeOwned,
+    M: DeserializeOwned + Serialize + Send,
     V: Serialize,
-    (u64, M): Into<V> + PersistingPathWithId<u64>,
+    ModelWithId<M>: Into<V> + PersistingPathWithId<u64>,
 {
     fetch_all::<M>(base_url, range)
         .await?
