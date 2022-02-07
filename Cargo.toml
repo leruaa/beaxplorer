@@ -3,6 +3,7 @@ members = [
     "web",
     "indexer",
     "indexer_cli",
+    "indexer_macro",
     "types",
     "shared",
 ]
