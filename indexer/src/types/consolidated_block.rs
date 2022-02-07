@@ -173,7 +173,10 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockModelWithId {
             },
         };
 
-        (value.slot.as_u64(), model)
+        BlockModelWithId {
+            id: value.slot.as_u64(),
+            model,
+        }
     }
 }
 
@@ -206,7 +209,10 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockExtendedModelWithId {
             },
         };
 
-        (value.slot.as_u64(), model)
+        BlockExtendedModelWithId {
+            id: value.slot.as_u64(),
+            model,
+        }
     }
 }
 
@@ -229,7 +235,10 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for CommitteesModelWithId {
             })
             .collect::<Vec<CommitteeModel>>();
 
-        (slot.as_u64(), r)
+        CommitteesModelWithId {
+            id: slot.as_u64(),
+            model: r,
+        }
     }
 }
 
@@ -247,6 +256,9 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for AttestationsModelWithId {
             None => Vec::new(),
         };
 
-        (slot.as_u64(), r)
+        AttestationsModelWithId {
+            id: slot.as_u64(),
+            model: r,
+        }
     }
 }

@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use serde::Serialize;
 
+use crate::model::ModelWithId;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BlockModel {
     pub epoch: u64,
@@ -13,7 +15,7 @@ pub struct BlockModel {
     pub status: String,
 }
 
-pub type BlockModelWithId = (u64, BlockModel);
+pub type BlockModelWithId = ModelWithId<BlockModel>;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BlockExtendedModel {
@@ -29,7 +31,7 @@ pub struct BlockExtendedModel {
     pub eth1data_block_hash: Vec<u8>,
 }
 
-pub type BlockExtendedModelWithId = (u64, BlockExtendedModel);
+pub type BlockExtendedModelWithId = ModelWithId<BlockExtendedModel>;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct BlockView {
@@ -38,9 +40,12 @@ pub struct BlockView {
     pub model: BlockModel,
 }
 
-impl From<(u64, BlockModel)> for BlockView {
-    fn from((slot, model): (u64, BlockModel)) -> Self {
-        BlockView { slot, model }
+impl From<BlockModelWithId> for BlockView {
+    fn from(value: BlockModelWithId) -> Self {
+        BlockView {
+            slot: value.id,
+            model: value.model,
+        }
     }
 }
 

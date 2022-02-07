@@ -20,6 +20,7 @@ flate2 = "1.0"
 ordered-float = "2.0"
 shared = { path = "../shared" }
 types = { path = "../types" }
+indexer_macro = { path = "../indexer_macro" }
 
 eth2 = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 lighthouse_types = { package = "types", git = "https://github.com/sigp/lighthouse", branch = "stable" }

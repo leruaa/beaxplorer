@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use serde::Serialize;
 
+use crate::model::ModelWithId;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ValidatorModel {
     pub pubkey: Vec<u8>,
@@ -17,7 +19,7 @@ pub struct ValidatorModel {
     pub status: String,
 }
 
-pub type ValidatorModelWithId = (u64, ValidatorModel);
+pub type ValidatorModelWithId = ModelWithId<ValidatorModel>;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct ValidatorView {
@@ -26,11 +28,11 @@ pub struct ValidatorView {
     pub model: ValidatorModel,
 }
 
-impl From<(u64, ValidatorModel)> for ValidatorView {
-    fn from((validator_index, model): (u64, ValidatorModel)) -> Self {
+impl From<ValidatorModelWithId> for ValidatorView {
+    fn from(value: ValidatorModelWithId) -> Self {
         ValidatorView {
-            validator_index,
-            model,
+            validator_index: value.id,
+            model: value.model,
         }
     }
 }

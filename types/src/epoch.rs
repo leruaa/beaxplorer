@@ -3,6 +3,8 @@ use std::ops::Div;
 use serde::Deserialize;
 use serde::Serialize;
 
+use crate::model::ModelWithId;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EpochModel {
     pub timestamp: u64,
@@ -14,7 +16,7 @@ pub struct EpochModel {
     pub voted_ether: u64,
 }
 
-pub type EpochModelWithId = (u64, EpochModel);
+pub type EpochModelWithId = ModelWithId<EpochModel>;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct EpochView {
@@ -25,13 +27,14 @@ pub struct EpochView {
     pub global_participation_rate: f64,
 }
 
-impl From<(u64, EpochModel)> for EpochView {
-    fn from((epoch, model): (u64, EpochModel)) -> Self {
-        let global_participation_rate = (model.voted_ether as f64).div(model.eligible_ether as f64);
+impl From<EpochModelWithId> for EpochView {
+    fn from(value: EpochModelWithId) -> Self {
+        let global_participation_rate =
+            (value.model.voted_ether as f64).div(value.model.eligible_ether as f64);
 
         EpochView {
-            epoch,
-            model,
+            epoch: value.id,
+            model: value.model,
             finalized: global_participation_rate >= 2f64 / 3f64,
             global_participation_rate: global_participation_rate,
         }
@@ -46,7 +49,7 @@ pub struct EpochExtendedModel {
     pub total_validator_balance: u64,
 }
 
-pub type EpochExtendedModelWithId = (u64, EpochExtendedModel);
+pub type EpochExtendedModelWithId = ModelWithId<EpochExtendedModel>;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct EpochExtendedView {

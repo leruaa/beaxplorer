@@ -112,7 +112,10 @@ impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochModelWithId {
             voted_ether: voted_ether,
         };
 
-        (value.epoch.as_u64(), model)
+        EpochModelWithId {
+            id: value.epoch.as_u64(),
+            model,
+        }
     }
 }
 
@@ -127,6 +130,9 @@ impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochExtendedModelWithId {
             total_validator_balance: value.get_total_validator_balance(),
         };
 
-        (value.epoch.as_u64(), model)
+        EpochExtendedModelWithId {
+            id: value.epoch.as_u64(),
+            model,
+        }
     }
 }

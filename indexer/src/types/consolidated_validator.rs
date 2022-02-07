@@ -51,6 +51,9 @@ impl From<&ConsolidatedValidator> for ValidatorModelWithId {
             status: value.0.status.to_string(),
         };
 
-        (value.0.index, model)
+        ValidatorModelWithId {
+            id: value.0.index,
+            model,
+        }
     }
 }

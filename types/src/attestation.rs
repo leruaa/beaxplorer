@@ -6,6 +6,8 @@ use lighthouse_types::Hash256;
 use serde::Deserialize;
 use serde::Serialize;
 
+use crate::model::ModelWithId;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AttestationModel {
     pub aggregation_bits: Vec<bool>,
@@ -16,7 +18,7 @@ pub struct AttestationModel {
     pub signature: AggregateSignature,
 }
 
-pub type AttestationsModelWithId = (u64, Vec<AttestationModel>);
+pub type AttestationsModelWithId = ModelWithId<Vec<AttestationModel>>;
 
 impl<T: EthSpec> From<&Attestation<T>> for AttestationModel {
     fn from(attestation: &Attestation<T>) -> Self {
