@@ -75,13 +75,13 @@ impl Indexer {
 
         EpochsMeta::new(epochs.len()).persist(base_dir);
 
-        FieldBinaryHeap::<EpochAttestationsCount>::from_model(&epochs).persist(&epochs_dir);
-        FieldBinaryHeap::<EpochDepositsCount>::from_model(&epochs).persist(&epochs_dir);
-        FieldBinaryHeap::<EpochAttesterSlashingsCount>::from_model(&epochs).persist(&epochs_dir);
-        FieldBinaryHeap::<EpochProposerSlashingsCount>::from_model(&epochs).persist(&epochs_dir);
-        FieldBinaryHeap::<EpochEligibleEther>::from_model(&epochs).persist(&epochs_dir);
-        FieldBinaryHeap::<EpochVotedEther>::from_model(&epochs).persist(&epochs_dir);
-        FieldBinaryHeap::<EpochGlobalParticipationRate>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochAttestationsCount, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochDepositsCount, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochAttesterSlashingsCount, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochProposerSlashingsCount, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochEligibleEther, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochVotedEther, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochGlobalParticipationRate, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
 
         epochs.persist(base_dir);
         epochs_extended.persist(base_dir);

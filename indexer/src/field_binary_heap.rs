@@ -5,25 +5,25 @@ use serde::Serialize;
 
 use crate::{orderable::Orderable, persistable::Persistable, persistable_fields::PersistableField};
 
-pub struct FieldBinaryHeap<F: PersistableField> {
+pub struct FieldBinaryHeap<F: PersistableField<M>, M> {
     inner: BinaryHeap<Orderable<F::Field>>,
 }
 
-impl<F: PersistableField> FieldBinaryHeap<F> {
+impl<F: PersistableField<M>, M> FieldBinaryHeap<F, M> {
     pub fn new() -> Self {
         FieldBinaryHeap {
             inner: BinaryHeap::new(),
         }
     }
 
-    pub fn from_model(model: &Vec<F::Model>) -> Self {
+    pub fn from_model(model: &Vec<M>) -> Self {
         let mut heap = Self::new();
         heap.inner.extend(model.iter().map(|x| F::get_value(x)));
         heap
     }
 }
 
-impl<F: PersistableField> Persistable for FieldBinaryHeap<F> {
+impl<F: PersistableField<M>, M> Persistable for FieldBinaryHeap<F, M> {
     fn persist(self, base_dir: &str) -> () {
         for (i, chunk) in self.inner.into_sorted_vec().chunks(10).enumerate() {
             let indexes: Vec<u64> = chunk.into_iter().map(|x| x.id).collect();
