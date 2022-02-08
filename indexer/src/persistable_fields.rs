@@ -1,11 +1,10 @@
 use std::ops::Div;
 
+use indexer_macro::persistable_field;
 use ordered_float::OrderedFloat;
 use types::epoch::EpochModelWithId;
 
 use crate::orderable::Orderable;
-
-//use indexer_macro::persistable_field;
 
 pub trait PersistableField<M> {
     type Field: Ord + Eq + Send + Clone;
@@ -14,72 +13,23 @@ pub trait PersistableField<M> {
     fn get_value(model: &M) -> Orderable<Self::Field>;
 }
 
-//#[persistable_field(EpochModelWithId, attestations_count)]
+#[persistable_field(EpochModelWithId, attestations_count, usize)]
 pub struct EpochAttestationsCount;
 
-impl PersistableField<EpochModelWithId> for EpochAttestationsCount {
-    type Field = usize;
-    const FIELD_NAME: &'static str = "attestations_count";
-
-    fn get_value(value: &EpochModelWithId) -> Orderable<Self::Field> {
-        (value.id, value.model.attestations_count).into()
-    }
-}
-
+#[persistable_field(EpochModelWithId, deposits_count, usize)]
 pub struct EpochDepositsCount;
 
-impl PersistableField<EpochModelWithId> for EpochDepositsCount {
-    type Field = usize;
-    const FIELD_NAME: &'static str = "deposits_count";
-
-    fn get_value(value: &EpochModelWithId) -> Orderable<Self::Field> {
-        (value.id, value.model.deposits_count).into()
-    }
-}
-
+#[persistable_field(EpochModelWithId, attester_slashings_count, usize)]
 pub struct EpochAttesterSlashingsCount;
 
-impl PersistableField<EpochModelWithId> for EpochAttesterSlashingsCount {
-    type Field = usize;
-    const FIELD_NAME: &'static str = "attester_slashings_count";
-
-    fn get_value(value: &EpochModelWithId) -> Orderable<Self::Field> {
-        (value.id, value.model.attester_slashings_count).into()
-    }
-}
-
+#[persistable_field(EpochModelWithId, proposer_slashings_count, usize)]
 pub struct EpochProposerSlashingsCount;
 
-impl PersistableField<EpochModelWithId> for EpochProposerSlashingsCount {
-    type Field = usize;
-    const FIELD_NAME: &'static str = "proposer_slashings_count";
-
-    fn get_value(value: &EpochModelWithId) -> Orderable<Self::Field> {
-        (value.id, value.model.proposer_slashings_count).into()
-    }
-}
-
+#[persistable_field(EpochModelWithId, eligible_ether, u64)]
 pub struct EpochEligibleEther;
 
-impl PersistableField<EpochModelWithId> for EpochEligibleEther {
-    type Field = u64;
-    const FIELD_NAME: &'static str = "eligible_ether";
-
-    fn get_value(value: &EpochModelWithId) -> Orderable<Self::Field> {
-        (value.id, value.model.eligible_ether).into()
-    }
-}
-
+#[persistable_field(EpochModelWithId, voted_ether, u64)]
 pub struct EpochVotedEther;
-
-impl PersistableField<EpochModelWithId> for EpochVotedEther {
-    type Field = u64;
-    const FIELD_NAME: &'static str = "voted_ether";
-
-    fn get_value(value: &EpochModelWithId) -> Orderable<Self::Field> {
-        (value.id, value.model.voted_ether).into()
-    }
-}
 
 pub struct EpochGlobalParticipationRate;
 
