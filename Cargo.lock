@@ -2265,6 +2265,7 @@ dependencies = [
  "eth2",
  "flate2",
  "futures",
+ "indexer_macro",
  "log",
  "ordered-float",
  "rmp",
@@ -2290,6 +2291,14 @@ dependencies = [
  "log",
  "simple_logger",
  "tokio",
+]
+
+[[package]]
+name = "indexer_macro"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn",
 ]
 
 [[package]]

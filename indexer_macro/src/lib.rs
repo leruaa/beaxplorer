@@ -2,69 +2,70 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
     parse::{Parse, ParseStream},
-    parse_macro_input, DeriveInput, Type,
+    parse_macro_input, Ident, Token, Type,
 };
 
 extern crate proc_macro;
 
-/*
-struct PersistableFieldInput {
-    modelType: Type,
-    field: String,
+struct AttributeMetadata {
+    model_type: Type,
+    field_name: Ident,
+    field_type: Ident,
 }
 
-impl Parse for PersistableFieldInput {
+impl Parse for AttributeMetadata {
     fn parse(input: ParseStream) -> Result<Self, syn::Error> {
-        let modelType = input.parse::<Type>()?;
-        let field = input.parse::<String>()?;
+        let model_type = input.parse::<Type>()?;
+        input.parse::<Token![,]>()?;
+        let field_name = input.parse::<Ident>()?;
+        input.parse::<Token![,]>()?;
+        let field_type = input.parse::<Ident>()?;
 
-        let input = PersistableFieldInput { modelType, field };
-
-        Ok(input)
+        Ok(AttributeMetadata {
+            model_type,
+            field_name,
+            field_type,
+        })
     }
 }
 
-#[proc_macro_derive(PersistableField)]
-pub fn derive_persistable_field(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
+struct Input {
+    field_struct: Ident,
+}
 
-    println!("input: {:?}", input);
+impl Parse for Input {
+    fn parse(input: ParseStream) -> Result<Self, syn::Error> {
+        input.parse::<Token![pub]>()?;
+        input.parse::<Token![struct]>()?;
+        let field_struct = input.parse::<Ident>()?;
+        input.parse::<Token![;]>()?;
+
+        Ok(Input { field_struct })
+    }
+}
+
+#[proc_macro_attribute]
+pub fn persistable_field(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let attribute_meta = parse_macro_input!(attr as AttributeMetadata);
+    let input = parse_macro_input!(item as Input);
+
+    let model_type = attribute_meta.model_type;
+    let field_name = attribute_meta.field_name;
+    let field_type = attribute_meta.field_type;
+    let field_struct = input.field_struct;
 
     let expanded = quote! {
+        pub struct #field_struct;
         // The generated impl.
-        impl crate::persistable_fields::PersistableField for EpochAttestationsCount {
-            type Model = EpochModelWithId;
-            type Field = usize;
-            const FIELD_NAME: &'static str = "attestations_count";
+        impl PersistableField<#model_type> for #field_struct {
+            type Field = #field_type;
+            const FIELD_NAME: &'static str = "#field_name";
 
-            fn get_value(model: &Self::Model) -> Orderable<Self::Field> {
-                (model.0, model.1.attestations_count).into()
+            fn get_value(value: &#model_type) -> Orderable<Self::Field> {
+                (value.id, value.model.#field_name).into()
             }
         }
     };
 
     TokenStream::from(expanded)
 }
-
-#[proc_macro_attribute]
-pub fn persistable_field(attr: TokenStream, mut item: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(attr as Type);
-
-    println!("_attr: {:?}", input);
-    let expanded = quote! {
-        // The generated impl.
-        impl crate::persistable_fields::PersistableField for EpochAttestationsCount {
-            type Model = EpochModelWithId;
-            type Field = usize;
-            const FIELD_NAME: &'static str = "attestations_count";
-
-            fn get_value(model: &Self::Model) -> Orderable<Self::Field> {
-                (model.0, model.1.attestations_count).into()
-            }
-        }
-    };
-
-    item.extend(TokenStream::from(expanded));
-    item
-}
- */
