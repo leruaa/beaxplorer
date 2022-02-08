@@ -28,7 +28,7 @@ impl Blocks {
         let url = base_url + "/data";
         let meta = fetch(BlocksMeta::to_path(&*url)).await?;
 
-        Ok(Blocks::new(url, meta).into())
+        Ok(Blocks::new(url, meta))
     }
 
     pub fn get(&self, block: u64) -> Promise {
@@ -65,11 +65,11 @@ impl Blocks {
             page_size,
             sort_id,
             sort_desc,
-            self.meta.count.clone(),
+            self.meta.count,
         )
     }
 
     pub fn meta(&self) -> Result<JsValue, JsValue> {
-        return to_js(&self.meta).map_err(Into::into);
+        to_js(&self.meta).map_err(Into::into)
     }
 }

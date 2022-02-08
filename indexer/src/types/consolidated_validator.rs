@@ -11,12 +11,10 @@ impl ConsolidatedValidator {
         state: StateId,
         client: BeaconNodeClient,
     ) -> Result<Vec<Self>, IndexerError> {
-        client.get_validators(state).await.map(|validators| {
-            validators
-                .into_iter()
-                .map(|v| ConsolidatedValidator(v))
-                .collect()
-        })
+        client
+            .get_validators(state)
+            .await
+            .map(|validators| validators.into_iter().map(ConsolidatedValidator).collect())
     }
 }
 

@@ -7,6 +7,7 @@ use syn::{
 
 extern crate proc_macro;
 
+/*
 struct PersistableFieldInput {
     modelType: Type,
     field: String,
@@ -66,3 +67,4 @@ pub fn persistable_field(attr: TokenStream, mut item: TokenStream) -> TokenStrea
     item.extend(TokenStream::from(expanded));
     item
 }
+ */

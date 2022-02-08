@@ -54,7 +54,7 @@ impl BeaconNodeClient {
                 .get_beacon_blocks_root(block)
                 .await
                 .map_err(|inner_error| IndexerError::NodeError { inner_error })?
-                .ok_or(IndexerError::ElementNotFound(block.to_string()))
+                .ok_or_else(|| IndexerError::ElementNotFound(block.to_string()))
         }
     }
 
@@ -69,7 +69,7 @@ impl BeaconNodeClient {
                 .get_beacon_states_validators(state, None, None)
                 .await
                 .transpose()
-                .ok_or(IndexerError::ElementNotFound(state.to_string()))?
+                .ok_or_else(|| IndexerError::ElementNotFound(state.to_string()))?
                 .map(|response| response.data)
                 .map_err(|inner_error| IndexerError::NodeError { inner_error })
         }
@@ -86,7 +86,7 @@ impl BeaconNodeClient {
                 .get_beacon_states_validator_balances(state, None)
                 .await
                 .transpose()
-                .ok_or(IndexerError::ElementNotFound(state.to_string()))?
+                .ok_or_else(|| IndexerError::ElementNotFound(state.to_string()))?
                 .map(|response| response.data)
                 .map_err(|inner_error| IndexerError::NodeError { inner_error })
         }
@@ -133,7 +133,7 @@ impl BeaconNodeClient {
                 .get_beacon_states_committees(StateId::Head, None, None, Some(epoch))
                 .await
                 .transpose()
-                .ok_or(IndexerError::ElementNotFound(epoch.to_string()))?
+                .ok_or_else(|| IndexerError::ElementNotFound(epoch.to_string()))?
                 .map(|response| response.data)
                 .map_err(|inner_error| IndexerError::NodeError { inner_error })
         }

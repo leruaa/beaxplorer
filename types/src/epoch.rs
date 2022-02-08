@@ -36,7 +36,7 @@ impl From<EpochModelWithId> for EpochView {
             epoch: value.id,
             model: value.model,
             finalized: global_participation_rate >= 2f64 / 3f64,
-            global_participation_rate: global_participation_rate,
+            global_participation_rate,
         }
     }
 }
@@ -70,7 +70,7 @@ impl From<(u64, EpochModel, EpochExtendedModel)> for EpochExtendedView {
             epoch,
             model,
             finalized: global_participation_rate >= 2f64 / 3f64,
-            global_participation_rate: global_participation_rate,
+            global_participation_rate,
             extended_model,
         }
     }

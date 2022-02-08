@@ -10,7 +10,7 @@ use indexer::retriever::Retriever;
 
 use crate::cli::Cli;
 
-pub async fn process(cli: Cli, running: Arc<AtomicBool>) -> () {
+pub async fn process(cli: Cli, running: Arc<AtomicBool>) {
     if cli.reset {
         fs::remove_dir_all("../web/public/data").unwrap();
     }
@@ -35,7 +35,7 @@ pub async fn process(cli: Cli, running: Arc<AtomicBool>) -> () {
     while running.load(Ordering::SeqCst) {
         match retriever.retrieve_epoch(n).await {
             Ok(_) => {
-                n = n + 1;
+                n += 1;
             }
             Err(err) => {
                 running.store(false, Ordering::SeqCst);

@@ -27,7 +27,7 @@ impl Epochs {
         let url = base_url + "/data";
         let meta = fetch(EpochsMeta::to_path(&*url)).await?;
 
-        Ok(Epochs::new(url, meta).into())
+        Ok(Epochs::new(url, meta))
     }
 
     pub fn get(&self, epoch: u64) -> Promise {
@@ -55,11 +55,11 @@ impl Epochs {
             page_size,
             sort_id,
             sort_desc,
-            self.meta.count.clone(),
+            self.meta.count,
         )
     }
 
     pub fn meta(&self) -> Result<JsValue, JsValue> {
-        return to_js(&self.meta).map_err(Into::into);
+        to_js(&self.meta).map_err(Into::into)
     }
 }

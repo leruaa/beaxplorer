@@ -35,7 +35,7 @@ where
             "default" => {
                 let range = if sort_by.desc {
                     let end = total_count - page_index * page_size;
-                    let start = end.checked_sub(page_size).unwrap_or(0);
+                    let start = end.saturating_sub(page_size);
                     start..end
                 } else {
                     let start = page_index * page_size;
@@ -70,7 +70,7 @@ where
 
                 if sort_by.desc {
                     let skip = if page_index == 0 {
-                        0 as usize
+                        0_usize
                     } else {
                         10 - total_count as usize % 10
                     };

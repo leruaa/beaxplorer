@@ -108,8 +108,8 @@ impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochModelWithId {
             attester_slashings_count: value.get_attester_slashings_count(),
             attestations_count: value.get_attestations_count(),
             deposits_count: value.get_deposits_count(),
-            eligible_ether: eligible_ether,
-            voted_ether: voted_ether,
+            eligible_ether,
+            voted_ether,
         };
 
         EpochModelWithId {

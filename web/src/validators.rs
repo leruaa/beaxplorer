@@ -22,7 +22,7 @@ impl Validators {
         let url = base_url + "/data";
         let meta = fetch(ValidatorsMeta::to_path(&*url)).await?;
 
-        Ok(Validators::new(url, meta).into())
+        Ok(Validators::new(url, meta))
     }
 
     pub fn get(&self, validator: u64) -> Promise {
@@ -44,11 +44,11 @@ impl Validators {
             page_size,
             sort_id,
             sort_desc,
-            self.meta.count.clone(),
+            self.meta.count,
         )
     }
 
     pub fn meta(&self) -> Result<JsValue, JsValue> {
-        return to_js(&self.meta).map_err(Into::into);
+        to_js(&self.meta).map_err(Into::into)
     }
 }
