@@ -1,48 +1,9 @@
+use persistable_field::{AttributeMetadata, Input};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{
-    parse::{Parse, ParseStream},
-    parse_macro_input, Ident, Token, Type,
-};
+use syn::parse_macro_input;
 
-extern crate proc_macro;
-
-struct AttributeMetadata {
-    model_type: Type,
-    field_name: Ident,
-    field_type: Ident,
-}
-
-impl Parse for AttributeMetadata {
-    fn parse(input: ParseStream) -> Result<Self, syn::Error> {
-        let model_type = input.parse::<Type>()?;
-        input.parse::<Token![,]>()?;
-        let field_name = input.parse::<Ident>()?;
-        input.parse::<Token![,]>()?;
-        let field_type = input.parse::<Ident>()?;
-
-        Ok(AttributeMetadata {
-            model_type,
-            field_name,
-            field_type,
-        })
-    }
-}
-
-struct Input {
-    field_struct: Ident,
-}
-
-impl Parse for Input {
-    fn parse(input: ParseStream) -> Result<Self, syn::Error> {
-        input.parse::<Token![pub]>()?;
-        input.parse::<Token![struct]>()?;
-        let field_struct = input.parse::<Ident>()?;
-        input.parse::<Token![;]>()?;
-
-        Ok(Input { field_struct })
-    }
-}
+mod persistable_field;
 
 #[proc_macro_attribute]
 pub fn persistable_field(attr: TokenStream, item: TokenStream) -> TokenStream {
