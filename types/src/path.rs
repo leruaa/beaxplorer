@@ -1,0 +1,50 @@
+use crate::{
+    block::{BlockExtendedModelWithId, BlockModelWithId},
+    committee::CommitteesModelWithId,
+    epoch::{EpochExtendedModelWithId, EpochModelWithId},
+    validator::ValidatorModelWithId,
+};
+
+pub trait AsPath {
+    fn as_path(&self, base: &str) -> String;
+}
+
+pub trait ToPath<Id: ToString> {
+    fn to_path(base: &str, id: Id) -> String;
+}
+
+impl ToPath<u64> for EpochModelWithId {
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/epochs/{}.msg", base, id)
+    }
+}
+
+impl ToPath<u64> for EpochExtendedModelWithId {
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/epochs/e/{}.msg", base, id)
+    }
+}
+
+impl ToPath<u64> for BlockModelWithId {
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/blocks/{}.msg", base, id)
+    }
+}
+
+impl ToPath<u64> for BlockExtendedModelWithId {
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/blocks/e/{}.msg", base, id)
+    }
+}
+
+impl ToPath<u64> for CommitteesModelWithId {
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/blocks/c/{}.msg", base, id)
+    }
+}
+
+impl ToPath<u64> for ValidatorModelWithId {
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/validators/{}.msg", base, id)
+    }
+}

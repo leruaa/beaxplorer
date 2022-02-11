@@ -1,20 +1,33 @@
 use std::{fs::File, io::BufWriter};
 
-use crate::types::meta::Meta;
 use rmp_serde::Serializer;
 use serde::Serialize;
-use types::{model::ModelWithId, persisting_path::PersistingPathWithId};
+use types::{
+    block::BlocksMeta, epoch::EpochsMeta, meta::Meta, model::ModelWithId, path::AsPath,
+    validator::ValidatorsMeta,
+};
 
 pub trait Persistable: Send {
     fn persist(self, base_dir: &str);
 }
 
-impl<T> Persistable for T
-where
-    T: Meta,
-{
+impl Persistable for EpochsMeta {
     fn persist(self, base_dir: &str) {
-        let mut f = BufWriter::new(File::create(T::to_path(base_dir)).unwrap());
+        let mut f = BufWriter::new(File::create(Self::to_path(base_dir)).unwrap());
+        self.serialize(&mut Serializer::new(&mut f)).unwrap();
+    }
+}
+
+impl Persistable for BlocksMeta {
+    fn persist(self, base_dir: &str) {
+        let mut f = BufWriter::new(File::create(Self::to_path(base_dir)).unwrap());
+        self.serialize(&mut Serializer::new(&mut f)).unwrap();
+    }
+}
+
+impl Persistable for ValidatorsMeta {
+    fn persist(self, base_dir: &str) {
+        let mut f = BufWriter::new(File::create(Self::to_path(base_dir)).unwrap());
         self.serialize(&mut Serializer::new(&mut f)).unwrap();
     }
 }
@@ -22,10 +35,10 @@ where
 impl<M> Persistable for ModelWithId<M>
 where
     M: Serialize + Send,
-    ModelWithId<M>: PersistingPathWithId<u64>,
+    ModelWithId<M>: AsPath,
 {
     fn persist(self, base_dir: &str) {
-        let mut f = BufWriter::new(File::create(Self::to_path(base_dir, self.id)).unwrap());
+        let mut f = BufWriter::new(File::create(self.as_path(base_dir)).unwrap());
         self.model.serialize(&mut Serializer::new(&mut f)).unwrap();
     }
 }
@@ -33,7 +46,7 @@ where
 impl<M> Persistable for Vec<ModelWithId<M>>
 where
     M: Serialize + Send,
-    ModelWithId<M>: PersistingPathWithId<u64>,
+    ModelWithId<M>: AsPath,
 {
     fn persist(self, base_dir: &str) {
         for m in self {

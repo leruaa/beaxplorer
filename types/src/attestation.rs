@@ -7,6 +7,7 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use crate::model::ModelWithId;
+use crate::path::AsPath;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AttestationModel {
@@ -30,5 +31,11 @@ impl<T: EthSpec> From<&Attestation<T>> for AttestationModel {
             target: attestation.data.target,
             signature: attestation.signature.clone(),
         }
+    }
+}
+
+impl AsPath for AttestationsModelWithId {
+    fn as_path(&self, base: &str) -> String {
+        format!("{}/blocks/a/{}.msg", base, self.id)
     }
 }

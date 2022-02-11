@@ -2,8 +2,9 @@ pub mod attestation;
 pub mod block;
 pub mod committee;
 pub mod epoch;
+pub mod meta;
 pub mod model;
-pub mod persisting_path;
+pub mod path;
 pub mod validator;
 
 pub use serde::de::DeserializeOwned;
