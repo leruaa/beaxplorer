@@ -18,8 +18,9 @@ rmp = "^0.8"
 rmp-serde = "^0.15"
 flate2 = "1.0"
 ordered-float = "2.0"
+itertools = "0.10"
 shared = { path = "../shared" }
-types = { path = "../types" }
+types = { path = "../types", features = ["indexing"] }
 indexer_macro = { path = "../indexer_macro" }
 
 eth2 = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
