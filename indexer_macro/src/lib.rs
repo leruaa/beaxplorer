@@ -20,7 +20,7 @@ pub fn persistable_field(attr: TokenStream, item: TokenStream) -> TokenStream {
         // The generated impl.
         impl PersistableField<#model_type> for #field_struct {
             type Field = #field_type;
-            const FIELD_NAME: &'static str = "#field_name";
+            const FIELD_NAME: &'static str = stringify!(#field_name);
 
             fn get_value(value: &#model_type) -> Orderable<Self::Field> {
                 (value.id, value.model.#field_name).into()
