@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+
+use itertools::Itertools;
 use lighthouse_types::MainnetEthSpec;
 use types::{
     attestation::AttestationsModelWithId,
@@ -5,6 +8,7 @@ use types::{
     committee::CommitteesModelWithId,
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
     validator::{ValidatorModelWithId, ValidatorsMeta},
+    vote::VotesModelWithId,
 };
 
 use crate::{
@@ -47,6 +51,11 @@ impl Indexer {
             .flat_map(|x| x.blocks)
             .collect::<Vec<_>>();
 
+        let block_roots_to_slots = all_blocks
+            .iter()
+            .map(|x| (x.block_root, x.slot))
+            .collect::<HashMap<_, _>>();
+
         let blocks = all_blocks
             .iter()
             .map(BlockModelWithId::from)
@@ -62,9 +71,32 @@ impl Indexer {
             .map(CommitteesModelWithId::from)
             .collect::<Vec<_>>();
 
+        let all_attestations = all_blocks
+            .iter()
+            .filter_map(|x| x.block.clone())
+            .flat_map(|x| x.body().attestations().to_vec())
+            .collect::<Vec<_>>();
+
         let attestations = all_blocks
             .iter()
             .map(AttestationsModelWithId::from)
+            .collect::<Vec<_>>();
+
+        let votes = all_attestations
+            .iter()
+            .map(|x| {
+                (
+                    block_roots_to_slots.get(&x.data.beacon_block_root),
+                    x.clone(),
+                )
+            })
+            .into_group_map()
+            .into_iter()
+            .filter_map(|x| match x.0 {
+                Some(slot) => Some((slot, x.1)),
+                _ => None,
+            })
+            .map(VotesModelWithId::from)
             .collect::<Vec<_>>();
 
         let validators = self
@@ -75,13 +107,20 @@ impl Indexer {
 
         EpochsMeta::new(epochs.len()).persist(base_dir);
 
-        FieldBinaryHeap::<EpochAttestationsCount, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
-        FieldBinaryHeap::<EpochDepositsCount, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
-        FieldBinaryHeap::<EpochAttesterSlashingsCount, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
-        FieldBinaryHeap::<EpochProposerSlashingsCount, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
-        FieldBinaryHeap::<EpochEligibleEther, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
-        FieldBinaryHeap::<EpochVotedEther, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
-        FieldBinaryHeap::<EpochGlobalParticipationRate, EpochModelWithId>::from_model(&epochs).persist(&epochs_dir);
+        FieldBinaryHeap::<EpochAttestationsCount, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+        FieldBinaryHeap::<EpochDepositsCount, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+        FieldBinaryHeap::<EpochAttesterSlashingsCount, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+        FieldBinaryHeap::<EpochProposerSlashingsCount, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+        FieldBinaryHeap::<EpochEligibleEther, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+        FieldBinaryHeap::<EpochVotedEther, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+        FieldBinaryHeap::<EpochGlobalParticipationRate, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
 
         epochs.persist(base_dir);
         epochs_extended.persist(base_dir);
@@ -92,6 +131,7 @@ impl Indexer {
         extended_blocks.persist(base_dir);
         committees.persist(base_dir);
         attestations.persist(base_dir);
+        votes.persist(base_dir);
 
         ValidatorsMeta::new(self.validators.len()).persist(base_dir);
 
