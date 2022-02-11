@@ -1,8 +1,6 @@
 use bytes::Buf;
 use futures::future::try_join_all;
-use types::{
-    model::ModelWithId, persisting_path::PersistingPathWithId, DeserializeOwned, Serialize,
-};
+use types::{model::ModelWithId, path::ToPath, DeserializeOwned, Serialize};
 
 use crate::DeserializeError;
 
@@ -18,7 +16,7 @@ pub async fn fetch_all<T>(
 ) -> Result<Vec<ModelWithId<T>>, DeserializeError>
 where
     T: DeserializeOwned + Serialize + Send,
-    ModelWithId<T>: PersistingPathWithId<u64>,
+    ModelWithId<T>: ToPath<u64>,
 {
     let mut futures = vec![];
 

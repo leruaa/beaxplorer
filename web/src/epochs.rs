@@ -1,10 +1,12 @@
 use js_sys::Promise;
-use types::epoch::{
-    EpochExtendedModel, EpochExtendedModelWithId, EpochExtendedView, EpochModel, EpochModelWithId,
-    EpochView, EpochsMeta,
+use types::path::ToPath;
+use types::{
+    epoch::{
+        EpochExtendedModel, EpochExtendedModelWithId, EpochExtendedView, EpochModel,
+        EpochModelWithId, EpochView, EpochsMeta,
+    },
+    meta::Meta,
 };
-use types::persisting_path::PersistingPath;
-use types::persisting_path::PersistingPathWithId;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 

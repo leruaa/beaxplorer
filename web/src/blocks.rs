@@ -4,8 +4,8 @@ use types::block::{
     BlockView, BlocksMeta,
 };
 use types::committee::{CommitteeModel, CommitteesModelWithId};
-use types::persisting_path::PersistingPath;
-use types::persisting_path::PersistingPathWithId;
+use types::meta::Meta;
+use types::path::ToPath;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 

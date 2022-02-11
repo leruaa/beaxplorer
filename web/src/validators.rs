@@ -1,6 +1,9 @@
 use js_sys::Promise;
-use types::persisting_path::{PersistingPath, PersistingPathWithId};
-use types::validator::{ValidatorModel, ValidatorModelWithId, ValidatorView, ValidatorsMeta};
+use types::path::ToPath;
+use types::{
+    meta::Meta,
+    validator::{ValidatorModel, ValidatorModelWithId, ValidatorView, ValidatorsMeta},
+};
 use wasm_bindgen::prelude::*;
 
 use crate::{fetcher::fetch, get::by_id, page::page, to_js};
