@@ -2,7 +2,6 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use crate::model::ModelWithId;
-use crate::path::AsPath;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AttestationModel {
@@ -27,11 +26,5 @@ impl<T: lighthouse_types::EthSpec> From<&lighthouse_types::Attestation<T>> for A
             target: attestation.data.target.epoch.as_u64(),
             signature: attestation.signature.to_string(),
         }
-    }
-}
-
-impl AsPath for AttestationsModelWithId {
-    fn as_path(&self, base: &str) -> String {
-        format!("{}/blocks/a/{}.msg", base, self.id)
     }
 }
