@@ -9,6 +9,7 @@ mod get;
 mod page;
 pub mod sort;
 pub mod validators;
+pub mod views;
 
 #[wasm_bindgen]
 extern "C" {
