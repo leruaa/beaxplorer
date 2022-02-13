@@ -20,5 +20,6 @@ serde-wasm-bindgen = { git = "https://github.com/cloudflare/serde-wasm-bindgen",
 thiserror = "1.0"
 js-sys = "0.3.52"
 web-sys = "0.3.55"
+console_error_panic_hook = "0.1.7"
 
-types = { path = "../types" }
+types = { path = "../types", features = ["wasm"] }
