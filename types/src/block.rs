@@ -1,7 +1,7 @@
+use crate::model::ModelWithId;
 use serde::Deserialize;
 use serde::Serialize;
-
-use crate::model::ModelWithId;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BlockModel {
@@ -33,9 +33,7 @@ pub struct BlockExtendedModel {
 
 pub type BlockExtendedModelWithId = ModelWithId<BlockExtendedModel>;
 
-
-
-
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BlocksMeta {
     pub count: usize,
