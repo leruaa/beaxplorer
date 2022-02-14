@@ -4,6 +4,7 @@ use crate::{
     committee::CommitteesModelWithId,
     epoch::{EpochExtendedModelWithId, EpochModelWithId},
     validator::ValidatorModelWithId,
+    vote::VotesModelWithId,
 };
 
 pub trait AsPath {
@@ -41,6 +42,12 @@ impl ToPath<u64> for BlockExtendedModelWithId {
 impl ToPath<u64> for CommitteesModelWithId {
     fn to_path(base: &str, id: u64) -> String {
         format!("{}/blocks/c/{}.msg", base, id)
+    }
+}
+
+impl ToPath<u64> for VotesModelWithId {
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/blocks/v/{}.msg", base, id)
     }
 }
 

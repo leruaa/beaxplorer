@@ -1,5 +1,4 @@
 use crate::model::ModelWithId;
-use crate::path::AsPath;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -38,11 +37,5 @@ impl<E: lighthouse_types::EthSpec>
             id: value.0.as_u64(),
             model: value.1.iter().map(VoteModel::from).collect::<Vec<_>>(),
         }
-    }
-}
-
-impl AsPath for VotesModelWithId {
-    fn as_path(&self, base: &str) -> String {
-        format!("{}/blocks/v/{}.msg", base, self.id)
     }
 }
