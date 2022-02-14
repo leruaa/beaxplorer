@@ -1,6 +1,7 @@
 use crate::model::ModelWithId;
 use serde::Deserialize;
 use serde::Serialize;
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
