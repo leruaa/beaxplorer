@@ -24,7 +24,7 @@ export function useBlocks(pageIndex: number, pageSize: number, sortId: string, s
   );
 }
 
-export function useCommitees(slot: string) {
+export function useCommittees(slot: string) {
   return useSWR(slot ? ["committees", slot] : null, (_, s) => Blocks.committees("http://localhost:3000/data", BigInt(s)));
 }
 

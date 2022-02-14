@@ -11,7 +11,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::views::attestations::AttestationView;
 use crate::views::blocks::{BlockExtendedView, BlockView};
-use crate::views::commitees::CommitteeView;
+use crate::views::committees::CommitteeView;
 use crate::views::votes::VoteView;
 use crate::{fetcher::fetch, page::page, to_js};
 
@@ -31,13 +31,13 @@ impl Blocks {
 
     pub async fn committees(base_url: String, block: u64) -> Result<JsValue, JsValue> {
         let committees_url = CommitteesModelWithId::to_path(&*base_url, block);
-        let commitees = fetch::<Vec<CommitteeModel>>(committees_url)
+        let committees = fetch::<Vec<CommitteeModel>>(committees_url)
             .await?
             .into_iter()
             .map(CommitteeView::from)
             .collect::<Vec<_>>();
 
-        to_js(&commitees).map_err(Into::into)
+        to_js(&committees).map_err(Into::into)
     }
 
     pub async fn votes(base_url: String, block: u64) -> Result<JsValue, JsValue> {

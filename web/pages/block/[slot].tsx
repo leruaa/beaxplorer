@@ -11,7 +11,7 @@ const Validators = ({ validators }) => {
 }
 
 const Committees = ({ slot }) => {
-  const { data: committees } = useCommitees(slot);
+  const { data: committees } = useCommittees(slot);
 
   if (!committees) {
     return (
