@@ -28,6 +28,11 @@ export function useCommitees(slot: string) {
   return useSWR(slot ? ["committees", slot] : null, (_, s) => Blocks.committees("http://localhost:3000/data", BigInt(s)));
 }
 
+export function useVotes(slot: string) {
+  return useSWR(slot ? ["votes", slot] : null, (_, s) => Blocks.votes("http://localhost:3000/data", BigInt(s)));
+}
+
+
 export function useAttestations(slot: string) {
   return useSWR(slot ? ["attestations", slot] : null, (_, s) => Blocks.attestations("http://localhost:3000/data", BigInt(s)));
 }

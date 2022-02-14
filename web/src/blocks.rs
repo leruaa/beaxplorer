@@ -6,11 +6,13 @@ use types::block::{
 use types::committee::{CommitteeModel, CommitteesModelWithId};
 use types::meta::Meta;
 use types::path::ToPath;
+use types::vote::{VoteModel, VotesModelWithId};
 use wasm_bindgen::prelude::*;
 
 use crate::views::attestations::AttestationView;
 use crate::views::blocks::{BlockExtendedView, BlockView};
 use crate::views::commitees::CommitteeView;
+use crate::views::votes::VoteView;
 use crate::{fetcher::fetch, page::page, to_js};
 
 #[wasm_bindgen]
@@ -36,6 +38,17 @@ impl Blocks {
             .collect::<Vec<_>>();
 
         to_js(&commitees).map_err(Into::into)
+    }
+
+    pub async fn votes(base_url: String, block: u64) -> Result<JsValue, JsValue> {
+        let votes_url = VotesModelWithId::to_path(&*base_url, block);
+        let votes = fetch::<Vec<VoteModel>>(votes_url)
+            .await?
+            .into_iter()
+            .map(VoteView::from)
+            .collect::<Vec<_>>();
+
+        to_js(&votes).map_err(Into::into)
     }
 
     pub async fn attestations(base_url: String, block: u64) -> Result<JsValue, JsValue> {

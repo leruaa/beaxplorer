@@ -2,7 +2,7 @@ import { useRouter } from 'next/router'
 import { TabPanel, useTabs } from 'react-headless-tabs';
 import Breadcrumb from "../../components/breadcrumb";
 import TabSelector from '../../components/tab-selector';
-import { useBlock, useAttestations, useCommitees } from "../../hooks/blocks";
+import { useBlock, useAttestations, useVotes, useCommitees } from "../../hooks/blocks";
 
 const Validators = ({ validators }) => {
   return validators.map(v => (
@@ -23,6 +23,23 @@ const Committees = ({ slot }) => {
     <dl>
       <dt>{c.index}</dt>
       <dd className="flex flex-wrap"><Validators validators={c.validators} /></dd>
+    </dl>
+  ));
+}
+
+const Votes = ({ slot }) => {
+  const { data: votes } = useVotes(slot);
+
+  if (!votes) {
+    return (
+      <p>Loading...</p>
+    );
+  }
+
+  return votes.map(a => (
+    <dl>
+      <dt>{a.slot}</dt>
+      <dd className="flex flex-wrap">{a.committee_index}</dd>
     </dl>
   ));
 }
@@ -76,12 +93,22 @@ export default () => {
             >
               Overview
             </TabSelector>
+
             <TabSelector
               isActive={selectedTab === 'committees'}
               onClick={() => setSelectedTab('committees')}
             >
               Committees
             </TabSelector>
+
+
+            <TabSelector
+              isActive={selectedTab === 'votes'}
+              onClick={() => setSelectedTab('votes')}
+            >
+              Votes
+            </TabSelector>
+
             <TabSelector
               isActive={selectedTab === 'attestations'}
               onClick={() => setSelectedTab('attestations')}
@@ -98,10 +125,17 @@ export default () => {
               <dd>{block && block.slot}</dd>
             </dl>
           </TabPanel>
+
           <TabPanel hidden={selectedTab !== 'committees'}>
             Committees
             <Committees slot={slot} />
           </TabPanel>
+
+          <TabPanel hidden={selectedTab !== 'votes'}>
+            Votes
+            <Votes slot={slot} />
+          </TabPanel>
+
           <TabPanel hidden={selectedTab !== 'attestations'}>
             Attestations
             <Attestations slot={slot} />
