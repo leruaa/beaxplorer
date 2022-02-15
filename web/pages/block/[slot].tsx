@@ -1,12 +1,19 @@
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router'
 import { TabPanel, useTabs } from 'react-headless-tabs';
 import Breadcrumb from "../../components/breadcrumb";
 import TabSelector from '../../components/tab-selector';
-import { useBlock, useAttestations, useVotes, useCommitees } from "../../hooks/blocks";
+import { useBlock, useAttestations, useVotes, useCommittees } from "../../hooks/blocks";
 
 const Validators = ({ validators }) => {
+  if (!validators) {
+    return (
+      <p>Loading...</p>
+    );
+  }
+
   return validators.map(v => (
-    <span className='w-16'>{v}</span>
+    <span key={v} className='w-16'>{v}</span>
   ));
 }
 
@@ -20,14 +27,14 @@ const Committees = ({ slot }) => {
   }
 
   return committees.map(c => (
-    <dl>
+    <dl key={c.index}>
       <dt>{c.index}</dt>
       <dd className="flex flex-wrap"><Validators validators={c.validators} /></dd>
     </dl>
   ));
 }
 
-const Votes = ({ slot }) => {
+const Votes = ({ slot, voteCount, setVoteCount }) => {
   const { data: votes } = useVotes(slot);
 
   if (!votes) {
@@ -36,12 +43,37 @@ const Votes = ({ slot }) => {
     );
   }
 
-  return votes.map(a => (
-    <dl>
-      <dt>{a.slot}</dt>
-      <dd className="flex flex-wrap">{a.committee_index}</dd>
-    </dl>
+  return votes.map((v, i) => (
+    <Vote key={i} vote={v} voteCount={voteCount} setVoteCount={setVoteCount} />
   ));
+}
+
+const Vote = ({ vote, voteCount, setVoteCount }) => {
+  const { data: committees } = useCommittees(vote.slot);
+
+  if (!committees) {
+    return (
+      <p>Loading...</p>
+    );
+  }
+
+  const validators = committees[vote.committee_index].validators;
+
+
+  //setVoteCount(voteCount + validators.length);
+
+  return (
+    <dl>
+      <dt>Slot</dt>
+      <dd>{vote.slot}</dd>
+
+      <dt>Committee index</dt>
+      <dd>{vote.committee_index}</dd>
+
+      <dt>Validators</dt>
+      <dd className="flex flex-wrap"><Validators validators={validators} /></dd>
+    </dl>
+  );
 }
 
 const Attestations = ({ slot }) => {
@@ -53,17 +85,42 @@ const Attestations = ({ slot }) => {
     );
   }
 
-  return attestations.map(a => (
-    <dl>
-      <dt>{a.committee_index}</dt>
-      <dd className="flex flex-wrap">{a.aggregation_bits.length}</dd>
-    </dl>
+  return attestations.map((a, i) => (
+    <div key={i}>
+      <h3>Attestation {i}</h3>
+      <Attestation attestation={a} />
+    </div>
   ));
+}
+
+const Attestation = ({ attestation }) => {
+  const { data: committees } = useCommittees(attestation.slot);
+
+  if (!committees) {
+    return (
+      <p>Loading... {attestation.slot}</p>
+    );
+  }
+
+  return (
+    <dl>
+      <dt>Slot</dt>
+      <dd>{attestation.slot}</dd>
+
+      <dt>Committee index</dt>
+      <dd>{attestation.committee_index}</dd>
+
+      <dt>Validators</dt>
+      <dd className="flex flex-wrap"><Validators validators={committees[attestation.committee_index].validators} /></dd>
+
+    </dl>
+  );
 }
 
 export default () => {
   const router = useRouter();
   const { slot } = router.query;
+  const [voteCount, setVoteCount] = useState(0);
   const { data: block, error } = useBlock(slot as string);
 
   const [selectedTab, setSelectedTab] = useTabs([
@@ -106,7 +163,7 @@ export default () => {
               isActive={selectedTab === 'votes'}
               onClick={() => setSelectedTab('votes')}
             >
-              Votes
+              Votes ({voteCount})
             </TabSelector>
 
             <TabSelector
@@ -127,18 +184,17 @@ export default () => {
           </TabPanel>
 
           <TabPanel hidden={selectedTab !== 'committees'}>
-            Committees
             <Committees slot={slot} />
           </TabPanel>
 
           <TabPanel hidden={selectedTab !== 'votes'}>
-            Votes
-            <Votes slot={slot} />
+            <Votes slot={slot} voteCount={voteCount} setVoteCount={setVoteCount} />
           </TabPanel>
 
           <TabPanel hidden={selectedTab !== 'attestations'}>
-            Attestations
-            <Attestations slot={slot} />
+            <React.StrictMode>
+              <Attestations slot={slot} />
+            </React.StrictMode>
           </TabPanel>
         </div>
       </section>
