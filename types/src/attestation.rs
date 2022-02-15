@@ -5,6 +5,7 @@ use crate::model::ModelWithId;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AttestationModel {
+    pub slot: u64,
     pub aggregation_bits: Vec<bool>,
     pub committee_index: u64,
     pub beacon_block_root: String,
@@ -19,6 +20,7 @@ pub type AttestationsModelWithId = ModelWithId<Vec<AttestationModel>>;
 impl<T: lighthouse_types::EthSpec> From<&lighthouse_types::Attestation<T>> for AttestationModel {
     fn from(attestation: &lighthouse_types::Attestation<T>) -> Self {
         AttestationModel {
+            slot: attestation.data.slot.as_u64(),
             aggregation_bits: attestation.aggregation_bits.iter().collect(),
             committee_index: attestation.data.index,
             beacon_block_root: attestation.data.beacon_block_root.to_string(),
