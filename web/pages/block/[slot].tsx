@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/router'
 import { TabPanel, useTabs } from 'react-headless-tabs';
 import Breadcrumb from "../../components/breadcrumb";
@@ -34,7 +34,7 @@ const Committees = ({ slot }) => {
   ));
 }
 
-const Votes = ({ slot, voteCount, setVoteCount }) => {
+const Votes = ({ slot }) => {
   const { data: votes } = useVotes(slot);
 
   if (!votes) {
@@ -44,23 +44,19 @@ const Votes = ({ slot, voteCount, setVoteCount }) => {
   }
 
   return votes.map((v, i) => (
-    <Vote key={i} vote={v} voteCount={voteCount} setVoteCount={setVoteCount} />
+    <Vote key={i} vote={v} />
   ));
 }
 
-const Vote = ({ vote, voteCount, setVoteCount }) => {
+const Vote = ({ vote }) => {
   const { data: committees } = useCommittees(vote.slot);
+  const validators = useMemo(() => committees ? committees[vote.committee_index].validators : undefined, [committees]);
 
-  if (!committees) {
+  if (!validators) {
     return (
       <p>Loading...</p>
     );
   }
-
-  const validators = committees[vote.committee_index].validators;
-
-
-  //setVoteCount(voteCount + validators.length);
 
   return (
     <dl>
@@ -120,7 +116,6 @@ const Attestation = ({ attestation }) => {
 export default () => {
   const router = useRouter();
   const { slot } = router.query;
-  const [voteCount, setVoteCount] = useState(0);
   const { data: block, error } = useBlock(slot as string);
 
   const [selectedTab, setSelectedTab] = useTabs([
@@ -163,7 +158,7 @@ export default () => {
               isActive={selectedTab === 'votes'}
               onClick={() => setSelectedTab('votes')}
             >
-              Votes ({voteCount})
+              Votes (0)
             </TabSelector>
 
             <TabSelector
@@ -188,13 +183,11 @@ export default () => {
           </TabPanel>
 
           <TabPanel hidden={selectedTab !== 'votes'}>
-            <Votes slot={slot} voteCount={voteCount} setVoteCount={setVoteCount} />
+            <Votes slot={slot} />
           </TabPanel>
 
           <TabPanel hidden={selectedTab !== 'attestations'}>
-            <React.StrictMode>
-              <Attestations slot={slot} />
-            </React.StrictMode>
+            <Attestations slot={slot} />
           </TabPanel>
         </div>
       </section>
