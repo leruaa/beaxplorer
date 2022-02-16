@@ -16,7 +16,7 @@ pub struct ConsolidatedBlock<E: EthSpec> {
     pub epoch: Epoch,
     pub slot: Slot,
     pub block: Option<BeaconBlock<E>>,
-    pub block_root: Hash256,
+    pub block_root: Option<Hash256>,
     pub signature: Signature,
     pub status: BlockStatus,
     pub proposer: u64,
@@ -51,11 +51,11 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
         let block_response = client.get_block::<E>(block).await?;
         let duration = start.elapsed();
         log::trace!("get_block duration: {:?}", duration);
+        let block_root = client.get_block_root(block).await.ok().map(|x| x.data.root);
 
         if let Some(block_response) = block_response {
             let (beacon_block, signature) = block_response.data.deconstruct();
             let start = Instant::now();
-            let block_root = client.get_block_root(block).await?;
             let duration = start.elapsed();
             let sync_participation_rate =
                 beacon_block.body().sync_aggregate().map(|sync_aggregate| {
@@ -67,7 +67,7 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
                 epoch,
                 slot: beacon_block.slot(),
                 block: Some(beacon_block.clone()),
-                block_root: block_root.data.root,
+                block_root,
                 signature,
                 status: BlockStatus::Proposed,
                 proposer: beacon_block.proposer_index(),
@@ -87,15 +87,19 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
             }
 
             if let Some(proposer_duties) = proposer_duties {
+                let status = match block_root {
+                    Some(_) => BlockStatus::Orphaned,
+                    None => BlockStatus::Missed,
+                };
                 for proposer in proposer_duties {
                     if proposer.slot == slot {
                         let consolidated_block = ConsolidatedBlock {
                             epoch,
                             slot: proposer.slot,
                             block: None,
-                            block_root: Hash256::zero(),
+                            block_root,
                             signature: Signature::empty(),
-                            status: BlockStatus::Missed,
+                            status,
                             proposer: proposer.validator_index,
                             sync_participation_rate: None,
                             committees,
@@ -182,7 +186,7 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockExtendedModelWithId {
     fn from(value: &ConsolidatedBlock<E>) -> Self {
         let model = match &value.block {
             Some(block) => BlockExtendedModel {
-                block_root: value.block_root.as_bytes().to_vec(),
+                block_root: value.block_root.unwrap_or_default().as_bytes().to_vec(),
                 parent_root: block.parent_root().as_bytes().to_vec(),
                 state_root: block.state_root().as_bytes().to_vec(),
                 randao_reveal: block.body().randao_reveal().to_string().as_bytes().to_vec(),
@@ -195,7 +199,7 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockExtendedModelWithId {
                 eth1data_block_hash: block.body().eth1_data().block_hash.as_bytes().to_vec(),
             },
             None => BlockExtendedModel {
-                block_root: value.block_root.as_bytes().to_vec(),
+                block_root: value.block_root.unwrap_or_default().as_bytes().to_vec(),
                 parent_root: vec![],
                 state_root: vec![],
                 randao_reveal: vec![],

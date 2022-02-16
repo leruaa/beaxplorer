@@ -53,7 +53,7 @@ impl Indexer {
 
         let block_roots_to_slots = all_blocks
             .iter()
-            .map(|x| (x.block_root, x.slot))
+            .filter_map(|x| x.block_root.map(|block_root| (block_root, x.slot)))
             .collect::<HashMap<_, _>>();
 
         let blocks = all_blocks
