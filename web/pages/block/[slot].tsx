@@ -1,19 +1,22 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/router'
 import { TabPanel, useTabs } from 'react-headless-tabs';
+import cx from 'classnames';
 import Breadcrumb from "../../components/breadcrumb";
 import TabSelector from '../../components/tab-selector';
 import { useBlock, useAttestations, useVotes, useCommittees } from "../../hooks/blocks";
 
-const Validators = ({ validators }) => {
+const Validators = ({ validators, aggregation_bits = [] }) => {
   if (!validators) {
     return (
       <p>Loading...</p>
     );
   }
 
-  return validators.map(v => (
-    <span key={v} className='w-16'>{v}</span>
+  return validators.map((v, i) => (
+    <span key={v} className={cx({ 'w-16': true, "text-gray-400": aggregation_bits.length > 0 && !aggregation_bits[i] })}>
+      {v}
+    </span>
   ));
 }
 
@@ -107,7 +110,11 @@ const Attestation = ({ attestation }) => {
       <dd>{attestation.committee_index}</dd>
 
       <dt>Validators</dt>
-      <dd className="flex flex-wrap"><Validators validators={committees[attestation.committee_index].validators} /></dd>
+      <dd className="flex flex-wrap">
+        <Validators
+          validators={committees[attestation.committee_index].validators}
+          aggregation_bits={attestation.aggregation_bits} />
+      </dd>
 
     </dl>
   );
