@@ -61,7 +61,7 @@ impl Indexer {
             .map(BlockModelWithId::from)
             .collect::<Vec<_>>();
 
-        let extended_blocks = all_blocks
+        let mut extended_blocks = all_blocks
             .iter()
             .map(BlockExtendedModelWithId::from)
             .collect::<Vec<_>>();
@@ -98,6 +98,11 @@ impl Indexer {
             })
             .map(VotesModelWithId::from)
             .collect::<Vec<_>>();
+
+        extended_blocks
+            .iter_mut()
+            .zip(votes.iter())
+            .for_each(|(ext, votes)| ext.model.votes_count = votes.model.len());
 
         let validators = self
             .validators

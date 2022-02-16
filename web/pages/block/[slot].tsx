@@ -158,7 +158,7 @@ export default () => {
               isActive={selectedTab === 'votes'}
               onClick={() => setSelectedTab('votes')}
             >
-              Votes (0)
+              Votes ({block && block.votes_count})
             </TabSelector>
 
             <TabSelector

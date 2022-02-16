@@ -27,6 +27,7 @@ pub struct BlockExtendedModel {
     pub randao_reveal: Vec<u8>,
     pub graffiti: Vec<u8>,
     pub graffiti_text: String,
+    pub votes_count: usize,
     pub eth1data_deposit_root: Vec<u8>,
     pub eth1data_deposit_count: u64,
     pub eth1data_block_hash: Vec<u8>,
