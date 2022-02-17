@@ -18,7 +18,7 @@ impl From<AttestationModel> for AttestationView {
             slot: model.slot,
             aggregation_bits: model.aggregation_bits,
             committee_index: model.committee_index,
-            beacon_block_root: model.beacon_block_root,
+            beacon_block_root: model.beacon_block_root.to_string(),
             source: model.source,
             target: model.target,
             signature: model.signature,
