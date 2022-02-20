@@ -1,4 +1,7 @@
+#![recursion_limit = "256"]
+
 pub mod beacon_node_client;
+pub mod direct_indexer;
 pub mod errors;
 pub mod field_binary_heap;
 pub mod node_to_files_indexer;
