@@ -1,27 +1,28 @@
+#![recursion_limit = "256"]
+
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
 use clap::StructOpt;
 use dotenv::dotenv;
-use simple_logger::SimpleLogger;
+use env_logger::{Builder, Env};
 use tokio::sync::oneshot;
 
 use crate::cli::Cli;
 
 mod cli;
-pub mod node_to_files;
+mod direct;
+// mod node_to_files;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     dotenv().ok();
-    SimpleLogger::new()
-        .with_level(log::LevelFilter::Info)
-        .init()
-        .ok();
+    Builder::from_env(Env::default()).init();
 
     let cli = Cli::parse();
 
+    direct::process(cli);
+    /*
     let start = Instant::now();
 
     let running = Arc::new(AtomicBool::new(true));
@@ -35,7 +36,7 @@ async fn main() {
     .expect("Error setting Ctrl-C handler");
 
     tokio::spawn(async move {
-        node_to_files::process(cli, running).await;
+
 
         sender.send(()).unwrap();
     });
@@ -44,4 +45,5 @@ async fn main() {
 
     let duration = start.elapsed();
     log::info!("Avg epoch indexing duration: {:?}", duration.div_f32(10.));
+    */
 }

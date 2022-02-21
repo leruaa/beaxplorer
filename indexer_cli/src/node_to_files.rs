@@ -10,7 +10,7 @@ use indexer::retriever::Retriever;
 
 use crate::cli::Cli;
 
-pub async fn process(cli: Cli, running: Arc<AtomicBool>) {
+pub async fn process(cli: Cli) {
     if cli.reset {
         fs::remove_dir_all("../web/public/data").unwrap();
     }
@@ -30,6 +30,31 @@ pub async fn process(cli: Cli, running: Arc<AtomicBool>) {
     fs::create_dir_all("../web/public/data/blocks/v/").unwrap();
     fs::create_dir_all("../web/public/data/validators").unwrap();
 
+    let running = Arc::new(AtomicBool::new(true));
+
+    let (sender, receiver) = oneshot::channel::<()>();
+    let r = running.clone();
+
+    ctrlc::set_handler(move || {
+        r.store(false, Ordering::SeqCst);
+    })
+    .expect("Error setting Ctrl-C handler");
+
+    tokio::spawn(async move {
+        let retriever = retrieve(running);
+        let indexer = Indexer::from(retriever);
+    
+        indexer.index("../web/public/data").unwrap();
+
+        sender.send(()).unwrap();
+    });
+
+    receiver.await.unwrap();
+
+}
+
+
+async fn retrieve(running: Arc<AtomicBool>) -> Retriever {
     let mut retriever = Retriever::new(cli.endpoint_url);
     let mut n = 0;
 
@@ -52,13 +77,5 @@ pub async fn process(cli: Cli, running: Arc<AtomicBool>) {
         }
     }
 
-    let indexer = Indexer::from(retriever);
-
-    indexer.index("../web/public/data").unwrap();
-
-    /*
-        if let Err(err) = indexer.index_validators().await {
-        log::warn!("Error while indexing validators: {:?}", err);
-    }
-    */
+    retriever
 }
