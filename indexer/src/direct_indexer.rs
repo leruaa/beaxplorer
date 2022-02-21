@@ -1,5 +1,8 @@
-use beacon_node::{ClientConfig, ProductionBeaconNode};
+use beacon_node::{get_config, ClientConfig, ClientGenesis, ProductionBeaconNode};
+use clap::ArgMatches;
 use environment::{EnvironmentBuilder, LoggerConfig};
+use eth2_network_config::{Eth2NetworkConfig, DEFAULT_HARDCODED_NETWORK};
+use store::MainnetEthSpec;
 use task_executor::ShutdownReason;
 
 pub struct Indexer {}
@@ -16,14 +19,16 @@ impl Indexer {
             max_log_number: 0,
             compression: false,
         };
+        let eth2_network_config = Eth2NetworkConfig::constant(DEFAULT_HARDCODED_NETWORK)?;
         let mut environment = environment_builder
+            .optional_eth2_network_config(eth2_network_config)?
             .initialize_logger(logger_config)?
             .multi_threaded_tokio_runtime()?
             .build()?;
         let context = environment.core_context();
         let executor = context.executor.clone();
 
-        let client_config = ClientConfig::default();
+        let client_config = get_config::<MainnetEthSpec>(&ArgMatches::default(), &context)?;
 
         executor.clone().spawn(
             async move {

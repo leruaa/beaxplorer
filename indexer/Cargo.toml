@@ -19,10 +19,12 @@ rmp-serde = "^0.15"
 flate2 = "1.0"
 ordered-float = "2.0"
 itertools = "0.10"
+clap = "2.34"
 shared = { path = "../shared" }
 types = { path = "../types", features = ["indexing"] }
 indexer_macro = { path = "../indexer_macro" }
 
+eth2_network_config = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 environment = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 task_executor = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 beacon_node = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
