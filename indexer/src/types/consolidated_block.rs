@@ -57,11 +57,14 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
             let (beacon_block, signature) = block_response.data.deconstruct();
             let start = Instant::now();
             let duration = start.elapsed();
-            let sync_participation_rate =
-                beacon_block.body().sync_aggregate().map(|sync_aggregate| {
+            let sync_participation_rate = beacon_block
+                .body()
+                .sync_aggregate()
+                .map(|sync_aggregate| {
                     sync_aggregate.num_set_bits() as f64
                         / sync_aggregate.sync_committee_bits.len() as f64
-                });
+                })
+                .ok();
             log::trace!("get_block_root duration: {:?}", duration);
             let consolidated_block = ConsolidatedBlock {
                 epoch,
