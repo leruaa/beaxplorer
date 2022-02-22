@@ -1,13 +1,8 @@
 #![recursion_limit = "256"]
 
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::time::Instant;
-
 use clap::StructOpt;
 use dotenv::dotenv;
 use env_logger::{Builder, Env};
-use tokio::sync::oneshot;
 
 use crate::cli::Cli;
 
@@ -21,7 +16,7 @@ fn main() {
 
     let cli = Cli::parse();
 
-    direct::process(cli);
+    let _res = direct::process(cli);
     /*
     let start = Instant::now();
 

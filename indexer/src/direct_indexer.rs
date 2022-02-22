@@ -1,4 +1,4 @@
-use beacon_node::{get_config, ClientConfig, ClientGenesis, ProductionBeaconNode};
+use beacon_node::{get_config, ProductionBeaconNode};
 use clap::ArgMatches;
 use environment::{EnvironmentBuilder, LoggerConfig};
 use eth2_network_config::{Eth2NetworkConfig, DEFAULT_HARDCODED_NETWORK};
@@ -32,7 +32,7 @@ impl Indexer {
 
         executor.clone().spawn(
             async move {
-                if let Err(e) = ProductionBeaconNode::new(context.clone(), client_config).await {
+                if let Err(_e) = ProductionBeaconNode::new(context.clone(), client_config).await {
                     // Ignore the error since it always occurs during normal operation when
                     // shutting down.
                     let _ = executor
@@ -43,7 +43,7 @@ impl Indexer {
             "beacon_node",
         );
 
-        let shutdown_reason = environment.block_until_shutdown_requested()?;
+        environment.block_until_shutdown_requested()?;
 
         Ok(())
     }
