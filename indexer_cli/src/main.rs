@@ -17,28 +17,4 @@ fn main() {
     let cli = Cli::parse();
 
     let _res = direct::process(cli);
-    /*
-    let start = Instant::now();
-
-    let running = Arc::new(AtomicBool::new(true));
-
-    let (sender, receiver) = oneshot::channel::<()>();
-    let r = running.clone();
-
-    ctrlc::set_handler(move || {
-        r.store(false, Ordering::SeqCst);
-    })
-    .expect("Error setting Ctrl-C handler");
-
-    tokio::spawn(async move {
-
-
-        sender.send(()).unwrap();
-    });
-
-    receiver.await.unwrap();
-
-    let duration = start.elapsed();
-    log::info!("Avg epoch indexing duration: {:?}", duration.div_f32(10.));
-    */
 }
