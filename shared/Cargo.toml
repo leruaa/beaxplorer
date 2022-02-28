@@ -10,5 +10,5 @@ edition = "2018"
 chrono = "0.4"
 timeago = "0.3"
 thiserror = "1.0.26"
-types = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
+lighthouse_types = { git = "https://github.com/sigp/lighthouse", package = "types", branch = "stable" }
 slot_clock = { git = "https://github.com/sigp/lighthouse", branch = "stable" }

@@ -9,10 +9,13 @@ edition = "2018"
 [dependencies]
 futures = "0.3"
 tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1.8"
+async-stream = "0.3.2"
 dotenv = "0.15.0"
 thiserror = "1.0.26"
 log = "0.4.14"
 simple_logger = "1.11.0"
+slog = "2.7"
 serde = { version = "1.0", features = ["derive"] }
 rmp = "^0.8"
 rmp-serde = "^0.15"
@@ -28,7 +31,28 @@ eth2_network_config = { git = "https://github.com/sigp/lighthouse", branch = "st
 environment = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 task_executor = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 beacon_node = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
+network = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
+lighthouse_network = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
+client = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 store = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 eth2 = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 lighthouse_types = { package = "types", git = "https://github.com/sigp/lighthouse", branch = "stable" }
 sensitive_url = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
+
+[dependencies.libp2p]
+git = "https://github.com/sigp/rust-libp2p"
+# branch libp2p-gossipsub-interval-hotfix
+rev = "e213703e616eaba3c482d7714775e0d37c4ae8e5"
+default-features = false
+features = [
+    "websocket",
+    "identify",
+    "mplex",
+    "yamux",
+    "noise",
+    "gossipsub",
+    "dns-tokio",
+    "tcp-tokio",
+    "plaintext",
+    "secp256k1",
+]

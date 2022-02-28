@@ -3,12 +3,26 @@ members = ["web", "indexer", "indexer_cli", "indexer_macro", "types", "shared"]
 
 [patch]
 [patch.crates-io]
-tree_hash = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
-tree_hash_derive = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
-eth2_ssz = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
-eth2_ssz_derive = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
-eth2_ssz_types = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
-eth2_hashing = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
-eth2_serde_utils = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
+tree_hash = { git = "https://github.com/sigp/lighthouse", branch = "unstable" }
+tree_hash_derive = { git = "https://github.com/sigp/lighthouse", branch = "unstable" }
+eth2_ssz = { git = "https://github.com/sigp/lighthouse", branch = "unstable" }
+eth2_ssz_derive = { git = "https://github.com/sigp/lighthouse", branch = "unstable" }
+eth2_ssz_types = { git = "https://github.com/sigp/lighthouse", branch = "unstable" }
+eth2_hashing = { git = "https://github.com/sigp/lighthouse", branch = "unstable" }
+eth2_serde_utils = { git = "https://github.com/sigp/lighthouse", branch = "unstable" }
 fixed-hash = { git = "https://github.com/paritytech/parity-common", rev = "df638ab0885293d21d656dc300d39236b69ce57d" }
 warp = { git = "https://github.com/macladson/warp", rev = "7e75acc" }
+
+[patch.'https://github.com/sigp/lighthouse']
+eth2_network_config = { path = "../lighthouse/common/eth2_network_config" }
+environment = { path = "../lighthouse/lighthouse/environment" }
+task_executor = { path = "../lighthouse/common/task_executor" }
+beacon_node = { path = "../lighthouse/beacon_node" }
+network = { path = "../lighthouse/beacon_node/network" }
+lighthouse_network = { path = "../lighthouse/beacon_node/lighthouse_network" }
+client = { path = "../lighthouse/beacon_node/client" }
+store = { path = "../lighthouse/beacon_node/store" }
+eth2 = { path = "../lighthouse/common/eth2" }
+lighthouse_types = { package = "types", path = "../lighthouse/consensus/types" }
+sensitive_url = { path = "../lighthouse/common/sensitive_url" }
+slot_clock = { path = "../lighthouse/common/slot_clock" }
