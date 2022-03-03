@@ -1,8 +1,8 @@
 use std::{ops::Sub, time::Duration};
 
 use chrono::{TimeZone, Utc};
+use lighthouse_types::{ChainSpec, Slot};
 use slot_clock::{SlotClock, SystemTimeSlotClock};
-use types::{ChainSpec, Slot};
 
 pub struct Clock {
     clock: SystemTimeSlotClock,
