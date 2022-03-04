@@ -113,15 +113,12 @@ impl Service {
                                 SwarmEvent::Dialing(_) => println!("Dialing"), }
                         },
                         request = request_handler_mut.next() => {
-                            match request {
-                                Some((peer_id, request)) => {
-                                    swarm.behaviour_mut().send_request(
-                                        peer_id,
-                                        RequestId::Behaviour,
-                                        request.into(),
-                                    );
-                                }
-                                other => {},
+                            if let Some((peer_id, request)) = request {
+                                swarm.behaviour_mut().send_request(
+                                    peer_id,
+                                    RequestId::Behaviour,
+                                    request.into(),
+                                );
                             }
                         }
                     }
@@ -201,7 +198,7 @@ impl Stream for Service {
 
     fn poll_next(
         self: Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
+        _cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Option<Self::Item>> {
         std::task::Poll::Pending
     }

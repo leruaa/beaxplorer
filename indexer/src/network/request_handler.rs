@@ -64,19 +64,12 @@ impl SafeRequestHandler {
         SafeRequestHandler(Arc::new(Mutex::new(RequestHandler::new())))
     }
 
-    pub async fn create_channel(
-        &mut self,
-        peer_id: PeerId,
-    ) -> Result<UnboundedSender<Request>, String> {
-        self.0.lock().await.create_channel(peer_id)
-    }
-
     pub async fn activate(&mut self, peer_id: PeerId) -> Result<(), String> {
         self.0.lock().await.activate(peer_id)
     }
 
     pub async fn next(&mut self) -> Option<(PeerId, Request)> {
-        self.0.lock().await.streams.next().await
+        self.0.lock().await.next().await
     }
 
     pub async fn guard(&self) -> MutexGuard<'_, RequestHandler> {
