@@ -12,7 +12,7 @@ use lighthouse_network::{
 };
 use store::{Hash256, MainnetEthSpec};
 
-use crate::{beacon_node_client::BeaconNodeClient, network::service::Service};
+use crate::{beacon_node_client::BeaconNodeClient, network::network_service::NetworkService};
 
 
 // use the executor for libp2p
@@ -41,7 +41,7 @@ impl Indexer {
                     .await
                     .unwrap();
 
-                println!("Peers: {:?}", peers);
+                //println!("Peers: {:?}", peers);
 
                 let peer_id = "16Uiu2HAkwgkdraX5wvaCkuRi1YdU5VUvpdQH42Un2DXyADYXAD8Q".parse().unwrap();
 
@@ -51,23 +51,22 @@ impl Indexer {
                         .unwrap();
 
                 let root: Hash256 =
-                    "0x84e1e9d854cd679d06de0ad9c006c0ce93bde7fda6259f4b0a9827666da9cad2"
+                    "0x70ffb2f48d9dc3ba835ebd0a4bd34e2d7b09bc6d4ef3b46c74131b6cbf952a90"
                         .parse()
                         .unwrap();
 
-                let mut service = Service::new(context.clone(), network_config, peers).unwrap();
-
-                service.connect(remote).unwrap();
+                let mut service = NetworkService::new(context.clone(), network_config).unwrap();
 
                 service
                     .send_request(
-                        peer_id,
                         Request::BlocksByRoot(BlocksByRootRequest {
                             block_roots: vec![root].into(),
                         }),
+                        peer_id,
+                        remote,
                     )
                     .await;
-
+ 
                 
                 loop {
                     let _ = service.next().await;

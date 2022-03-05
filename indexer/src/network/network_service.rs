@@ -38,19 +38,16 @@ impl libp2p::core::Executor for Executor {
 #[derive(Debug)]
 struct ConnectTo(Multiaddr);
 
-pub struct Service {
-    context: RuntimeContext<MainnetEthSpec>,
+pub struct NetworkService {
     connection_send: UnboundedSender<ConnectTo>,
-    peers: Vec<Peer<MainnetEthSpec>>,
     connected_peers: HashMap<PeerId, UnboundedSender<Request>>,
     request_handler: SafeRequestHandler,
 }
 
-impl Service {
+impl NetworkService {
     pub fn new(
         context: RuntimeContext<MainnetEthSpec>,
         network_config: Eth2NetworkConfig,
-        peers: Vec<Peer<MainnetEthSpec>>,
     ) -> Result<Self, String> {
         let spec = context.eth2_config().spec.clone();
         let genesis_state_bytes = network_config.genesis_state_bytes.unwrap();
@@ -128,9 +125,7 @@ impl Service {
         );
 
         let indexer = Self {
-            context,
             connection_send,
-            peers,
             connected_peers: HashMap::new(),
             request_handler,
         };
@@ -138,19 +133,21 @@ impl Service {
         Ok(indexer)
     }
 
-    pub fn connect(&self, multiaddr: Multiaddr) -> Result<(), String> {
-        self.connection_send
-            .send(ConnectTo(multiaddr))
-            .map_err(|_| "Can't send message".to_string())
-    }
-
-    pub async fn send_request(&mut self, peer_id: PeerId, request: Request) {
+    pub async fn send_request(&mut self, request: Request, peer_id: PeerId, multiaddr: Multiaddr) {
         let mut request_handler = self.request_handler.guard().await;
+        let is_connected = self.connected_peers.contains_key(&peer_id);
 
         let tx = self
             .connected_peers
             .entry(peer_id)
             .or_insert_with(|| request_handler.create_channel(peer_id).unwrap());
+
+        if !is_connected {
+            self.connection_send
+                .send(ConnectTo(multiaddr))
+                .map_err(|_| "Can't send message".to_string())
+                .unwrap();
+        }
 
         tx.send(request).unwrap();
     }
@@ -193,7 +190,7 @@ impl Service {
     }
 }
 
-impl Stream for Service {
+impl Stream for NetworkService {
     type Item = ();
 
     fn poll_next(
