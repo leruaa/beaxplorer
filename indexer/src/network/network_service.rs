@@ -1,7 +1,6 @@
 use std::{collections::HashMap, pin::Pin, sync::Arc, time::Duration};
 
 use environment::RuntimeContext;
-use eth2::lighthouse::Peer;
 use eth2_network_config::Eth2NetworkConfig;
 use futures::{Future, Stream, StreamExt};
 use libp2p::{
@@ -35,11 +34,8 @@ impl libp2p::core::Executor for Executor {
     }
 }
 
-#[derive(Debug)]
-struct ConnectTo(Multiaddr);
-
 pub struct NetworkService {
-    connection_send: UnboundedSender<ConnectTo>,
+    connection_send: UnboundedSender<Multiaddr>,
     connected_peers: HashMap<PeerId, UnboundedSender<Request>>,
     request_handler: SafeRequestHandler,
 }
@@ -61,7 +57,7 @@ impl NetworkService {
         ));
         let executor = context.clone().executor;
 
-        let (connection_send, mut connection_recv) = mpsc::unbounded_channel::<ConnectTo>();
+        let (connection_send, mut connection_recv) = mpsc::unbounded_channel::<Multiaddr>();
 
         //let connected_peers = Arc::new(vec![]);
         let request_handler = SafeRequestHandler::new();
@@ -81,8 +77,8 @@ impl NetworkService {
                         connection_event = connection_recv.recv() => {
                             match connection_event {
                                 Some(message) => {
-                                    println!("Dial to {:}", message.0);
-                                    swarm.dial(message.0).unwrap();
+                                    println!("Dial to {:}", message);
+                                    swarm.dial(message).unwrap();
                                 }
                                 _ => println!("All sender have dropped"),
                             }
@@ -144,7 +140,7 @@ impl NetworkService {
 
         if !is_connected {
             self.connection_send
-                .send(ConnectTo(multiaddr))
+                .send(multiaddr)
                 .map_err(|_| "Can't send message".to_string())
                 .unwrap();
         }
