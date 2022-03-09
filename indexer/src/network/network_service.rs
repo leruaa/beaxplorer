@@ -97,7 +97,7 @@ impl NetworkService {
                                     println!("Error {:?}", error)
                                 }
                                 SwarmEvent::ConnectionClosed { peer_id, .. } => {
-                                    request_handler_mut.close_channel(&peer_id).await.unwrap()
+                                    request_handler_mut.close_channel(peer_id).await;
                                     println!("Connection to {:} closed", peer_id)
                                 }
                                 SwarmEvent::IncomingConnection { .. } => println!("Incoming connection"),
@@ -132,7 +132,11 @@ impl NetworkService {
         Ok(indexer)
     }
 
-    pub async fn send_request(&mut self, request: Request, peer_id: PeerId, multiaddr: Multiaddr) {
+    pub async fn connect(
+        &mut self,
+        peer_id: PeerId,
+        multiaddr: &Multiaddr,
+    ) -> &mut UnboundedSender<Request> {
         let mut request_handler = self.request_handler.guard().await;
         let is_connected = self.connected_peers.contains_key(&peer_id);
 
@@ -143,10 +147,16 @@ impl NetworkService {
 
         if !is_connected {
             self.connection_send
-                .send(multiaddr)
+                .send(multiaddr.clone())
                 .map_err(|_| "Can't send message".to_string())
                 .unwrap();
         }
+
+        tx
+    }
+
+    pub async fn send_request(&mut self, request: Request, peer_id: PeerId, multiaddr: &Multiaddr) {
+        let tx = self.connect(peer_id, multiaddr).await;
 
         tx.send(request).unwrap();
     }

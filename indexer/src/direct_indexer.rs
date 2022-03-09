@@ -63,7 +63,7 @@ impl Indexer {
                             block_roots: vec![root].into(),
                         }),
                         peer_id,
-                        remote,
+                        &remote,
                     )
                     .await;
  

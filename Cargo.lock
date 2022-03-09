@@ -2431,6 +2431,7 @@ dependencies = [
  "log",
  "network",
  "ordered-float",
+ "rand 0.8.5",
  "rmp",
  "rmp-serde",
  "sensitive_url",
