@@ -42,6 +42,10 @@ impl RequestHandler {
         Ok(tx)
     }
 
+    pub fn close_channel(&mut self, peer_id: PeerId) {
+        self.pending_channels.remove(&peer_id);
+    }
+
     pub fn activate(&mut self, peer_id: PeerId) -> Result<(), String> {
         let rx = self
             .pending_channels
@@ -66,6 +70,10 @@ impl SafeRequestHandler {
 
     pub async fn activate(&mut self, peer_id: PeerId) -> Result<(), String> {
         self.0.lock().await.activate(peer_id)
+    }
+
+    pub async fn close_channel(&mut self, peer_id: PeerId) {
+        self.0.lock().await.close_channel(peer_id)
     }
 
     pub async fn next(&mut self) -> Option<(PeerId, Request)> {

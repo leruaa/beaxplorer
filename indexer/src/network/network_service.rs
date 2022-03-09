@@ -96,7 +96,10 @@ impl NetworkService {
                                 SwarmEvent::OutgoingConnectionError{error, ..} => {
                                     println!("Error {:?}", error)
                                 }
-                                SwarmEvent::ConnectionClosed { peer_id, .. } => println!("Connection to {:} closed", peer_id),
+                                SwarmEvent::ConnectionClosed { peer_id, .. } => {
+                                    request_handler_mut.close_channel(&peer_id).await.unwrap()
+                                    println!("Connection to {:} closed", peer_id)
+                                }
                                 SwarmEvent::IncomingConnection { .. } => println!("Incoming connection"),
                                 SwarmEvent::IncomingConnectionError { error, .. } => println!("Incoming connection error: {:?}", error),
                                 SwarmEvent::BannedPeer { peer_id, endpoint } => todo!(),
