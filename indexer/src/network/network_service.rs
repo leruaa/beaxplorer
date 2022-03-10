@@ -1,26 +1,31 @@
-use std::{collections::HashMap, pin::Pin, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap,
+    marker::PhantomData,
+    pin::Pin,
+    sync::Arc,
+    task::{Context, Poll},
+    time::Duration,
+};
 
 use environment::RuntimeContext;
 use eth2_network_config::Eth2NetworkConfig;
-use futures::{Future, Stream, StreamExt};
+use futures::{future, join, Future, FutureExt, Stream, StreamExt};
 use libp2p::{
     bandwidth::BandwidthLogging,
     core::{muxing::StreamMuxerBox, transport::Boxed},
     dns::TokioDnsConfig,
     swarm::{SwarmBuilder, SwarmEvent},
     tcp::TokioTcpConfig,
-    Multiaddr, Transport,
+    Multiaddr, Swarm, Transport,
 };
 use lighthouse_network::{
     peer_manager::Keypair,
-    rpc::{RequestId, RPC},
+    rpc::{methods::Ping, outbound::OutboundRequest, RPCReceived, RequestId, RPC},
     PeerId, Request,
 };
+use slog::{error, info, Logger};
 use store::{BeaconState, ForkContext, MainnetEthSpec};
-use tokio::{
-    select,
-    sync::mpsc::{self, UnboundedSender},
-};
+use tokio::sync::{mpsc::UnboundedSender, Mutex};
 
 use super::request_handler::SafeRequestHandler;
 
@@ -34,14 +39,19 @@ impl libp2p::core::Executor for Executor {
     }
 }
 
+pub enum NetworkEvent {
+    None,
+}
+
 pub struct NetworkService {
-    connection_send: UnboundedSender<Multiaddr>,
-    connected_peers: HashMap<PeerId, UnboundedSender<Request>>,
+    swarm: Arc<Mutex<Swarm<RPC<MainnetEthSpec>>>>,
+    connected_peers: HashMap<PeerId, UnboundedSender<OutboundRequest<MainnetEthSpec>>>,
     request_handler: SafeRequestHandler,
+    log: Logger,
 }
 
 impl NetworkService {
-    pub fn new(
+    pub async fn new(
         context: RuntimeContext<MainnetEthSpec>,
         network_config: Eth2NetworkConfig,
     ) -> Result<Self, String> {
@@ -57,76 +67,22 @@ impl NetworkService {
         ));
         let executor = context.clone().executor;
 
-        let (connection_send, mut connection_recv) = mpsc::unbounded_channel::<Multiaddr>();
-
         //let connected_peers = Arc::new(vec![]);
         let request_handler = SafeRequestHandler::new();
-        let mut request_handler_mut = request_handler.clone();
-        context.executor.spawn(
-            async move {
-                let local_key = Keypair::generate_ed25519();
-                let local_peer_id = PeerId::from(local_key.public());
-                let transport = Self::build_transport(local_key).unwrap();
-                let behaviour = RPC::<MainnetEthSpec>::new(fork_context, executor.log().clone());
-                let mut swarm = SwarmBuilder::new(transport, behaviour, local_peer_id)
-                    .executor(Box::new(Executor(executor)))
-                    .build();
 
-                loop {
-                    select! {
-                        connection_event = connection_recv.recv() => {
-                            match connection_event {
-                                Some(message) => {
-                                    println!("Dial to {:}", message);
-                                    swarm.dial(message).unwrap();
-                                }
-                                _ => println!("All sender have dropped"),
-                            }
-                        },
-                        swarm_event = swarm.select_next_some() => {
-                            match swarm_event {
-                                SwarmEvent::NewListenAddr{address, ..} => {
-                                    println!("Listening on {:?}",address)
-                                }
-                                SwarmEvent::Behaviour(e)=> println!("Behaviour: {:?}", e.event),
-                                SwarmEvent::ConnectionEstablished{peer_id, ..} => {
-                                    request_handler_mut.activate(peer_id).await.unwrap();
-                                    println!("Connected to {:?}",peer_id);
-                                }
-                                SwarmEvent::OutgoingConnectionError{error, ..} => {
-                                    println!("Error {:?}", error)
-                                }
-                                SwarmEvent::ConnectionClosed { peer_id, .. } => {
-                                    request_handler_mut.close_channel(peer_id).await;
-                                    println!("Connection to {:} closed", peer_id)
-                                }
-                                SwarmEvent::IncomingConnection { .. } => println!("Incoming connection"),
-                                SwarmEvent::IncomingConnectionError { error, .. } => println!("Incoming connection error: {:?}", error),
-                                SwarmEvent::BannedPeer { peer_id, endpoint } => todo!(),
-                                SwarmEvent::ExpiredListenAddr { listener_id, address } => todo!(),
-                                SwarmEvent::ListenerClosed { listener_id, addresses, reason } => todo!(),
-                                SwarmEvent::ListenerError { error, .. } => println!("Listener error {:?}", error),
-                                SwarmEvent::Dialing(_) => println!("Dialing"), }
-                        },
-                        request = request_handler_mut.next() => {
-                            if let Some((peer_id, request)) = request {
-                                swarm.behaviour_mut().send_request(
-                                    peer_id,
-                                    RequestId::Behaviour,
-                                    request.into(),
-                                );
-                            }
-                        }
-                    }
-                }
-            },
-            "swarm",
-        );
+        let local_key = Keypair::generate_ed25519();
+        let local_peer_id = PeerId::from(local_key.public());
+        let transport = Self::build_transport(local_key).unwrap();
+        let behaviour = RPC::<MainnetEthSpec>::new(fork_context, executor.log().clone());
+        let swarm = SwarmBuilder::new(transport, behaviour, local_peer_id)
+            .executor(Box::new(Executor(executor)))
+            .build();
 
         let indexer = Self {
-            connection_send,
+            swarm: Arc::new(Mutex::new(swarm)),
             connected_peers: HashMap::new(),
             request_handler,
+            log: context.log().clone(),
         };
 
         Ok(indexer)
@@ -136,7 +92,7 @@ impl NetworkService {
         &mut self,
         peer_id: PeerId,
         multiaddr: &Multiaddr,
-    ) -> &mut UnboundedSender<Request> {
+    ) -> &mut UnboundedSender<OutboundRequest<MainnetEthSpec>> {
         let mut request_handler = self.request_handler.guard().await;
         let is_connected = self.connected_peers.contains_key(&peer_id);
 
@@ -146,19 +102,118 @@ impl NetworkService {
             .or_insert_with(|| request_handler.create_channel(peer_id).unwrap());
 
         if !is_connected {
-            self.connection_send
-                .send(multiaddr.clone())
-                .map_err(|_| "Can't send message".to_string())
-                .unwrap();
+            self.swarm.lock().await.dial(multiaddr.clone()).unwrap();
         }
 
         tx
     }
 
-    pub async fn send_request(&mut self, request: Request, peer_id: PeerId, multiaddr: &Multiaddr) {
-        let tx = self.connect(peer_id, multiaddr).await;
+    pub async fn send_request(
+        &self,
+        request: OutboundRequest<MainnetEthSpec>,
+        peer_id: PeerId,
+    ) -> Result<(), String> {
+        let tx = self.connected_peers.get(&peer_id).ok_or("err")?;
+        tx.send(request).map_err(|err| err.to_string())?;
 
-        tx.send(request).unwrap();
+        Ok(())
+    }
+
+    async fn poll_requests(&self) {
+        let mut request_handler = self.request_handler.guard().await;
+
+        while let Some((peer_id, r)) = request_handler.next().await {
+            info!(self.log, "Sending request to {:?}", peer_id);
+            self.swarm.lock().await.behaviour_mut().send_request(
+                peer_id,
+                RequestId::Behaviour,
+                r.into(),
+            );
+        }
+    }
+
+    async fn poll_swarm(&self) -> Option<NetworkEvent> {
+        match self.swarm.lock().await.select_next_some().await {
+            SwarmEvent::NewListenAddr { address, .. } => {
+                println!("Listening on {:?}", address);
+                Some(NetworkEvent::None)
+            }
+            SwarmEvent::Behaviour(e) => {
+                match e.event {
+                    Ok(event) => match event {
+                        RPCReceived::Request(_, request) => match request.protocol() {
+                            lighthouse_network::rpc::Protocol::Status => todo!(),
+                            lighthouse_network::rpc::Protocol::Goodbye => todo!(),
+                            lighthouse_network::rpc::Protocol::BlocksByRange => todo!(),
+                            lighthouse_network::rpc::Protocol::BlocksByRoot => todo!(),
+                            lighthouse_network::rpc::Protocol::Ping => {
+                                let request = OutboundRequest::Ping(Ping { data: 1 });
+                                self.send_request(request, e.peer_id).await.unwrap();
+                            }
+                            lighthouse_network::rpc::Protocol::MetaData => {
+                                let request = OutboundRequest::MetaData(PhantomData);
+                                self.send_request(request, e.peer_id).await.unwrap();
+                            }
+                        },
+                        RPCReceived::Response(_, response) => {
+                            info!(self.log, "Response: {:?}", response)
+                        }
+                        RPCReceived::EndOfStream(_, _) => todo!(),
+                    },
+                    Err(err) => error!(self.log, "{:?}", err),
+                }
+                Some(NetworkEvent::None)
+            }
+            SwarmEvent::ConnectionEstablished { peer_id, .. } => {
+                self.request_handler
+                    .guard()
+                    .await
+                    .activate(peer_id)
+                    .unwrap();
+                info!(self.log, "Connected to {:?}", peer_id);
+                Some(NetworkEvent::None)
+            }
+            SwarmEvent::OutgoingConnectionError { error, .. } => {
+                println!("Error {:?}", error);
+                Some(NetworkEvent::None)
+            }
+            SwarmEvent::ConnectionClosed { peer_id, .. } => {
+                self.request_handler.guard().await.close_channel(peer_id);
+                info!(self.log, "Connection to {:} closed", peer_id);
+                Some(NetworkEvent::None)
+            }
+            SwarmEvent::IncomingConnection { .. } => {
+                println!("Incoming connection");
+                Some(NetworkEvent::None)
+            }
+            SwarmEvent::IncomingConnectionError { error, .. } => {
+                println!("Incoming connection error: {:?}", error);
+                Some(NetworkEvent::None)
+            }
+            SwarmEvent::BannedPeer { peer_id, endpoint } => todo!(),
+            SwarmEvent::ExpiredListenAddr {
+                listener_id,
+                address,
+            } => todo!(),
+            SwarmEvent::ListenerClosed {
+                listener_id,
+                addresses,
+                reason,
+            } => todo!(),
+            SwarmEvent::ListenerError { error, .. } => {
+                println!("Listener error {:?}", error);
+                Some(NetworkEvent::None)
+            }
+            SwarmEvent::Dialing(_) => {
+                println!("Dialing");
+                Some(NetworkEvent::None)
+            }
+        }
+    }
+
+    async fn poll_network(&self) -> Option<NetworkEvent> {
+        let (r, _) = join!(self.poll_swarm(), self.poll_requests());
+        r
     }
 
     fn build_transport(local_private_key: Keypair) -> Result<BoxedTransport, String> {
@@ -200,12 +255,17 @@ impl NetworkService {
 }
 
 impl Stream for NetworkService {
-    type Item = ();
+    type Item = NetworkEvent;
 
-    fn poll_next(
-        self: Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Option<Self::Item>> {
-        std::task::Poll::Pending
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let future = self.poll_network();
+        if let Poll::Ready(p) = Box::pin(future).poll_unpin(cx) {
+            match p {
+                Some(p) => Poll::Ready(Some(p)),
+                None => Poll::Pending,
+            }
+        } else {
+            Poll::Pending
+        }
     }
 }

@@ -51,25 +51,26 @@ impl Indexer {
                         .unwrap();
 
                 let root: Hash256 =
-                    "0x70ffb2f48d9dc3ba835ebd0a4bd34e2d7b09bc6d4ef3b46c74131b6cbf952a90"
+                    "0x74442257e97a932c7b7427e4b0fa35b70e2e650fe6a4841ec22f706296797e70"
                         .parse()
                         .unwrap();
 
-                let mut service = NetworkService::new(context.clone(), network_config).unwrap();
+                let mut service = NetworkService::new(context.clone(), network_config).await.unwrap();
 
+                service.connect(peer_id, &remote).await;
+
+                /*
                 service
                     .send_request(
                         Request::BlocksByRoot(BlocksByRootRequest {
                             block_roots: vec![root].into(),
                         }),
                         peer_id,
-                        &remote,
                     )
-                    .await;
- 
-                
+                    .await.unwrap();
+                */
                 loop {
-                    let _ = service.next().await;
+                    service.next().await;
                 }
                 
             },

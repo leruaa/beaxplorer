@@ -24,6 +24,7 @@ ordered-float = "2.0"
 itertools = "0.10"
 clap = "2.34"
 rand = "0.8.5"
+pin-project = "1.0.10"
 shared = { path = "../shared" }
 types = { path = "../types", features = ["indexing"] }
 indexer_macro = { path = "../indexer_macro" }

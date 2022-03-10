@@ -2431,6 +2431,7 @@ dependencies = [
  "log",
  "network",
  "ordered-float",
+ "pin-project 1.0.10",
  "rand 0.8.5",
  "rmp",
  "rmp-serde",
