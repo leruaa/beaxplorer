@@ -1,19 +1,18 @@
 use std::{env, pin::Pin};
 
+use beacon_node::get_config;
+use clap::ArgMatches;
 use environment::{Environment, EnvironmentBuilder, LoggerConfig};
 use eth2_network_config::{Eth2NetworkConfig, DEFAULT_HARDCODED_NETWORK};
-use futures::{Future, StreamExt};
-use libp2p::{
-    Multiaddr,
-};
+use futures::Future;
+use libp2p::{Multiaddr, PeerId};
 use lighthouse_network::{
-    rpc::{BlocksByRootRequest},
-    Request,
+    rpc::{BlocksByRootRequest, RequestId},
+    BehaviourEvent, Libp2pEvent, Request,
 };
 use store::{Hash256, MainnetEthSpec};
 
 use crate::{beacon_node_client::BeaconNodeClient, network::network_service::NetworkService};
-
 
 // use the executor for libp2p
 struct Executor(task_executor::TaskExecutor);
@@ -30,9 +29,20 @@ impl Indexer {
     pub fn start() -> Result<(), String> {
         let endpoint = env::var("ENDPOINT_URL").unwrap();
         let client = BeaconNodeClient::new(endpoint);
-        let (mut environment, network_config) = Self::build_environment().unwrap();
+        let (mut environment, eth2_network_config) = Self::build_environment().unwrap();
         let context = environment.core_context();
+        let mut config = get_config::<MainnetEthSpec>(&ArgMatches::default(), &context)?;
         let executor = context.executor.clone();
+
+        let peer_id: PeerId = "16Uiu2HAkwgkdraX5wvaCkuRi1YdU5VUvpdQH42Un2DXyADYXAD8Q"
+            .parse()
+            .unwrap();
+        let remote: Multiaddr =
+            "/ip4/192.168.1.12/tcp/9000/p2p/16Uiu2HAkwgkdraX5wvaCkuRi1YdU5VUvpdQH42Un2DXyADYXAD8Q"
+                .parse()
+                .unwrap();
+
+        config.network.libp2p_nodes.push(remote);
 
         executor.spawn(
             async move {
@@ -43,36 +53,48 @@ impl Indexer {
 
                 //println!("Peers: {:?}", peers);
 
-                let peer_id = "16Uiu2HAkwgkdraX5wvaCkuRi1YdU5VUvpdQH42Un2DXyADYXAD8Q".parse().unwrap();
-
-                let remote: Multiaddr =
-                    "/ip4/192.168.1.12/tcp/9000/p2p/16Uiu2HAkwgkdraX5wvaCkuRi1YdU5VUvpdQH42Un2DXyADYXAD8Q"
-                        .parse()
-                        .unwrap();
-
                 let root: Hash256 =
-                    "0x74442257e97a932c7b7427e4b0fa35b70e2e650fe6a4841ec22f706296797e70"
+                    "0x70ffb2f48d9dc3ba835ebd0a4bd34e2d7b09bc6d4ef3b46c74131b6cbf952a90"
                         .parse()
                         .unwrap();
 
-                let mut service = NetworkService::new(context.clone(), network_config).await.unwrap();
+                let mut service = NetworkService::new(context.clone(), config, eth2_network_config)
+                    .await
+                    .unwrap();
 
-                service.connect(peer_id, &remote).await;
-
-                /*
-                service
-                    .send_request(
-                        Request::BlocksByRoot(BlocksByRootRequest {
-                            block_roots: vec![root].into(),
-                        }),
-                        peer_id,
-                    )
-                    .await.unwrap();
-                */
                 loop {
-                    service.next().await;
+                    match service.next_event().await {
+                        Libp2pEvent::Behaviour(b) => match b {
+                            BehaviourEvent::PeerConnectedOutgoing(p) => {
+                                if p == peer_id {
+                                    println!("CONNECTED");
+
+                                    service
+                                        .send_request(
+                                            peer_id,
+                                            RequestId::Router,
+                                            Request::BlocksByRoot(BlocksByRootRequest {
+                                                block_roots: vec![root].into(),
+                                            }),
+                                        )
+                                        .await;
+                                } else {
+                                    println!("Connected to {:?}", p);
+                                }
+                            }
+                            BehaviourEvent::ResponseReceived {
+                                peer_id, response, ..
+                            } => {
+                                println!("Response from {:}: {:?}", peer_id, response);
+                            }
+                            ev => {
+                                println!("Event: {:?}", ev);
+                            }
+                        },
+                        Libp2pEvent::NewListenAddr(_) => {}
+                        Libp2pEvent::ZeroListeners => todo!(),
+                    }
                 }
-                
             },
             "network",
         );
