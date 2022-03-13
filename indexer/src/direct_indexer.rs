@@ -62,38 +62,17 @@ impl Indexer {
                     .await
                     .unwrap();
 
-                loop {
-                    match service.next_event().await {
-                        Libp2pEvent::Behaviour(b) => match b {
-                            BehaviourEvent::PeerConnectedOutgoing(p) => {
-                                if p == peer_id {
-                                    println!("CONNECTED");
+                service.init().await;
 
-                                    service
-                                        .send_request(
-                                            peer_id,
-                                            RequestId::Router,
-                                            Request::BlocksByRoot(BlocksByRootRequest {
-                                                block_roots: vec![root].into(),
-                                            }),
-                                        )
-                                        .await;
-                                } else {
-                                    println!("Connected to {:?}", p);
-                                }
-                            }
-                            BehaviourEvent::ResponseReceived {
-                                peer_id, response, ..
-                            } => {
-                                println!("Response from {:}: {:?}", peer_id, response);
-                            }
-                            ev => {
-                                println!("Event: {:?}", ev);
-                            }
-                        },
-                        Libp2pEvent::NewListenAddr(_) => {}
-                        Libp2pEvent::ZeroListeners => todo!(),
-                    }
+                service
+                    .send_request(Request::BlocksByRoot(BlocksByRootRequest {
+                        block_roots: vec![root].into(),
+                    }))
+                    .unwrap();
+
+                loop {
+                    let response = service.next_event().await;
+                    println!("{:?}", response);
                 }
             },
             "network",
