@@ -7,12 +7,16 @@ use eth2_network_config::{Eth2NetworkConfig, DEFAULT_HARDCODED_NETWORK};
 use futures::Future;
 use libp2p::{Multiaddr, PeerId};
 use lighthouse_network::{
-    rpc::{BlocksByRootRequest, RequestId},
-    BehaviourEvent, Libp2pEvent, Request,
+    rpc::{BlocksByRangeRequest, BlocksByRootRequest},
+    Request,
 };
-use store::{Hash256, MainnetEthSpec};
+use store::{beacon_block, Hash256, MainnetEthSpec};
 
-use crate::{beacon_node_client::BeaconNodeClient, network::network_service::NetworkService};
+use crate::{
+    beacon_chain::beacon_context::BeaconContext,
+    beacon_node_client::BeaconNodeClient,
+    network::{network_service::NetworkService, request_manager::RequestManager},
+};
 
 // use the executor for libp2p
 struct Executor(task_executor::TaskExecutor);
@@ -31,47 +35,33 @@ impl Indexer {
         let client = BeaconNodeClient::new(endpoint);
         let (mut environment, eth2_network_config) = Self::build_environment().unwrap();
         let context = environment.core_context();
-        let mut config = get_config::<MainnetEthSpec>(&ArgMatches::default(), &context)?;
+        let beacon_context = BeaconContext::build(&context)?;
         let executor = context.executor.clone();
 
-        let peer_id: PeerId = "16Uiu2HAkwgkdraX5wvaCkuRi1YdU5VUvpdQH42Un2DXyADYXAD8Q"
-            .parse()
-            .unwrap();
-        let remote: Multiaddr =
-            "/ip4/192.168.1.12/tcp/9000/p2p/16Uiu2HAkwgkdraX5wvaCkuRi1YdU5VUvpdQH42Un2DXyADYXAD8Q"
-                .parse()
-                .unwrap();
-
-        config.network.libp2p_nodes.push(remote);
-
-        executor.spawn(
+        executor.clone().spawn(
             async move {
-                let peers = client
-                    .get_connected_peers::<MainnetEthSpec>()
-                    .await
-                    .unwrap();
-
-                //println!("Peers: {:?}", peers);
-
                 let root: Hash256 =
                     "0x70ffb2f48d9dc3ba835ebd0a4bd34e2d7b09bc6d4ef3b46c74131b6cbf952a90"
                         .parse()
                         .unwrap();
 
-                let mut service = NetworkService::new(context.clone(), config, eth2_network_config)
-                    .await
-                    .unwrap();
+                let log = executor.clone().log().clone();
+                let network_service = NetworkService::new(executor, beacon_context).await.unwrap();
+                let mut request_manager = RequestManager::new(network_service, log);
 
-                service.init().await;
-
-                service
-                    .send_request(Request::BlocksByRoot(BlocksByRootRequest {
-                        block_roots: vec![root].into(),
-                    }))
-                    .unwrap();
+                request_manager.send_request(Request::BlocksByRange(BlocksByRangeRequest {
+                    start_slot: 0,
+                    count: 32,
+                    step: 1,
+                }));
+                /*
+                request_manager.send_request(Request::BlocksByRoot(BlocksByRootRequest {
+                    block_roots: vec![root].into(),
+                }));
+                 */
 
                 loop {
-                    let response = service.next_event().await;
+                    let response = request_manager.next_event().await;
                     println!("{:?}", response);
                 }
             },
