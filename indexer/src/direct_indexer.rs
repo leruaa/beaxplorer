@@ -12,7 +12,7 @@ use state_processing::{
 };
 
 use crate::{
-    beacon_chain::beacon_context::BeaconContext,
+    beacon_chain::{beacon_chain_builder::BeaconChainBuilder, beacon_context::BeaconContext},
     beacon_node_client::BeaconNodeClient,
     network::{network_service::NetworkService, request_manager::RequestManager},
 };
@@ -45,6 +45,11 @@ impl Indexer {
                         .unwrap();
 
                 let log = executor.clone().log().clone();
+                let beacon_chain = BeaconChainBuilder::new()
+                    .context(&beacon_context)
+                    .logger(&log)
+                    .build(&executor)
+                    .unwrap();
                 let network_service = NetworkService::new(executor, &beacon_context)
                     .await
                     .unwrap();
