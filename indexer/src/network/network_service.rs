@@ -20,7 +20,7 @@ pub struct NetworkService {
 impl NetworkService {
     pub async fn new(
         executor: TaskExecutor,
-        beacon_context: BeaconContext<MainnetEthSpec>,
+        beacon_context: &BeaconContext<MainnetEthSpec>,
     ) -> Result<Self, String> {
         let enr_fork_id = beacon_context.spec.enr_fork_id::<MainnetEthSpec>(
             beacon_context.spec.genesis_slot,
@@ -33,8 +33,6 @@ impl NetworkService {
         ));
         let network_log = executor.log().clone();
         let mut network = NetworkConfig::default();
-
-        network.discv5_config.query_parallelism = 20;
 
         if let Some(boot_nodes) = &beacon_context.eth2_network_config.boot_enr {
             network.boot_nodes_enr.extend_from_slice(boot_nodes)

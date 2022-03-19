@@ -38,6 +38,8 @@ lighthouse_network = { git = "https://github.com/sigp/lighthouse", branch = "sta
 client = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 store = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 eth2 = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
+state_processing = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
+genesis = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 lighthouse_types = { package = "types", git = "https://github.com/sigp/lighthouse", branch = "stable" }
 sensitive_url = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 

@@ -26,3 +26,5 @@ eth2 = { path = "../lighthouse/common/eth2" }
 lighthouse_types = { package = "types", path = "../lighthouse/consensus/types" }
 sensitive_url = { path = "../lighthouse/common/sensitive_url" }
 slot_clock = { path = "../lighthouse/common/slot_clock" }
+state_processing = { path = "../lighthouse/consensus/state_processing" }
+genesis = { path = "../lighthouse/beacon_node/genesis" }
