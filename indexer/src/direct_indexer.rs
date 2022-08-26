@@ -113,35 +113,38 @@ impl<E: EthSpec> Indexer<E> {
                             BlockMessage::Missed(slot) => *slot,
                         };
 
-                        let epoch = slot.epoch(MainnetEthSpec::slots_per_epoch());
+                        if slot.as_u64() == 0 || slot > self.beacon_state.slot() {
+                            let epoch = slot.epoch(MainnetEthSpec::slots_per_epoch());
 
-                        let blocks_by_slot = self
-                            .blocks_by_epoch
-                            .entry(epoch)
-                            .or_insert_with(HashMap::new);
+                            let blocks_by_slot = self
+                                .blocks_by_epoch
+                                .entry(epoch)
+                                .or_insert_with(HashMap::new);
 
-                        match blocks_by_slot.entry(slot) {
-                            Entry::Occupied(mut e) => {
-                                if let BlockMessage::MaybeOrphaned(_) = e.get() {
+                            match blocks_by_slot.entry(slot) {
+                                Entry::Occupied(mut e) => {
+                                    if let BlockMessage::MaybeOrphaned(_) = e.get() {
+                                        e.insert(block_message);
+                                    }
+                                }
+                                Entry::Vacant(e) => {
                                     e.insert(block_message);
                                 }
-                            }
-                            Entry::Vacant(e) => {
-                                e.insert(block_message);
-                            }
-                        };
+                            };
 
-                        if blocks_by_slot.len() as u64 == MainnetEthSpec::slots_per_epoch() {
-                            if let Some(blocks_by_slot) = self.blocks_by_epoch.remove(&epoch) {
-                                if let Ok(mut blocks_by_slot) = blocks_by_slot
-                                    .iter()
-                                    .map(|(s, b)| BlockStatus::try_from(b).map(|b| (s, b)))
-                                    .collect::<Result<Vec<_>, _>>()
-                                {
-                                    blocks_by_slot.sort_by(|(a, _), (b, _)| a.cmp(b));
+                            if blocks_by_slot.len() as u64 == MainnetEthSpec::slots_per_epoch() {
+                                if let Some(blocks_by_slot) = self.blocks_by_epoch.remove(&epoch) {
+                                    if let Ok(mut blocks_by_slot) = blocks_by_slot
+                                        .iter()
+                                        .map(|(s, b)| BlockStatus::try_from(b).map(|b| (s, b)))
+                                        .collect::<Result<Vec<_>, _>>()
+                                    {
+                                        blocks_by_slot.sort_by(|(a, _), (b, _)| a.cmp(b));
 
-                                    self.persist_epoch(&epoch, blocks_by_slot);
-                                    self.blocks_by_epoch.remove(&epoch);
+                                        self.persist_epoch(&epoch, blocks_by_slot);
+                                    } else {
+                                        self.blocks_by_epoch.insert(epoch, blocks_by_slot);
+                                    }
                                 }
                             }
                         }
@@ -228,19 +231,12 @@ impl<E: EthSpec> Indexer<E> {
         for (i, block) in blocks.iter().enumerate() {
             // Allow one additional block at the start which is only used for its state root.
             if i == 0 && block.slot() <= self.beacon_state.slot() {
-                info!(self.log, "Skip slot: {}", block.slot());
                 continue;
             }
 
             while self.beacon_state.slot() < block.slot() {
                 per_slot_processing(&mut self.beacon_state, None, &self.spec)
                     .map_err(BlockReplayError::from)?;
-                info!(
-                    self.log,
-                    "Block slot: {}, State slot (+1): {}",
-                    block.slot(),
-                    self.beacon_state.slot()
-                );
             }
 
             per_block_processing(
@@ -257,7 +253,6 @@ impl<E: EthSpec> Indexer<E> {
         while self.beacon_state.slot() < target_slot {
             per_slot_processing(&mut self.beacon_state, None, &self.spec)
                 .map_err(BlockReplayError::from)?;
-            info!(self.log, "State slot: {}", self.beacon_state.slot());
         }
 
         Ok(())
