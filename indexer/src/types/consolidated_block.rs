@@ -1,23 +1,16 @@
 use std::{
     convert::TryFrom,
     fmt::{Display, Formatter},
-    sync::Arc,
-    time::Instant,
 };
 
-use eth2::types::{BlockId, CommitteeData, ProposerData};
-use lighthouse_types::{BeaconBlock, Epoch, EthSpec, Hash256, Signature, Slot};
+use lighthouse_types::{Epoch, EthSpec, Slot};
 use store::SignedBeaconBlock;
-use tokio::sync::RwLock;
 use types::{
     attestation::{AttestationModel, AttestationsModelWithId},
     block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId},
-    committee::{CommitteeModel, CommitteesModelWithId},
 };
 
-use crate::{
-    beacon_node_client::BeaconNodeClient, direct_indexer::BlockMessage, errors::IndexerError,
-};
+use crate::direct_indexer::BlockMessage;
 
 #[derive(Debug, Clone)]
 pub enum BlockStatus<E: EthSpec> {

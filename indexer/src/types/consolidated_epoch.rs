@@ -1,14 +1,12 @@
 use std::collections::HashMap;
 use std::ops::Div;
-use std::sync::Arc;
 
 use eth2::lighthouse::GlobalValidatorInclusionData;
-use eth2::types::{CommitteeData, ValidatorBalanceData};
 
 use lighthouse_types::{Epoch, EthSpec};
 use shared::utils::clock::Clock;
 use state_processing::per_epoch_processing::EpochProcessingSummary;
-use store::{SignedBeaconBlock, Slot};
+use store::Slot;
 
 use types::epoch::{EpochExtendedModel, EpochExtendedModelWithId, EpochModel, EpochModelWithId};
 
@@ -46,12 +44,6 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
                     .unwrap_or(0),
             },
         }
-    }
-
-    pub fn add_block(&mut self, block: Box<SignedBeaconBlock<E>>) {
-        let slot = block.message().slot();
-
-        //self.blocks.insert(slot, ConsolidatedBlock::new(block));
     }
 
     pub fn get_attestations_count(&self) -> usize {

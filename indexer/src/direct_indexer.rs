@@ -1,6 +1,6 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
-    convert::{TryFrom, TryInto},
+    convert::TryFrom,
     pin::Pin,
     sync::Arc,
     time::Duration,
@@ -12,9 +12,8 @@ use lighthouse_network::NetworkGlobals;
 use lighthouse_types::{BeaconState, BlindedPayload, ChainSpec};
 use slog::{info, Logger};
 use state_processing::{
-    per_block_processing,
-    per_epoch_processing::{process_epoch, EpochProcessingSummary},
-    per_slot_processing, BlockReplayError, BlockReplayer, BlockSignatureStrategy, VerifyBlockRoot,
+    per_block_processing, per_epoch_processing::process_epoch, per_slot_processing,
+    BlockReplayError, BlockSignatureStrategy, VerifyBlockRoot,
 };
 use store::{Epoch, EthSpec, MainnetEthSpec, SignedBeaconBlock, Slot};
 use tokio::{
@@ -30,7 +29,7 @@ use crate::{
     persistable::Persistable,
     types::{
         consolidated_block::{BlockStatus, ConsolidatedBlock},
-        consolidated_epoch::{self, ConsolidatedEpoch},
+        consolidated_epoch::ConsolidatedEpoch,
     },
 };
 
@@ -157,7 +156,7 @@ impl<E: EthSpec> Indexer<E> {
 
         let b = blocks
             .iter()
-            .filter_map(|(s, b)| match b {
+            .filter_map(|(_, b)| match b {
                 BlockStatus::Proposed(b) => Some(b),
                 _ => None,
             })
