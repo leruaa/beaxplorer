@@ -21,7 +21,11 @@ pub enum BlockStatus<E: EthSpec> {
 
 impl<E: EthSpec> Display for BlockStatus<E> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        match self {
+            BlockStatus::Proposed(_) => write!(f, "Proposed"),
+            BlockStatus::Missed => write!(f, "Missed"),
+            BlockStatus::Orphaned(_) => write!(f, "Orphaned"),
+        }
     }
 }
 
