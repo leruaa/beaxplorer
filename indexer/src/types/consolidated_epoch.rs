@@ -1,12 +1,11 @@
-use std::collections::HashMap;
 use std::ops::Div;
+use std::rc::Rc;
 
 use eth2::lighthouse::GlobalValidatorInclusionData;
 
 use lighthouse_types::{Epoch, EthSpec};
 use shared::utils::clock::Clock;
 use state_processing::per_epoch_processing::EpochProcessingSummary;
-use store::Slot;
 
 use types::epoch::{EpochExtendedModel, EpochExtendedModelWithId, EpochModel, EpochModelWithId};
 
@@ -15,7 +14,7 @@ use super::consolidated_block::ConsolidatedBlock;
 #[derive(Debug)]
 pub struct ConsolidatedEpoch<E: EthSpec> {
     pub epoch: Epoch,
-    pub blocks: HashMap<Slot, ConsolidatedBlock<E>>,
+    pub blocks: Rc<Vec<ConsolidatedBlock<E>>>,
     pub validator_balances: Vec<u64>,
     pub validator_inclusion: GlobalValidatorInclusionData,
 }
@@ -23,12 +22,13 @@ pub struct ConsolidatedEpoch<E: EthSpec> {
 impl<E: EthSpec> ConsolidatedEpoch<E> {
     pub fn new(
         epoch: Epoch,
+        blocks: Rc<Vec<ConsolidatedBlock<E>>>,
         summary: EpochProcessingSummary<E>,
         validator_balances: Vec<u64>,
     ) -> Self {
         ConsolidatedEpoch::<E> {
             epoch,
-            blocks: HashMap::new(),
+            blocks,
             validator_balances,
             validator_inclusion: GlobalValidatorInclusionData {
                 current_epoch_active_gwei: summary.current_epoch_total_active_balance(),
@@ -47,33 +47,30 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
     }
 
     pub fn get_attestations_count(&self) -> usize {
-        self.blocks
-            .values()
-            .map(|b| b.get_attestations_count())
-            .sum()
+        self.blocks.iter().map(|b| b.get_attestations_count()).sum()
     }
 
     pub fn get_deposits_count(&self) -> usize {
-        self.blocks.values().map(|b| b.get_deposits_count()).sum()
+        self.blocks.iter().map(|b| b.get_deposits_count()).sum()
     }
 
     pub fn get_voluntary_exits_count(&self) -> usize {
         self.blocks
-            .values()
+            .iter()
             .map(|b| b.get_voluntary_exits_count())
             .sum()
     }
 
     pub fn get_proposer_slashings_count(&self) -> usize {
         self.blocks
-            .values()
+            .iter()
             .map(|b| b.get_proposer_slashings_count())
             .sum()
     }
 
     pub fn get_attester_slashings_count(&self) -> usize {
         self.blocks
-            .values()
+            .iter()
             .map(|b| b.get_attester_slashings_count())
             .sum()
     }

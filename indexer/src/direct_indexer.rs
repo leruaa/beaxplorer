@@ -2,6 +2,7 @@ use std::{
     collections::{hash_map::Entry, HashMap},
     convert::TryFrom,
     pin::Pin,
+    rc::Rc,
     sync::Arc,
     time::Duration,
 };
@@ -21,7 +22,7 @@ use tokio::{
     time::{interval_at, Instant},
 };
 use types::{
-    block::{BlockExtendedModelWithId, BlockModelWithId},
+    block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
 };
 
@@ -173,13 +174,6 @@ impl<E: EthSpec> Indexer<E> {
 
         let summary = process_epoch(&mut self.beacon_state.clone(), &self.spec).unwrap();
 
-        let consolidated_epoch =
-            ConsolidatedEpoch::new(*epoch, summary, self.beacon_state.balances().clone().into());
-
-        let epoch_model = EpochModelWithId::from(&consolidated_epoch);
-
-        let extended_epoch_model = EpochExtendedModelWithId::from(&consolidated_epoch);
-
         let blocks = blocks
             .into_iter()
             .map(|(slot, block_status)| {
@@ -194,6 +188,8 @@ impl<E: EthSpec> Indexer<E> {
             })
             .collect::<Vec<_>>();
 
+        let blocks = Rc::new(blocks);
+
         let block_models = blocks
             .iter()
             .map(BlockModelWithId::from)
@@ -204,7 +200,19 @@ impl<E: EthSpec> Indexer<E> {
             .map(BlockExtendedModelWithId::from)
             .collect::<Vec<_>>();
 
+        let consolidated_epoch = ConsolidatedEpoch::new(
+            *epoch,
+            blocks.clone(),
+            summary,
+            self.beacon_state.balances().clone().into(),
+        );
+
+        let epoch_model = EpochModelWithId::from(&consolidated_epoch);
+
+        let extended_epoch_model = EpochExtendedModelWithId::from(&consolidated_epoch);
+
         EpochsMeta::new(epoch.as_usize()).persist(&self.base_dir);
+        BlocksMeta::new(blocks.len()).persist(&self.base_dir);
 
         epoch_model.persist(&self.base_dir);
         extended_epoch_model.persist(&self.base_dir);

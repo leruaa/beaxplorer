@@ -44,12 +44,13 @@ impl Indexer {
             .map(EpochExtendedModelWithId::from)
             .collect::<Vec<_>>();
 
+        /*
         let all_blocks = self
             .epochs
             .into_iter()
             .flat_map(|x| x.blocks)
             .collect::<Vec<_>>();
-        /*
+
                let block_roots_to_slots = all_blocks
                    .iter()
                    .filter_map(|x| x.block_root.map(|block_root| (block_root, x.slot)))
