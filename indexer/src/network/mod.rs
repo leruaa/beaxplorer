@@ -1,4 +1,5 @@
-pub mod active_requests;
-pub mod network_service;
-pub mod request_history;
-pub mod request_manager;
+pub mod augmented_network_service;
+pub mod block_by_root_requests;
+pub mod block_range_request;
+pub mod peer_db;
+pub mod worker;

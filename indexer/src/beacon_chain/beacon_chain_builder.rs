@@ -13,7 +13,7 @@ use task_executor::TaskExecutor;
 
 use super::beacon_context::BeaconContext;
 
-pub type ConcreteWitness<E: EthSpec> =
+pub type ConcreteWitness<E> =
     Witness<SystemTimeSlotClock, DummyEth1ChainBackend<E>, E, LevelDB<E>, LevelDB<E>>;
 
 pub struct BeaconChainBuilder<'a, E: EthSpec> {
@@ -62,7 +62,7 @@ impl<'a, E: EthSpec> BeaconChainBuilder<'a, E> {
             Duration::from_secs(context.spec.seconds_per_slot),
         );
 
-        let beacon_chain = beacon_chain_builder
+        beacon_chain_builder
             .logger(log.clone())
             .store(store)
             .genesis_state(context.genesis_state.clone())?
@@ -70,8 +70,6 @@ impl<'a, E: EthSpec> BeaconChainBuilder<'a, E> {
             .shutdown_sender(executor.shutdown_sender())
             .monitor_validators(false, vec![], log.clone())
             .eth1_backend(None as Option<DummyEth1ChainBackend<E>>)
-            .build()?;
-
-        Ok(beacon_chain)
+            .build()
     }
 }

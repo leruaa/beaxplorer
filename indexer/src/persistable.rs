@@ -43,6 +43,22 @@ where
     }
 }
 
+impl<M> Persistable for Option<ModelWithId<M>>
+where
+    M: Serialize + Send,
+    ModelWithId<M>: AsPath,
+{
+    fn persist(self, base_dir: &str) {
+        if let Some(model_with_id) = self {
+            let mut f = BufWriter::new(File::create(model_with_id.as_path(base_dir)).unwrap());
+            model_with_id
+                .model
+                .serialize(&mut Serializer::new(&mut f))
+                .unwrap();
+        }
+    }
+}
+
 impl<M> Persistable for Vec<ModelWithId<M>>
 where
     M: Serialize + Send,

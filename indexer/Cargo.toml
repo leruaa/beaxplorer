@@ -44,9 +44,7 @@ lighthouse_types = { package = "types", git = "https://github.com/sigp/lighthous
 sensitive_url = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 
 [dependencies.libp2p]
-git = "https://github.com/sigp/rust-libp2p"
-# branch libp2p-gossipsub-interval-hotfix
-rev = "e213703e616eaba3c482d7714775e0d37c4ae8e5"
+version = "0.43.0"
 default-features = false
 features = [
     "websocket",

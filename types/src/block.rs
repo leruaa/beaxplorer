@@ -33,7 +33,7 @@ pub struct BlockExtendedModel {
     pub eth1data_block_hash: Vec<u8>,
 }
 
-pub type BlockExtendedModelWithId = ModelWithId<BlockExtendedModel>;
+pub type BlockExtendedModelWithId = ModelWithId<Option<BlockExtendedModel>>;
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
 #[derive(Serialize, Deserialize, Debug, Clone)]

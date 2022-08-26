@@ -138,30 +138,4 @@ impl BeaconNodeClient {
                 .map_err(|inner_error| IndexerError::NodeError { inner_error })
         }
     }
-
-    pub fn get_peers<E: EthSpec>(
-        &self,
-    ) -> impl Future<Output = Result<Vec<Peer<E>>, IndexerError>> {
-        let client = self.client.clone();
-
-        async move {
-            client
-                .get_lighthouse_peers::<E>()
-                .await
-                .map_err(|inner_error| IndexerError::NodeError { inner_error })
-        }
-    }
-
-    pub fn get_connected_peers<E: EthSpec>(
-        &self,
-    ) -> impl Future<Output = Result<Vec<Peer<E>>, IndexerError>> {
-        let client = self.client.clone();
-
-        async move {
-            client
-                .get_lighthouse_connected_peers::<E>()
-                .await
-                .map_err(|inner_error| IndexerError::NodeError { inner_error })
-        }
-    }
 }

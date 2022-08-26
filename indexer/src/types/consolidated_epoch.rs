@@ -1,93 +1,93 @@
+use std::collections::HashMap;
 use std::ops::Div;
 use std::sync::Arc;
 
 use eth2::lighthouse::GlobalValidatorInclusionData;
-use eth2::types::{CommitteeData, ProposerData, StateId, ValidatorBalanceData};
-use futures::future::try_join_all;
+use eth2::types::{CommitteeData, ValidatorBalanceData};
+
 use lighthouse_types::{Epoch, EthSpec};
 use shared::utils::clock::Clock;
-use tokio::sync::RwLock;
-use types::epoch::{EpochExtendedModel, EpochExtendedModelWithId, EpochModel, EpochModelWithId};
+use state_processing::per_epoch_processing::EpochProcessingSummary;
+use store::{SignedBeaconBlock, Slot};
 
-use crate::beacon_node_client::BeaconNodeClient;
-use crate::errors::IndexerError;
+use types::epoch::{EpochExtendedModel, EpochExtendedModelWithId, EpochModel, EpochModelWithId};
 
 use super::consolidated_block::ConsolidatedBlock;
 
 #[derive(Debug)]
 pub struct ConsolidatedEpoch<E: EthSpec> {
     pub epoch: Epoch,
-    pub blocks: Vec<ConsolidatedBlock<E>>,
-    pub validator_balances: Vec<ValidatorBalanceData>,
+    pub blocks: HashMap<Slot, ConsolidatedBlock<E>>,
+    pub validator_balances: Vec<u64>,
     pub validator_inclusion: GlobalValidatorInclusionData,
-    pub committees: Arc<Vec<CommitteeData>>,
 }
 
 impl<E: EthSpec> ConsolidatedEpoch<E> {
-    pub async fn new(epoch: Epoch, client: BeaconNodeClient) -> Result<Self, IndexerError> {
-        let mut build_consolidated_block_futures = Vec::new();
-        let proposer_duties_lock = Arc::new(RwLock::new(Option::<Vec<ProposerData>>::None));
-
-        let get_validator_balances_handle = tokio::spawn(
-            client.get_validators_balances(StateId::Slot(epoch.start_slot(E::slots_per_epoch()))),
-        );
-
-        let get_validator_inclusion_handle = tokio::spawn(client.get_validator_inclusion(epoch));
-
-        let get_committees_handle = tokio::spawn(client.get_committees(epoch));
-
-        let committees = Arc::new(get_committees_handle.await??);
-
-        for slot in epoch.slot_iter(E::slots_per_epoch()) {
-            build_consolidated_block_futures.push(ConsolidatedBlock::new(
-                epoch,
-                slot,
-                proposer_duties_lock.clone(),
-                committees.clone(),
-                client.clone(),
-            ));
-        }
-
-        Ok(ConsolidatedEpoch::<E> {
+    pub fn new(
+        epoch: Epoch,
+        summary: EpochProcessingSummary<E>,
+        validator_balances: Vec<u64>,
+    ) -> Self {
+        ConsolidatedEpoch::<E> {
             epoch,
-            blocks: try_join_all(build_consolidated_block_futures).await?,
-            validator_balances: get_validator_balances_handle.await??,
-            validator_inclusion: get_validator_inclusion_handle.await??,
-            committees,
-        })
+            blocks: HashMap::new(),
+            validator_balances,
+            validator_inclusion: GlobalValidatorInclusionData {
+                current_epoch_active_gwei: summary.current_epoch_total_active_balance(),
+                previous_epoch_active_gwei: summary.previous_epoch_total_active_balance(),
+                current_epoch_target_attesting_gwei: summary
+                    .current_epoch_target_attesting_balance()
+                    .unwrap_or(0),
+                previous_epoch_target_attesting_gwei: summary
+                    .previous_epoch_target_attesting_balance()
+                    .unwrap_or(0),
+                previous_epoch_head_attesting_gwei: summary
+                    .previous_epoch_head_attesting_balance()
+                    .unwrap_or(0),
+            },
+        }
+    }
+
+    pub fn add_block(&mut self, block: Box<SignedBeaconBlock<E>>) {
+        let slot = block.message().slot();
+
+        //self.blocks.insert(slot, ConsolidatedBlock::new(block));
     }
 
     pub fn get_attestations_count(&self) -> usize {
-        self.blocks.iter().map(|b| b.get_attestations_count()).sum()
+        self.blocks
+            .values()
+            .map(|b| b.get_attestations_count())
+            .sum()
     }
 
     pub fn get_deposits_count(&self) -> usize {
-        self.blocks.iter().map(|b| b.get_deposits_count()).sum()
+        self.blocks.values().map(|b| b.get_deposits_count()).sum()
     }
 
     pub fn get_voluntary_exits_count(&self) -> usize {
         self.blocks
-            .iter()
+            .values()
             .map(|b| b.get_voluntary_exits_count())
             .sum()
     }
 
     pub fn get_proposer_slashings_count(&self) -> usize {
         self.blocks
-            .iter()
+            .values()
             .map(|b| b.get_proposer_slashings_count())
             .sum()
     }
 
     pub fn get_attester_slashings_count(&self) -> usize {
         self.blocks
-            .iter()
+            .values()
             .map(|b| b.get_attester_slashings_count())
             .sum()
     }
 
-    pub fn get_total_validator_balance(&self) -> u64 {
-        self.validator_balances.iter().map(|v| v.balance).sum()
+    pub fn get_total_validators_balance(&self) -> u64 {
+        self.validator_balances.iter().sum()
     }
 }
 
@@ -125,9 +125,9 @@ impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochExtendedModelWithId {
             voluntary_exits_count: value.get_voluntary_exits_count(),
             validators_count: value.validator_balances.len(),
             average_validator_balance: value
-                .get_total_validator_balance()
+                .get_total_validators_balance()
                 .div(value.validator_balances.len() as u64),
-            total_validator_balance: value.get_total_validator_balance(),
+            total_validator_balance: value.get_total_validators_balance(),
         };
 
         EpochExtendedModelWithId {

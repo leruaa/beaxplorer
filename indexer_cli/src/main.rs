@@ -1,13 +1,14 @@
 #![recursion_limit = "256"]
 
 use clap::StructOpt;
+use cli::Commands;
 use dotenv::dotenv;
 use env_logger::{Builder, Env};
+use indexer::launcher;
 
 use crate::cli::Cli;
 
 mod cli;
-mod direct;
 // mod node_to_files;
 
 fn main() {
@@ -16,5 +17,8 @@ fn main() {
 
     let cli = Cli::parse();
 
-    let _res = direct::process(cli);
+    match cli.command {
+        Commands::Discover => launcher::start_discovery().unwrap(),
+        Commands::Index { reset, base_dir } => launcher::start_indexer(reset, base_dir).unwrap(),
+    }
 }

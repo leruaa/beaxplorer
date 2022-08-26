@@ -1,11 +1,20 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 pub struct Cli {
-    #[clap(long)]
-    pub reset: bool,
+    #[clap(subcommand)]
+    pub command: Commands,
+}
 
-    #[clap(long, env)]
-    pub endpoint_url: String,
+#[derive(Debug, Subcommand)]
+pub enum Commands {
+    Discover,
+
+    Index {
+        #[clap(long)]
+        reset: bool,
+        #[clap(long, default_value = "../web/public/data")]
+        base_dir: String,
+    },
 }
