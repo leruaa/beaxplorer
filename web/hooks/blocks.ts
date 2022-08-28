@@ -1,42 +1,49 @@
 
+import { useMemo } from 'react';
 import useSWR from 'swr';
 import { Blocks, BlocksMeta } from "../pkg/web";
 
-export function useBlock(slot: string) {
-  return useSWR(slot !== undefined ? ["block", slot] : null, (_, s) => Blocks.get("http://localhost:3000/data", BigInt(s)));
+function useBlocksFetcher() {
+  return useMemo(() => Blocks.build("http://localhost:3000"), []);
 }
 
-export function useBlocks(pageIndex: number, pageSize: number, sortId: string, sortDesc: boolean, meta: BlocksMeta) {
+export function useBlock(slot: string) {
+  const fetcher = useBlocksFetcher();
   return useSWR(
-    () => {
-      return {
-        type: "blocks", pageIndex, pageSize, totalCount: meta.count, sortId, sortDesc
-      }
-    },
-    key => Blocks.page(
-      "http://localhost:3000/data",
-      key.pageIndex,
-      key.pageSize,
-      key.totalCount,
-      key.sortId,
-      key.sortDesc
-    )
+    slot !== undefined ? ["block", slot] : null,
+    (_, s) => fetcher.then(blocks => blocks.get(BigInt(s)))
+  );
+}
+
+export function usePagedBlocks(pageIndex: number, pageSize: number, sortId: string, sortDesc: boolean, meta: BlocksMeta) {
+  const fetcher = useBlocksFetcher();
+  return useSWR(
+    ["blocks", pageIndex, pageSize, sortId, sortDesc],
+    (_, pageIndex, pageSize, sortId, sortDesc) => fetcher.then(blocks => blocks.page(pageIndex, pageSize, sortId, sortDesc))
   );
 }
 
 export function useCommittees(slot: string) {
-  return useSWR(slot !== undefined ? ["committees", slot] : null, (_, s) => Blocks.committees("http://localhost:3000/data", BigInt(s)));
+  const fetcher = useBlocksFetcher();
+  return useSWR(
+    slot !== undefined ? ["committees", slot] : null,
+    (_, s) => fetcher.then(blocks => blocks.committees(BigInt(s)))
+  );
 }
 
 export function useVotes(slot: string) {
-  return useSWR(slot !== undefined ? ["votes", slot] : null, (_, s) => Blocks.votes("http://localhost:3000/data", BigInt(s)));
+  const fetcher = useBlocksFetcher();
+  return useSWR(
+    slot !== undefined ? ["votes", slot] : null,
+    (_, s) => fetcher.then(blocks => blocks.votes(BigInt(s)))
+  );
 }
 
 
 export function useAttestations(slot: string) {
-  return useSWR(slot !== undefined ? ["attestations", slot] : null, (_, s) => Blocks.attestations("http://localhost:3000/data", BigInt(s)));
-}
-
-export async function useMeta() {
-  return useSWR(["blocks-meta"], (_, s) => Blocks.meta("http://localhost:3000/data"));
+  const fetcher = useBlocksFetcher();
+  return useSWR(
+    slot !== undefined ? ["attestations", slot] : null,
+    (_, s) => fetcher.then(blocks => blocks.attestations(BigInt(s)))
+  );
 }
