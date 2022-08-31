@@ -1,7 +1,4 @@
-use std::{
-    convert::TryFrom,
-    fmt::{Display, Formatter},
-};
+use std::fmt::{Display, Formatter};
 
 use lighthouse_types::{Epoch, EthSpec, Slot};
 use store::SignedBeaconBlock;
@@ -29,15 +26,12 @@ impl<E: EthSpec> Display for BlockStatus<E> {
     }
 }
 
-impl<E: EthSpec> TryFrom<&BlockMessage<E>> for BlockStatus<E> {
-    type Error = ();
-
-    fn try_from(value: &BlockMessage<E>) -> Result<Self, Self::Error> {
+impl<E: EthSpec> From<&BlockMessage<E>> for BlockStatus<E> {
+    fn from(value: &BlockMessage<E>) -> Self {
         match value {
-            BlockMessage::Proposed(block) => Ok(BlockStatus::Proposed(block.clone())),
-            BlockMessage::Orphaned(block) => Ok(BlockStatus::Orphaned(block.clone())),
-            BlockMessage::MaybeOrphaned(_) => Err(()),
-            BlockMessage::Missed(_) => Ok(BlockStatus::Missed),
+            BlockMessage::Proposed(block) => BlockStatus::Proposed(block.clone()),
+            BlockMessage::Orphaned(block) => BlockStatus::Orphaned(block.clone()),
+            BlockMessage::Missed(_) => BlockStatus::Missed,
         }
     }
 }

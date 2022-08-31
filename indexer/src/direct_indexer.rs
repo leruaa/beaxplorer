@@ -1,6 +1,5 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
-    convert::TryFrom,
     pin::Pin,
     rc::Rc,
     sync::Arc,
@@ -47,12 +46,12 @@ impl libp2p::core::Executor for Executor {
 pub enum BlockMessage<E: EthSpec> {
     Proposed(Box<SignedBeaconBlock<E>>),
     Orphaned(Box<SignedBeaconBlock<E>>),
-    MaybeOrphaned(Slot),
     Missed(Slot),
 }
 
 pub struct Indexer<E: EthSpec> {
     base_dir: String,
+    current_epoch: Epoch,
     beacon_state: BeaconState<E>,
     spec: ChainSpec,
     blocks_by_epoch: HashMap<Epoch, HashMap<Slot, BlockMessage<E>>>,
@@ -68,6 +67,7 @@ impl<E: EthSpec> Indexer<E> {
     ) -> Self {
         Indexer {
             base_dir,
+            current_epoch: Epoch::new(0),
             beacon_state,
             spec,
             blocks_by_epoch: HashMap::new(),
@@ -109,13 +109,12 @@ impl<E: EthSpec> Indexer<E> {
                         let slot = match &block_message {
                             BlockMessage::Proposed(block) => block.message().slot(),
                             BlockMessage::Orphaned(block) => block.message().slot(),
-                            BlockMessage::MaybeOrphaned(slot) => *slot,
                             BlockMessage::Missed(slot) => *slot,
                         };
 
-                        if slot.as_u64() == 0 || slot > self.beacon_state.slot() {
-                            let epoch = slot.epoch(MainnetEthSpec::slots_per_epoch());
+                        let epoch = slot.epoch(MainnetEthSpec::slots_per_epoch());
 
+                        if epoch >= self.current_epoch {
                             let blocks_by_slot = self
                                 .blocks_by_epoch
                                 .entry(epoch)
@@ -123,7 +122,7 @@ impl<E: EthSpec> Indexer<E> {
 
                             match blocks_by_slot.entry(slot) {
                                 Entry::Occupied(mut e) => {
-                                    if let BlockMessage::MaybeOrphaned(_) = e.get() {
+                                    if let BlockMessage::Missed(_) = e.get() {
                                         e.insert(block_message);
                                     }
                                 }
@@ -132,21 +131,29 @@ impl<E: EthSpec> Indexer<E> {
                                 }
                             };
 
-                            if blocks_by_slot.len() as u64 == MainnetEthSpec::slots_per_epoch() {
+                            if epoch == self.current_epoch
+                                && blocks_by_slot.len() as u64 == MainnetEthSpec::slots_per_epoch()
+                            {
                                 if let Some(blocks_by_slot) = self.blocks_by_epoch.remove(&epoch) {
-                                    if let Ok(mut blocks_by_slot) = blocks_by_slot
+                                    let mut blocks_by_slot = blocks_by_slot
                                         .iter()
-                                        .map(|(s, b)| BlockStatus::try_from(b).map(|b| (s, b)))
-                                        .collect::<Result<Vec<_>, _>>()
-                                    {
-                                        blocks_by_slot.sort_by(|(a, _), (b, _)| a.cmp(b));
+                                        .map(|(s, b)| (s, BlockStatus::from(b)))
+                                        .collect::<Vec<_>>();
 
-                                        self.persist_epoch(&epoch, blocks_by_slot);
-                                    } else {
-                                        self.blocks_by_epoch.insert(epoch, blocks_by_slot);
-                                    }
+                                    blocks_by_slot.sort_by(|(a, _), (b, _)| a.cmp(b));
+
+                                    self.persist_epoch(&epoch, blocks_by_slot);
+                                    self.current_epoch =
+                                        Epoch::new(self.current_epoch.as_u64() + 1);
                                 }
                             }
+                        } else if let BlockMessage::Orphaned(block) = block_message {
+                            // Presist orphaned even if we get them too late
+                            self.persist_existing_block(
+                                BlockStatus::Orphaned(block),
+                                &slot,
+                                &epoch,
+                            );
                         }
                     }
                 }
@@ -205,7 +212,7 @@ impl<E: EthSpec> Indexer<E> {
 
         let consolidated_epoch = ConsolidatedEpoch::new(
             *epoch,
-            blocks.clone(),
+            blocks,
             summary,
             self.beacon_state.balances().clone().into(),
         );
@@ -214,13 +221,22 @@ impl<E: EthSpec> Indexer<E> {
 
         let extended_epoch_model = EpochExtendedModelWithId::from(&consolidated_epoch);
 
-        EpochsMeta::new(epoch.as_usize()).persist(&self.base_dir);
-        BlocksMeta::new(blocks.len()).persist(&self.base_dir);
+        EpochsMeta::new(epoch.as_usize() + 1).persist(&self.base_dir);
+        BlocksMeta::new(last_slot.as_usize() + 1).persist(&self.base_dir);
 
         epoch_model.persist(&self.base_dir);
         extended_epoch_model.persist(&self.base_dir);
         block_models.persist(&self.base_dir);
         extended_block_models.persist(&self.base_dir);
+    }
+
+    fn persist_existing_block(&self, block_status: BlockStatus<E>, slot: &Slot, epoch: &Epoch) {
+        let block_model = BlockModelWithId::from_path(&self.base_dir, slot.as_u64());
+
+        let block = ConsolidatedBlock::new(block_status, *slot, *epoch, block_model.proposer);
+
+        BlockModelWithId::from(&block).persist(&self.base_dir);
+        BlockExtendedModelWithId::from(&block).persist(&self.base_dir);
     }
 
     fn apply_blocks(
