@@ -48,6 +48,10 @@ impl<E: EthSpec> Worker<E> {
     pub fn handle_event(&mut self, event: BehaviourEvent<RequestId, E>) {
         match event {
             BehaviourEvent::PeerConnectedOutgoing(peer_id) => {
+                if self.peer_db.is_known_great_peer(&peer_id) {
+                    self.peer_db.add_great_peer(peer_id);
+                }
+
                 self.block_range_request_state
                     .peer_connected(&peer_id, &self.network_send);
                 self.block_by_root_requests_state
@@ -124,6 +128,12 @@ impl<E: EthSpec> Worker<E> {
                     if let Some(block) = block {
                         if self.block_by_root_requests_state.block_found(&root) {
                             info!(self.log, "An orphaned block has been found"; "slot" => block.message().slot(), "root" => %block.canonical_root());
+                            if let Some(peer_info) = self.peer_db.get_peer_info(&peer_id) {
+                                for a in peer_info.listening_addresses() {
+                                    info!(self.log, "New great peer: {a:?}");
+                                }
+                            }
+
                             self.peer_db.add_great_peer(peer_id);
                             self.block_send.send(BlockMessage::Orphaned(block)).unwrap();
                         }

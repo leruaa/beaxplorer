@@ -168,6 +168,10 @@ impl BlockByRootRequests {
             }
 
             if connected_great_peers.is_empty() {
+                for a in peer_db.get_great_peers_known_addresses() {
+                    network_send.send(NetworkMessage::Dial(a)).unwrap();
+                }
+
                 RequestAttempts::awaiting_peer()
             } else {
                 RequestAttempts::requesting(HashSet::from_iter(
