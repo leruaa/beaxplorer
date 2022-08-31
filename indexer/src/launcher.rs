@@ -113,35 +113,23 @@ pub fn start_discovery() -> Result<(), String> {
                     .parse()
                     .unwrap();
 
-            let peer: Multiaddr = "/ip4/47.242.218.105/tcp/3083".parse().unwrap();
-
-            network_send.send(NetworkMessage::Dial(peer)).unwrap();
-
             while let Some(event) = behavior_recv.recv().await {
                 match event {
-                    BehaviourEvent::PeerConnectedOutgoing(peer_id) => {
-                        info!(log, "Peer connected: {peer_id}");
-                        /*
-                        network_send
+                    BehaviourEvent::PeerConnectedOutgoing(peer_id) => network_send
                         .send(NetworkMessage::SendRequest {
                             peer_id,
                             request_id: RequestId::Block(unknown),
-                            request: Request::BlocksByRoot(BlocksByRootRequest {
+                            request: Box::new(Request::BlocksByRoot(BlocksByRootRequest {
                                 block_roots: vec![unknown].into(),
-                            }),
+                            })),
                         })
-                        .unwrap()*/
-                    }
+                        .unwrap(),
 
                     BehaviourEvent::ResponseReceived { peer_id, .. } => {
                         if let Some(i) = network_globals.peers.read().peer_info(&peer_id) {
+                            info!(log, "Block found by {peer_id} ({:?})", i.client().kind);
                             for a in i.listening_addresses() {
-                                info!(
-                                    log,
-                                    "Block found by {peer_id} {} ({:?})",
-                                    a,
-                                    i.client().kind
-                                );
+                                info!(log, "Address: {}", a);
                             }
                         }
                     }
