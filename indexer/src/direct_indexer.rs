@@ -9,11 +9,11 @@ use std::{
 use futures::Future;
 use lighthouse_network::NetworkGlobals;
 
-use lighthouse_types::{BeaconState, BlindedPayload, ChainSpec};
-use slog::{info, Logger};
+use lighthouse_types::{BeaconState, BlindedPayload, ChainSpec, Hash256};
+use slog::{info, warn, Logger};
 use state_processing::{
     per_block_processing, per_epoch_processing::process_epoch, per_slot_processing,
-    BlockReplayError, BlockSignatureStrategy, VerifyBlockRoot,
+    BlockReplayError, BlockSignatureStrategy, ConsensusContext, VerifyBlockRoot,
 };
 use store::{Epoch, EthSpec, MainnetEthSpec, SignedBeaconBlock, Slot};
 use tokio::{
@@ -44,8 +44,8 @@ impl libp2p::core::Executor for Executor {
 
 #[derive(Debug, Clone)]
 pub enum BlockMessage<E: EthSpec> {
-    Proposed(Box<SignedBeaconBlock<E>>),
-    Orphaned(Box<SignedBeaconBlock<E>>),
+    Proposed(Arc<SignedBeaconBlock<E>>),
+    Orphaned(Arc<SignedBeaconBlock<E>>),
     Missed(Slot),
 }
 
@@ -171,11 +171,7 @@ impl<E: EthSpec> Indexer<E> {
                 BlockStatus::Proposed(b) => Some(b),
                 _ => None,
             })
-            .map(|b| {
-                let b = *b.clone();
-                let (b, _) = b.into();
-                b
-            })
+            .map(|b| b.clone_as_blinded())
             .collect::<Vec<_>>();
 
         let last_slot = epoch.end_slot(MainnetEthSpec::slots_per_epoch());
@@ -233,10 +229,14 @@ impl<E: EthSpec> Indexer<E> {
     fn persist_existing_block(&self, block_status: BlockStatus<E>, slot: &Slot, epoch: &Epoch) {
         let block_model = BlockModelWithId::from_path(&self.base_dir, slot.as_u64());
 
-        let block = ConsolidatedBlock::new(block_status, *slot, *epoch, block_model.proposer);
+        if block_model.status == "Missed" {
+            let block = ConsolidatedBlock::new(block_status, *slot, *epoch, block_model.proposer);
 
-        BlockModelWithId::from(&block).persist(&self.base_dir);
-        BlockExtendedModelWithId::from(&block).persist(&self.base_dir);
+            BlockModelWithId::from(&block).persist(&self.base_dir);
+            BlockExtendedModelWithId::from(&block).persist(&self.base_dir);
+        } else {
+            warn!(self.log, "Block {} not persisted", slot);
+        }
     }
 
     fn apply_blocks(
@@ -255,12 +255,14 @@ impl<E: EthSpec> Indexer<E> {
                     .map_err(BlockReplayError::from)?;
             }
 
+            let mut consensus_context = ConsensusContext::new(target_slot);
+
             per_block_processing(
                 &mut self.beacon_state,
                 block,
-                None,
                 BlockSignatureStrategy::NoVerification,
                 VerifyBlockRoot::False,
+                &mut consensus_context,
                 &self.spec,
             )
             .map_err(BlockReplayError::from)?;

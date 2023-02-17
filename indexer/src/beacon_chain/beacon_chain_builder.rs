@@ -68,7 +68,6 @@ impl<'a, E: EthSpec> BeaconChainBuilder<'a, E> {
             .genesis_state(context.genesis_state.clone())?
             .slot_clock(clock)
             .shutdown_sender(executor.shutdown_sender())
-            .monitor_validators(false, vec![], log.clone())
             .eth1_backend(None as Option<DummyEth1ChainBackend<E>>)
             .build()
     }

@@ -1,22 +1,24 @@
 use std::{collections::HashSet, sync::Arc};
 
-use libp2p::Multiaddr;
-use lighthouse_network::{NetworkGlobals, PeerId, PeerInfo};
+use lighthouse_network::{Multiaddr, NetworkGlobals, PeerId, PeerInfo};
+use slog::{info, Logger};
 use store::EthSpec;
 
 #[derive(Clone)]
 pub struct PeerDb<E: EthSpec> {
     network_globals: Arc<NetworkGlobals<E>>,
     great_peers: HashSet<PeerId>,
+    log: Logger,
 }
 
 type PeerTupleVec<E> = Vec<(PeerId, PeerInfo<E>)>;
 
 impl<E: EthSpec> PeerDb<E> {
-    pub fn new(network_globals: Arc<NetworkGlobals<E>>) -> Self {
+    pub fn new(network_globals: Arc<NetworkGlobals<E>>, log: Logger) -> Self {
         PeerDb {
             network_globals,
             great_peers: HashSet::new(),
+            log,
         }
     }
 
@@ -31,6 +33,20 @@ impl<E: EthSpec> PeerDb<E> {
             "/ip4/8.9.30.14/tcp/13000".parse().unwrap(),
             "/ip4/173.174.120.56/tcp/13000".parse().unwrap(),
             "/ip4/34.230.190.149/tcp/13000".parse().unwrap(),
+            "/ip4/98.0.57.197/tcp/13103".parse().unwrap(),
+            "/ip4/98.13.141.186/tcp/13103".parse().unwrap(),
+            "/ip4/204.13.164.143/tcp/13000".parse().unwrap(),
+            "/ip4/104.186.143.194/tcp/13000".parse().unwrap(),
+            "/ip4/54.65.63.75/tcp/13000".parse().unwrap(),
+            "/ip4/15.164.101.121/tcp/13000".parse().unwrap(),
+            "/ip4/121.78.247.249/tcp/13000".parse().unwrap(),
+            "/ip4/209.151.145.125/tcp/13000".parse().unwrap(),
+            "/ip4/95.111.198.189/tcp/13000".parse().unwrap(),
+            "/ip4/66.42.64.100/tcp/13000".parse().unwrap(),
+            "/ip4/139.9.74.98/tcp/13000".parse().unwrap(),
+            "/ip4/178.128.13.206/tcp/13000".parse().unwrap(),
+            "/ip4/99.130.254.231/tcp/13000".parse().unwrap(),
+            "/ip4/76.93.16.249/tcp/13000".parse().unwrap(),
         ]
     }
 
@@ -51,6 +67,7 @@ impl<E: EthSpec> PeerDb<E> {
     }
 
     pub fn add_great_peer(&mut self, peer_id: PeerId) {
+        info!(self.log, "New great peer: {peer_id}");
         self.great_peers.insert(peer_id);
     }
 
@@ -74,6 +91,16 @@ impl<E: EthSpec> PeerDb<E> {
         self.great_peers
             .iter()
             .filter_map(|peer_id| peer_db.peer_info(peer_id).map(|p| (*peer_id, p.clone())))
+            .partition(|(_, p)| p.is_connected())
+    }
+
+    pub fn get_trusted_peers(&self) -> (PeerTupleVec<E>, PeerTupleVec<E>) {
+        self.network_globals
+            .peers
+            .read()
+            .best_peers_by_status(|p| p.is_trusted())
+            .iter()
+            .map(|(peer_id, peer_info)| (**peer_id, peer_info.to_owned().clone()))
             .partition(|(_, p)| p.is_connected())
     }
 }

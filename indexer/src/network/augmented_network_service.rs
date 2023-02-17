@@ -1,9 +1,8 @@
-use std::{fmt::Display, sync::Arc};
+use std::sync::Arc;
 
-use libp2p::Multiaddr;
 use lighthouse_network::{
-    libp2p::swarm::dial_opts::DialOpts, rpc::StatusMessage, BehaviourEvent, Context, Libp2pEvent,
-    NetworkConfig, NetworkGlobals, PeerId, Request, Response, Service,
+    rpc::StatusMessage, service::Network, Context, Multiaddr, NetworkConfig, NetworkEvent,
+    NetworkGlobals, PeerId, Request, Response,
 };
 use slog::{error, info, Logger, Value};
 use store::{EnrForkId, Epoch, EthSpec, ForkContext, Hash256, Slot};
@@ -14,9 +13,9 @@ use crate::beacon_chain::beacon_context::BeaconContext;
 
 pub struct AugmentedNetworkService<E: EthSpec> {
     network_recv: UnboundedReceiver<NetworkMessage>,
-    behavior_send: UnboundedSender<BehaviourEvent<RequestId, E>>,
+    behavior_send: UnboundedSender<NetworkEvent<RequestId, E>>,
     enr_fork_id: EnrForkId,
-    service: Service<RequestId, E>,
+    service: Network<RequestId, E>,
     log: Logger,
 }
 
@@ -47,7 +46,7 @@ pub enum NetworkMessage {
         request_id: RequestId,
         request: Box<Request>,
     },
-    Dial(Multiaddr),
+    DialAddress(Multiaddr),
 }
 
 impl<E: EthSpec> AugmentedNetworkService<E> {
@@ -57,7 +56,7 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
     ) -> Result<
         (
             UnboundedSender<NetworkMessage>,
-            UnboundedReceiver<BehaviourEvent<RequestId, E>>,
+            UnboundedReceiver<NetworkEvent<RequestId, E>>,
             Arc<NetworkGlobals<E>>,
         ),
         String,
@@ -78,6 +77,32 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
             network_config.boot_nodes_enr.extend_from_slice(boot_nodes)
         }
 
+        network_config.libp2p_nodes = vec![
+            "/ip4/51.79.202.73/tcp/13000".parse().unwrap(),
+            "/ip4/76.141.229.155/tcp/13000".parse().unwrap(),
+            "/ip4/178.128.188.228/tcp/13000".parse().unwrap(),
+            "/ip4/107.184.229.134/tcp/13000".parse().unwrap(),
+            "/ip4/76.69.229.226/tcp/13000".parse().unwrap(),
+            "/ip4/67.174.112.67/tcp/13000".parse().unwrap(),
+            "/ip4/8.9.30.14/tcp/13000".parse().unwrap(),
+            "/ip4/173.174.120.56/tcp/13000".parse().unwrap(),
+            "/ip4/34.230.190.149/tcp/13000".parse().unwrap(),
+            "/ip4/98.0.57.197/tcp/13103".parse().unwrap(),
+            "/ip4/98.13.141.186/tcp/13103".parse().unwrap(),
+            "/ip4/204.13.164.143/tcp/13000".parse().unwrap(),
+            "/ip4/104.186.143.194/tcp/13000".parse().unwrap(),
+            "/ip4/54.65.63.75/tcp/13000".parse().unwrap(),
+            "/ip4/15.164.101.121/tcp/13000".parse().unwrap(),
+            "/ip4/121.78.247.249/tcp/13000".parse().unwrap(),
+            "/ip4/209.151.145.125/tcp/13000".parse().unwrap(),
+            "/ip4/95.111.198.189/tcp/13000".parse().unwrap(),
+            "/ip4/66.42.64.100/tcp/13000".parse().unwrap(),
+            "/ip4/139.9.74.98/tcp/13000".parse().unwrap(),
+            "/ip4/178.128.13.206/tcp/13000".parse().unwrap(),
+            "/ip4/99.130.254.231/tcp/13000".parse().unwrap(),
+            "/ip4/76.93.16.249/tcp/13000".parse().unwrap(),
+        ];
+
         network_config.upnp_enabled = false;
 
         // construct the libp2p service context
@@ -91,11 +116,11 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
 
         let (network_send, network_recv) = mpsc::unbounded_channel::<NetworkMessage>();
         let (behavior_send, behavior_recv) =
-            mpsc::unbounded_channel::<BehaviourEvent<RequestId, E>>();
+            mpsc::unbounded_channel::<NetworkEvent<RequestId, E>>();
 
         // launch libp2p service
-        let (network_globals, libp2p) =
-            Service::new(executor.clone(), service_context, &network_log)
+        let (libp2p, network_globals) =
+            Network::new(executor.clone(), service_context, &network_log)
                 .await
                 .map_err(|err| err.to_string())?;
 
@@ -126,28 +151,26 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
         );
     }
 
-    async fn handle_event(&mut self, event: Libp2pEvent<RequestId, E>) {
-        if let Libp2pEvent::Behaviour(event) = event {
-            match event {
-                BehaviourEvent::RequestReceived {
-                    peer_id,
-                    id,
-                    request: Request::Status(_),
-                } => self.service.send_response(
-                    peer_id,
-                    id,
-                    Response::Status(StatusMessage {
-                        fork_digest: self.enr_fork_id.fork_digest,
-                        finalized_root: Hash256::zero(),
-                        finalized_epoch: Epoch::new(0),
-                        head_root: Hash256::zero(),
-                        head_slot: Slot::new(0),
-                    }),
-                ),
+    async fn handle_event(&mut self, event: NetworkEvent<RequestId, E>) {
+        match event {
+            NetworkEvent::RequestReceived {
+                peer_id,
+                id,
+                request: Request::Status(_),
+            } => self.service.send_response(
+                peer_id,
+                id,
+                Response::Status(StatusMessage {
+                    fork_digest: self.enr_fork_id.fork_digest,
+                    finalized_root: Hash256::zero(),
+                    finalized_epoch: Epoch::new(0),
+                    head_root: Hash256::zero(),
+                    head_slot: Slot::new(0),
+                }),
+            ),
 
-                event => {
-                    self.behavior_send.send(event).unwrap();
-                }
+            event => {
+                self.behavior_send.send(event).unwrap();
             }
         }
     }
@@ -159,7 +182,7 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
                 request_id,
                 request,
             } => self.send_request(peer_id, request_id, *request),
-            NetworkMessage::Dial(addr) => self.dial(addr),
+            NetworkMessage::DialAddress(addr) => self.dial(&addr),
         }
     }
 
@@ -167,10 +190,10 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
         self.service.send_request(peer_id, request_id, request)
     }
 
-    fn dial(&mut self, dial_ops: impl Into<DialOpts> + Clone + Display) {
-        match self.service.swarm.dial(dial_ops.clone()) {
-            Ok(_) => info!(self.log, "Dialed {}", dial_ops),
-            Err(err) => error!(self.log, "Dial failed: {:?}", err),
+    fn dial(&mut self, addr: &Multiaddr) {
+        match self.service.testing_dial(addr.clone()) {
+            Ok(_) => info!(self.log, "Dialed {addr}"),
+            Err(err) => error!(self.log, "Error while dialing {addr}: {err}"),
         }
     }
 }

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use itertools::Itertools;
-use lighthouse_network::{BehaviourEvent, Response};
+use lighthouse_network::{NetworkEvent, Response};
 use lighthouse_types::Hash256;
 use slog::{debug, info, warn, Logger};
 use store::EthSpec;
@@ -45,9 +45,9 @@ impl<E: EthSpec> Worker<E> {
         }
     }
 
-    pub fn handle_event(&mut self, event: BehaviourEvent<RequestId, E>) {
+    pub fn handle_event(&mut self, event: NetworkEvent<RequestId, E>) {
         match event {
-            BehaviourEvent::PeerConnectedOutgoing(peer_id) => {
+            NetworkEvent::PeerConnectedOutgoing(peer_id) => {
                 if self.peer_db.is_known_great_peer(&peer_id) {
                     self.peer_db.add_great_peer(peer_id);
                 }
@@ -58,7 +58,7 @@ impl<E: EthSpec> Worker<E> {
                     .peer_connected(&peer_id, &self.network_send)
             }
 
-            BehaviourEvent::PeerDisconnected(peer_id) => {
+            NetworkEvent::PeerDisconnected(peer_id) => {
                 if self.block_range_request_state.matches(&peer_id) {
                     debug!(self.log, "Range request cancelled");
                     self.request_block_range();
@@ -67,14 +67,14 @@ impl<E: EthSpec> Worker<E> {
                     .peer_disconnected(&peer_id);
             }
 
-            BehaviourEvent::RPCFailed {
+            NetworkEvent::RPCFailed {
                 id: RequestId::Range(_),
                 ..
             } => {
                 self.request_block_range();
             }
 
-            BehaviourEvent::RPCFailed {
+            NetworkEvent::RPCFailed {
                 id: RequestId::Block(root),
                 peer_id,
             } => {
@@ -82,7 +82,7 @@ impl<E: EthSpec> Worker<E> {
                     .failed_request(&root, &peer_id);
             }
 
-            BehaviourEvent::ResponseReceived {
+            NetworkEvent::ResponseReceived {
                 id: RequestId::Range(start_slot),
                 response: Response::BlocksByRange(block),
                 ..
@@ -119,7 +119,7 @@ impl<E: EthSpec> Worker<E> {
                 }
             }
 
-            BehaviourEvent::ResponseReceived {
+            NetworkEvent::ResponseReceived {
                 peer_id,
                 id: RequestId::Block(root),
                 response: Response::BlocksByRoot(block),
@@ -128,12 +128,6 @@ impl<E: EthSpec> Worker<E> {
                     if let Some(block) = block {
                         if self.block_by_root_requests_state.block_found(&root) {
                             info!(self.log, "An orphaned block has been found"; "slot" => block.message().slot(), "root" => %block.canonical_root());
-                            if let Some(peer_info) = self.peer_db.get_peer_info(&peer_id) {
-                                for a in peer_info.listening_addresses() {
-                                    info!(self.log, "New great peer: {a:?}");
-                                }
-                            }
-
                             self.peer_db.add_great_peer(peer_id);
                             self.block_send.send(BlockMessage::Orphaned(block)).unwrap();
                         }

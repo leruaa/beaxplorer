@@ -1,4 +1,7 @@
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Display, Formatter},
+    sync::Arc,
+};
 
 use lighthouse_types::{Epoch, EthSpec, Slot};
 use store::SignedBeaconBlock;
@@ -11,9 +14,9 @@ use crate::direct_indexer::BlockMessage;
 
 #[derive(Debug, Clone)]
 pub enum BlockStatus<E: EthSpec> {
-    Proposed(Box<SignedBeaconBlock<E>>),
+    Proposed(Arc<SignedBeaconBlock<E>>),
     Missed,
-    Orphaned(Box<SignedBeaconBlock<E>>),
+    Orphaned(Arc<SignedBeaconBlock<E>>),
 }
 
 impl<E: EthSpec> Display for BlockStatus<E> {
@@ -45,7 +48,7 @@ pub struct ConsolidatedBlock<E: EthSpec> {
 }
 
 impl<E: EthSpec> ConsolidatedBlock<E> {
-    fn block(&self) -> Option<Box<SignedBeaconBlock<E>>> {
+    fn block(&self) -> Option<Arc<SignedBeaconBlock<E>>> {
         match &self.block {
             BlockStatus::Proposed(block) => Some(block.clone()),
             BlockStatus::Missed => None,

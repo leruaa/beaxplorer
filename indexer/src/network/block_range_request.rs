@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use lighthouse_network::{rpc::BlocksByRangeRequest, PeerId, Request};
 use lighthouse_types::{EthSpec, SignedBeaconBlock, Slot};
 use slog::{debug, Logger};
@@ -57,7 +59,6 @@ impl BlockRangeRequest {
                         request: Box::new(Request::BlocksByRange(BlocksByRangeRequest {
                             start_slot,
                             count: 32,
-                            step: 1,
                         })),
                     })
                     .unwrap();
@@ -68,7 +69,7 @@ impl BlockRangeRequest {
 
     pub fn block_found<E: EthSpec>(
         &mut self,
-        block: Box<SignedBeaconBlock<E>>,
+        block: Arc<SignedBeaconBlock<E>>,
     ) -> Vec<BlockMessage<E>> {
         let previous_latest_slot = self.latest_slot.unwrap_or_else(|| Slot::new(0));
         self.latest_slot = Some(block.message().slot());
@@ -103,7 +104,6 @@ impl BlockRangeRequest {
                     request: Box::new(Request::BlocksByRange(BlocksByRangeRequest {
                         start_slot,
                         count: 32,
-                        step: 1,
                     })),
                 })
                 .unwrap();

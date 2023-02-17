@@ -2,8 +2,7 @@ use std::{fs, time::Duration};
 
 use environment::{Environment, EnvironmentBuilder, LoggerConfig};
 use eth2_network_config::{Eth2NetworkConfig, DEFAULT_HARDCODED_NETWORK};
-use libp2p::Multiaddr;
-use lighthouse_network::{rpc::BlocksByRootRequest, BehaviourEvent, Request};
+use lighthouse_network::{rpc::BlocksByRootRequest, NetworkEvent, Request};
 use lighthouse_types::{EthSpec, Hash256, MainnetEthSpec};
 use slog::info;
 use tokio::{
@@ -69,7 +68,7 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
             indexer.spawn_indexer(&executor, block_recv);
 
             let mut worker = Worker::new(
-                PeerDb::new(network_globals),
+                PeerDb::new(network_globals, log.clone()),
                 network_send.clone(),
                 block_send,
                 log.clone(),
@@ -109,13 +108,13 @@ pub fn start_discovery() -> Result<(), String> {
                     .unwrap();
 
             let unknown: Hash256 =
-                "0x70ffb2f48d9dc3ba835ebd0a4bd34e2d7b09bc6d4ef3b46c74131b6cbf952a90"
+                "0x2f864ae1a78365ae6fcc8d2a52355eeaeb6f4b568ddbb0ff2ffaa1d9406a7fe8"
                     .parse()
                     .unwrap();
 
             while let Some(event) = behavior_recv.recv().await {
                 match event {
-                    BehaviourEvent::PeerConnectedOutgoing(peer_id) => network_send
+                    NetworkEvent::PeerConnectedOutgoing(peer_id) => network_send
                         .send(NetworkMessage::SendRequest {
                             peer_id,
                             request_id: RequestId::Block(unknown),
@@ -125,7 +124,7 @@ pub fn start_discovery() -> Result<(), String> {
                         })
                         .unwrap(),
 
-                    BehaviourEvent::ResponseReceived { peer_id, .. } => {
+                    NetworkEvent::ResponseReceived { peer_id, .. } => {
                         if let Some(i) = network_globals.peers.read().peer_info(&peer_id) {
                             info!(log, "Block found by {peer_id} ({:?})", i.client().kind);
                             for a in i.listening_addresses() {
@@ -151,12 +150,15 @@ fn build_environment<E: EthSpec>(
 ) -> Result<(Environment<E>, Eth2NetworkConfig), String> {
     let logger_config = LoggerConfig {
         path: None,
-        debug_level: "info",
-        logfile_debug_level: "info",
+        debug_level: String::from("info"),
+        logfile_debug_level: String::from("info"),
         log_format: None,
+        log_color: true,
+        disable_log_timestamp: true,
         max_log_size: 0,
         max_log_number: 0,
         compression: false,
+        is_restricted: false,
     };
     let eth2_network_config = Eth2NetworkConfig::constant(DEFAULT_HARDCODED_NETWORK)?
         .ok_or("Failed to build Eth2 network config")?;

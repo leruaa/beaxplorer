@@ -3,8 +3,9 @@ use std::time::Duration;
 use eth2::{
     lighthouse::{GlobalValidatorInclusionData, Peer},
     types::{
-        BlockId, CommitteeData, ForkVersionedResponse, GenericResponse, ProposerData, RootData,
-        StateId, ValidatorBalanceData, ValidatorData,
+        BlockId, CommitteeData, ExecutionOptimisticForkVersionedResponse,
+        ExecutionOptimisticResponse, ForkVersionedResponse, GenericResponse, ProposerData,
+        RootData, StateId, ValidatorBalanceData, ValidatorData,
     },
     BeaconNodeHttpClient, Timeouts,
 };
@@ -28,34 +29,30 @@ impl BeaconNodeClient {
         }
     }
 
-    pub fn get_block<E: EthSpec>(
+    pub async fn get_block<E: EthSpec>(
         &self,
         block: BlockId,
-    ) -> impl Future<Output = Result<Option<ForkVersionedResponse<SignedBeaconBlock<E>>>, IndexerError>>
+    ) -> Result<Option<ExecutionOptimisticForkVersionedResponse<SignedBeaconBlock<E>>>, IndexerError>
     {
         let client = self.client.clone();
 
-        async move {
-            client
-                .get_beacon_blocks::<E>(block)
-                .await
-                .map_err(|inner_error| IndexerError::NodeError { inner_error })
-        }
+        client
+            .get_beacon_blocks::<E>(block)
+            .await
+            .map_err(|inner_error| IndexerError::NodeError { inner_error })
     }
 
-    pub fn get_block_root(
+    pub async fn get_block_root(
         &self,
         block: BlockId,
-    ) -> impl Future<Output = Result<GenericResponse<RootData>, IndexerError>> {
+    ) -> Result<ExecutionOptimisticResponse<RootData>, IndexerError> {
         let client = self.client.clone();
 
-        async move {
-            client
-                .get_beacon_blocks_root(block)
-                .await
-                .map_err(|inner_error| IndexerError::NodeError { inner_error })?
-                .ok_or_else(|| IndexerError::ElementNotFound(block.to_string()))
-        }
+        client
+            .get_beacon_blocks_root(block)
+            .await
+            .map_err(|inner_error| IndexerError::NodeError { inner_error })?
+            .ok_or_else(|| IndexerError::ElementNotFound(block.to_string()))
     }
 
     pub fn get_validators(
