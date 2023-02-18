@@ -9,7 +9,7 @@ use std::{
 use futures::Future;
 use lighthouse_network::NetworkGlobals;
 
-use lighthouse_types::{BeaconState, BlindedPayload, ChainSpec, Hash256};
+use lighthouse_types::{BeaconState, BlindedPayload, ChainSpec};
 use slog::{info, warn, Logger};
 use state_processing::{
     per_block_processing, per_epoch_processing::process_epoch, per_slot_processing,
@@ -255,7 +255,7 @@ impl<E: EthSpec> Indexer<E> {
                     .map_err(BlockReplayError::from)?;
             }
 
-            let mut consensus_context = ConsensusContext::new(target_slot);
+            let mut consensus_context = ConsensusContext::new(block.slot());
 
             per_block_processing(
                 &mut self.beacon_state,

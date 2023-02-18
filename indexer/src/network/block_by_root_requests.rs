@@ -3,7 +3,6 @@ use std::{
     iter::FromIterator,
 };
 
-use itertools::Itertools;
 use lighthouse_network::{rpc::BlocksByRootRequest, PeerId, Request};
 use lighthouse_types::{EthSpec, Hash256, Slot};
 use slog::{debug, Logger};

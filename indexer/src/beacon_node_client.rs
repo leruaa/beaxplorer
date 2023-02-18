@@ -1,11 +1,11 @@
 use std::time::Duration;
 
 use eth2::{
-    lighthouse::{GlobalValidatorInclusionData, Peer},
+    lighthouse::GlobalValidatorInclusionData,
     types::{
         BlockId, CommitteeData, ExecutionOptimisticForkVersionedResponse,
-        ExecutionOptimisticResponse, ForkVersionedResponse, GenericResponse, ProposerData,
-        RootData, StateId, ValidatorBalanceData, ValidatorData,
+        ExecutionOptimisticResponse, ProposerData, RootData, StateId, ValidatorBalanceData,
+        ValidatorData,
     },
     BeaconNodeHttpClient, Timeouts,
 };
