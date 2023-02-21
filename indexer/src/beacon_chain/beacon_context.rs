@@ -5,6 +5,8 @@ use environment::RuntimeContext;
 use eth2_network_config::Eth2NetworkConfig;
 use store::{BeaconState, ChainSpec, EnrForkId, EthSpec, Slot};
 
+
+#[derive(Clone)]
 pub struct BeaconContext<E: EthSpec> {
     pub spec: ChainSpec,
     pub slot_clock: SystemTimeSlotClock,

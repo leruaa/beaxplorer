@@ -16,8 +16,9 @@ use state_processing::{
     BlockReplayError, BlockSignatureStrategy, ConsensusContext, VerifyBlockRoot,
 };
 use store::{Epoch, EthSpec, MainnetEthSpec, SignedBeaconBlock, Slot};
+use task_executor::TaskExecutor;
 use tokio::{
-    sync::mpsc::UnboundedReceiver,
+    sync::mpsc::{unbounded_channel, UnboundedReceiver},
     time::{interval_at, Instant},
 };
 use types::{
@@ -26,6 +27,10 @@ use types::{
 };
 
 use crate::{
+    beacon_chain::beacon_context::BeaconContext,
+    network::{
+        augmented_network_service::AugmentedNetworkService, peer_db::PeerDb, worker::Worker,
+    },
     persistable::Persistable,
     types::{
         consolidated_block::{BlockStatus, ConsolidatedBlock},
@@ -52,6 +57,7 @@ pub enum BlockMessage<E: EthSpec> {
 pub struct Indexer<E: EthSpec> {
     base_dir: String,
     current_epoch: Epoch,
+    beacon_context: BeaconContext<E>,
     beacon_state: BeaconState<E>,
     spec: ChainSpec,
     blocks_by_epoch: HashMap<Epoch, HashMap<Slot, BlockMessage<E>>>,
@@ -59,20 +65,52 @@ pub struct Indexer<E: EthSpec> {
 }
 
 impl<E: EthSpec> Indexer<E> {
-    pub fn new(
-        base_dir: String,
-        beacon_state: BeaconState<E>,
-        spec: ChainSpec,
-        log: Logger,
-    ) -> Self {
+    pub fn new(base_dir: String, beacon_context: BeaconContext<E>, log: Logger) -> Self {
         Indexer {
             base_dir,
             current_epoch: Epoch::new(0),
-            beacon_state,
-            spec,
+            beacon_context: beacon_context.clone(),
+            beacon_state: beacon_context.genesis_state.clone(),
+            spec: beacon_context.spec.clone(),
             blocks_by_epoch: HashMap::new(),
             log,
         }
+    }
+
+    pub fn spawn(mut self, executor: TaskExecutor) {
+        executor.clone().spawn(
+            async move {
+                let (network_command_send, mut network_event_recv, network_globals) =
+                    AugmentedNetworkService::start(executor, &self.beacon_context)
+                        .await
+                        .unwrap();
+
+                let (block_send, mut block_recv) = unbounded_channel::<BlockMessage<E>>();
+
+                let mut worker = Worker::new(
+                    PeerDb::new(network_globals.clone(), self.log.clone()),
+                    network_command_send.clone(),
+                    block_send,
+                    self.log.clone(),
+                );
+
+                let start_instant = Instant::now();
+                let interval_duration = Duration::from_secs(1);
+                let mut interval = interval_at(start_instant, interval_duration);
+
+                loop {
+                    tokio::select! {
+                        Some(event) = network_event_recv.recv() => worker.handle_event(event),
+                        Some(block_message) = block_recv.recv() => self.handle_block_message(block_message),
+                        _ = interval.tick() => {
+                            info!(self.log, "Status"; "connected peers" => network_globals.connected_peers());
+                            worker.notify();
+                        } 
+                    }
+                }
+            },
+            "indexer",
+        );
     }
 
     pub fn spawn_notifier(
@@ -90,76 +128,58 @@ impl<E: EthSpec> Indexer<E> {
                 loop {
                     interval.tick().await;
 
-                    info!(log, "Status"; "connected peers" => network_globals.connected_peers());
+                    
                 }
             },
             "notifier",
         );
     }
 
-    pub fn spawn_indexer(
-        mut self,
-        executor: &task_executor::TaskExecutor,
-        mut block_recv: UnboundedReceiver<BlockMessage<E>>,
-    ) {
-        executor.spawn(
-            async move {
-                loop {
-                    if let Some(block_message) = block_recv.recv().await {
-                        let slot = match &block_message {
-                            BlockMessage::Proposed(block) => block.message().slot(),
-                            BlockMessage::Orphaned(block) => block.message().slot(),
-                            BlockMessage::Missed(slot) => *slot,
-                        };
+    fn handle_block_message(&mut self, block_message: BlockMessage<E>) {
+        let slot = match &block_message {
+            BlockMessage::Proposed(block) => block.message().slot(),
+            BlockMessage::Orphaned(block) => block.message().slot(),
+            BlockMessage::Missed(slot) => *slot,
+        };
 
-                        let epoch = slot.epoch(MainnetEthSpec::slots_per_epoch());
+        let epoch = slot.epoch(MainnetEthSpec::slots_per_epoch());
 
-                        if epoch >= self.current_epoch {
-                            let blocks_by_slot = self
-                                .blocks_by_epoch
-                                .entry(epoch)
-                                .or_insert_with(HashMap::new);
+        if epoch >= self.current_epoch {
+            let blocks_by_slot = self
+                .blocks_by_epoch
+                .entry(epoch)
+                .or_insert_with(HashMap::new);
 
-                            match blocks_by_slot.entry(slot) {
-                                Entry::Occupied(mut e) => {
-                                    if let BlockMessage::Missed(_) = e.get() {
-                                        e.insert(block_message);
-                                    }
-                                }
-                                Entry::Vacant(e) => {
-                                    e.insert(block_message);
-                                }
-                            };
-
-                            if epoch == self.current_epoch
-                                && blocks_by_slot.len() as u64 == MainnetEthSpec::slots_per_epoch()
-                            {
-                                if let Some(blocks_by_slot) = self.blocks_by_epoch.remove(&epoch) {
-                                    let mut blocks_by_slot = blocks_by_slot
-                                        .iter()
-                                        .map(|(s, b)| (s, BlockStatus::from(b)))
-                                        .collect::<Vec<_>>();
-
-                                    blocks_by_slot.sort_by(|(a, _), (b, _)| a.cmp(b));
-
-                                    self.persist_epoch(&epoch, blocks_by_slot);
-                                    self.current_epoch =
-                                        Epoch::new(self.current_epoch.as_u64() + 1);
-                                }
-                            }
-                        } else if let BlockMessage::Orphaned(block) = block_message {
-                            // Presist orphaned even if we get them too late
-                            self.persist_existing_block(
-                                BlockStatus::Orphaned(block),
-                                &slot,
-                                &epoch,
-                            );
-                        }
+            match blocks_by_slot.entry(slot) {
+                Entry::Occupied(mut e) => {
+                    if let BlockMessage::Missed(_) = e.get() {
+                        e.insert(block_message);
                     }
                 }
-            },
-            "indexer",
-        );
+                Entry::Vacant(e) => {
+                    e.insert(block_message);
+                }
+            };
+
+            if epoch == self.current_epoch
+                && blocks_by_slot.len() as u64 == MainnetEthSpec::slots_per_epoch()
+            {
+                if let Some(blocks_by_slot) = self.blocks_by_epoch.remove(&epoch) {
+                    let mut blocks_by_slot = blocks_by_slot
+                        .iter()
+                        .map(|(s, b)| (s, BlockStatus::from(b)))
+                        .collect::<Vec<_>>();
+
+                    blocks_by_slot.sort_by(|(a, _), (b, _)| a.cmp(b));
+
+                    self.persist_epoch(&epoch, blocks_by_slot);
+                    self.current_epoch = Epoch::new(self.current_epoch.as_u64() + 1);
+                }
+            }
+        } else if let BlockMessage::Orphaned(block) = block_message {
+            // Presist orphaned even if we get them too late
+            self.persist_existing_block(BlockStatus::Orphaned(block), &slot, &epoch);
+        }
     }
 
     fn persist_epoch(&mut self, epoch: &Epoch, blocks: Vec<(&Slot, BlockStatus<E>)>) {
@@ -188,7 +208,7 @@ impl<E: EthSpec> Indexer<E> {
                     *slot,
                     *epoch,
                     self.beacon_state
-                        .get_beacon_proposer_index(*slot, &self.spec)
+                        .get_beacon_proposer_index(*slot, &self.beacon_context.spec)
                         .unwrap() as u64,
                 )
             })

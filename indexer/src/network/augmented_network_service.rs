@@ -12,8 +12,8 @@ use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 use crate::beacon_chain::beacon_context::BeaconContext;
 
 pub struct AugmentedNetworkService<E: EthSpec> {
-    network_recv: UnboundedReceiver<NetworkMessage>,
-    behavior_send: UnboundedSender<NetworkEvent<RequestId, E>>,
+    command_recv: UnboundedReceiver<NetworkCommand>,
+    event_send: UnboundedSender<NetworkEvent<RequestId, E>>,
     enr_fork_id: EnrForkId,
     service: Network<RequestId, E>,
     log: Logger,
@@ -40,7 +40,7 @@ impl Value for RequestId {
 }
 
 #[derive(Debug, Clone)]
-pub enum NetworkMessage {
+pub enum NetworkCommand {
     SendRequest {
         peer_id: PeerId,
         request_id: RequestId,
@@ -55,7 +55,7 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
         beacon_context: &BeaconContext<E>,
     ) -> Result<
         (
-            UnboundedSender<NetworkMessage>,
+            UnboundedSender<NetworkCommand>,
             UnboundedReceiver<NetworkEvent<RequestId, E>>,
             Arc<NetworkGlobals<E>>,
         ),
@@ -114,9 +114,8 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
             gossipsub_registry: None,
         };
 
-        let (network_send, network_recv) = mpsc::unbounded_channel::<NetworkMessage>();
-        let (behavior_send, behavior_recv) =
-            mpsc::unbounded_channel::<NetworkEvent<RequestId, E>>();
+        let (command_send, command_recv) = mpsc::unbounded_channel::<NetworkCommand>();
+        let (event_send, event_recv) = mpsc::unbounded_channel::<NetworkEvent<RequestId, E>>();
 
         // launch libp2p service
         let (libp2p, network_globals) =
@@ -125,8 +124,8 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
                 .map_err(|err| err.to_string())?;
 
         let network_service = Self {
-            network_recv,
-            behavior_send,
+            command_recv,
+            event_send,
             enr_fork_id: beacon_context.current_fork_id(),
             service: libp2p,
             log: network_log,
@@ -134,7 +133,7 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
 
         network_service.spawn(executor);
 
-        Ok((network_send, behavior_recv, network_globals))
+        Ok((command_send, event_recv, network_globals))
     }
 
     pub fn spawn(mut self, executor: TaskExecutor) {
@@ -143,7 +142,7 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
                 loop {
                     tokio::select! {
                         ev = self.service.next_event() => self.handle_event(ev).await,
-                        Some(msg) = self.network_recv.recv() => self.handle_network_message(msg)
+                        Some(msg) = self.command_recv.recv() => self.handle_network_message(msg)
                     }
                 }
             },
@@ -170,19 +169,19 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
             ),
 
             event => {
-                self.behavior_send.send(event).unwrap();
+                self.event_send.send(event).unwrap();
             }
         }
     }
 
-    fn handle_network_message(&mut self, message: NetworkMessage) {
+    fn handle_network_message(&mut self, message: NetworkCommand) {
         match message {
-            NetworkMessage::SendRequest {
+            NetworkCommand::SendRequest {
                 peer_id,
                 request_id,
                 request,
             } => self.send_request(peer_id, request_id, *request),
-            NetworkMessage::DialAddress(addr) => self.dial(&addr),
+            NetworkCommand::DialAddress(addr) => self.dial(&addr),
         }
     }
 

@@ -14,7 +14,7 @@ use crate::{
     beacon_chain::beacon_context::BeaconContext,
     direct_indexer::{BlockMessage, Indexer},
     network::{
-        augmented_network_service::{AugmentedNetworkService, NetworkMessage, RequestId},
+        augmented_network_service::{AugmentedNetworkService, NetworkCommand, RequestId},
         peer_db::PeerDb,
         worker::Worker,
     },
@@ -46,47 +46,9 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     fs::create_dir_all(base_dir.clone() + "/blocks/v/").unwrap();
     fs::create_dir_all(base_dir.clone() + "/validators").unwrap();
 
-    executor.clone().spawn(
-        async move {
-            let (network_send, mut behavior_recv, network_globals) =
-                AugmentedNetworkService::start(executor.clone(), &beacon_context)
-                    .await
-                    .unwrap();
+    let indexer = Indexer::new(base_dir, beacon_context, log.clone());
 
-            let (block_send, block_recv) =
-                mpsc::unbounded_channel::<BlockMessage<MainnetEthSpec>>();
-
-            let indexer = Indexer::new(
-                base_dir,
-                beacon_context.genesis_state.clone(),
-                beacon_context.spec.clone(),
-                log.clone(),
-            );
-
-            indexer.spawn_notifier(&executor, network_globals.clone());
-
-            indexer.spawn_indexer(&executor, block_recv);
-
-            let mut worker = Worker::new(
-                PeerDb::new(network_globals, log.clone()),
-                network_send.clone(),
-                block_send,
-                log.clone(),
-            );
-
-            let start_instant = Instant::now();
-            let interval_duration = Duration::from_secs(1);
-            let mut interval = interval_at(start_instant, interval_duration);
-
-            loop {
-                tokio::select! {
-                    Some(event) = behavior_recv.recv() => worker.handle_event(event),
-                    _ = interval.tick() => worker.notify()
-                }
-            }
-        },
-        "indexer",
-    );
+    indexer.spawn(executor);
 
     environment.block_until_shutdown_requested().unwrap();
 
@@ -115,7 +77,7 @@ pub fn start_discovery() -> Result<(), String> {
             while let Some(event) = behavior_recv.recv().await {
                 match event {
                     NetworkEvent::PeerConnectedOutgoing(peer_id) => network_send
-                        .send(NetworkMessage::SendRequest {
+                        .send(NetworkCommand::SendRequest {
                             peer_id,
                             request_id: RequestId::Block(unknown),
                             request: Box::new(Request::BlocksByRoot(BlocksByRootRequest {

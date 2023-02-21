@@ -29,7 +29,7 @@ impl Clock {
 
     pub fn format(&self, slot: Slot) -> String {
         let timestamp = self.timestamp(slot).unwrap_or(0);
-        let date = Utc.timestamp(timestamp as i64, 0);
+        let date = Utc.timestamp_opt(timestamp as i64, 0).unwrap();
 
         date.format("%a, %e %b %Y %r %Z").to_string()
     }

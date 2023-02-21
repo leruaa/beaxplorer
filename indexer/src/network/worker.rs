@@ -10,7 +10,7 @@ use tokio::sync::mpsc::UnboundedSender;
 use crate::direct_indexer::BlockMessage;
 
 use super::{
-    augmented_network_service::{NetworkMessage, RequestId},
+    augmented_network_service::{NetworkCommand, RequestId},
     block_by_root_requests::BlockByRootRequests,
     block_range_request::{BlockRangeRequest, BlockRangeRequestState},
 };
@@ -19,7 +19,7 @@ use super::peer_db::PeerDb;
 
 pub struct Worker<E: EthSpec> {
     peer_db: PeerDb<E>,
-    network_send: UnboundedSender<NetworkMessage>,
+    network_command_send: UnboundedSender<NetworkCommand>,
     block_send: UnboundedSender<BlockMessage<E>>,
     block_range_request_state: BlockRangeRequest,
     block_by_root_requests_state: BlockByRootRequests,
@@ -30,13 +30,13 @@ pub struct Worker<E: EthSpec> {
 impl<E: EthSpec> Worker<E> {
     pub fn new(
         peer_db: PeerDb<E>,
-        network_send: UnboundedSender<NetworkMessage>,
+        network_command_send: UnboundedSender<NetworkCommand>,
         block_send: UnboundedSender<BlockMessage<E>>,
         log: Logger,
     ) -> Self {
         Worker {
             peer_db,
-            network_send,
+            network_command_send,
             block_send,
             block_range_request_state: BlockRangeRequest::new(),
             block_by_root_requests_state: BlockByRootRequests::new(),
@@ -53,9 +53,9 @@ impl<E: EthSpec> Worker<E> {
                 }
 
                 self.block_range_request_state
-                    .peer_connected(&peer_id, &self.network_send);
+                    .peer_connected(&peer_id, &self.network_command_send);
                 self.block_by_root_requests_state
-                    .peer_connected(&peer_id, &self.network_send)
+                    .peer_connected(&peer_id, &self.network_command_send)
             }
 
             NetworkEvent::PeerDisconnected(peer_id) => {
@@ -104,7 +104,7 @@ impl<E: EthSpec> Worker<E> {
                         self.block_by_root_requests_state.request_block_by_root(
                             &slot,
                             &root,
-                            &self.network_send,
+                            &self.network_command_send,
                             &self.peer_db,
                         )
                     }
@@ -149,7 +149,7 @@ impl<E: EthSpec> Worker<E> {
     fn request_block_range(&mut self) {
         if let BlockRangeRequestState::Idle = self
             .block_range_request_state
-            .request_block_range(&self.network_send, &self.peer_db)
+            .request_block_range(&self.network_command_send, &self.peer_db)
         {
             warn!(self.log, "Unable to find a peer for a block range request");
         }

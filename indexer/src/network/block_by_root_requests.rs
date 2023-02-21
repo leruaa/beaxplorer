@@ -9,7 +9,7 @@ use slog::{debug, Logger};
 use tokio::sync::mpsc::UnboundedSender;
 
 use super::{
-    augmented_network_service::{NetworkMessage, RequestId},
+    augmented_network_service::{NetworkCommand, RequestId},
     peer_db::PeerDb,
 };
 
@@ -89,12 +89,12 @@ impl BlockByRootRequests {
     pub fn peer_connected(
         &mut self,
         peer_id: &PeerId,
-        network_send: &UnboundedSender<NetworkMessage>,
+        network_send: &UnboundedSender<NetworkCommand>,
     ) {
         self.requests.iter_mut().for_each(|(root, req)| {
             if req.insert_peer(peer_id) {
                 network_send
-                    .send(NetworkMessage::SendRequest {
+                    .send(NetworkCommand::SendRequest {
                         peer_id: *peer_id,
                         request_id: RequestId::Block(*root),
                         request: Box::new(Request::BlocksByRoot(BlocksByRootRequest {
@@ -141,15 +141,15 @@ impl BlockByRootRequests {
         &mut self,
         _slot: &Slot,
         root: &Hash256,
-        network_send: &UnboundedSender<NetworkMessage>,
+        network_command_send: &UnboundedSender<NetworkCommand>,
         peer_db: &PeerDb<E>,
     ) {
         self.requests.entry(*root).or_insert_with(|| {
             let (connected_great_peers, disconnected_great_peers) = peer_db.get_trusted_peers();
 
             for (peer_id, _) in &connected_great_peers {
-                network_send
-                    .send(NetworkMessage::SendRequest {
+                network_command_send
+                    .send(NetworkCommand::SendRequest {
                         peer_id: *peer_id,
                         request_id: RequestId::Block(*root),
                         request: Box::new(Request::BlocksByRoot(BlocksByRootRequest {
