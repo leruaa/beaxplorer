@@ -7,7 +7,6 @@ use std::{
 };
 
 use futures::Future;
-use lighthouse_network::NetworkGlobals;
 
 use lighthouse_types::{BeaconState, BlindedPayload, ChainSpec};
 use slog::{info, warn, Logger};
@@ -18,7 +17,10 @@ use state_processing::{
 use store::{Epoch, EthSpec, MainnetEthSpec, SignedBeaconBlock, Slot};
 use task_executor::TaskExecutor;
 use tokio::{
-    sync::mpsc::{unbounded_channel, UnboundedReceiver},
+    sync::{
+        mpsc::{unbounded_channel, Sender},
+        watch::Receiver,
+    },
     time::{interval_at, Instant},
 };
 use types::{
@@ -71,13 +73,18 @@ impl<E: EthSpec> Indexer<E> {
             current_epoch: Epoch::new(0),
             beacon_context: beacon_context.clone(),
             beacon_state: beacon_context.genesis_state.clone(),
-            spec: beacon_context.spec.clone(),
+            spec: beacon_context.spec,
             blocks_by_epoch: HashMap::new(),
             log,
         }
     }
 
-    pub fn spawn(mut self, executor: TaskExecutor) {
+    pub fn spawn(
+        mut self,
+        executor: TaskExecutor,
+        _: Sender<()>,
+        mut shutdown_trigger: Receiver<()>,
+    ) {
         executor.clone().spawn(
             async move {
                 let (network_command_send, mut network_event_recv, network_globals) =
@@ -105,33 +112,15 @@ impl<E: EthSpec> Indexer<E> {
                         _ = interval.tick() => {
                             info!(self.log, "Status"; "connected peers" => network_globals.connected_peers());
                             worker.notify();
-                        } 
+                        },
+                        _ = shutdown_trigger.changed() => {
+                            info!(self.log, "Shutting down indexer...");
+                            return;
+                        }
                     }
                 }
             },
             "indexer",
-        );
-    }
-
-    pub fn spawn_notifier(
-        &self,
-        executor: &task_executor::TaskExecutor,
-        network_globals: Arc<NetworkGlobals<MainnetEthSpec>>,
-    ) {
-        let start_instant = Instant::now();
-        let interval_duration = Duration::from_secs(5);
-        let mut interval = interval_at(start_instant, interval_duration);
-        let log = self.log.clone();
-
-        executor.spawn(
-            async move {
-                loop {
-                    interval.tick().await;
-
-                    
-                }
-            },
-            "notifier",
         );
     }
 

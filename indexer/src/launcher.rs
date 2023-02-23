@@ -1,27 +1,23 @@
-use std::{fs, time::Duration};
+use std::fs;
 
 use environment::{Environment, EnvironmentBuilder, LoggerConfig};
 use eth2_network_config::{Eth2NetworkConfig, DEFAULT_HARDCODED_NETWORK};
 use lighthouse_network::{rpc::BlocksByRootRequest, NetworkEvent, Request};
-use lighthouse_types::{EthSpec, Hash256, MainnetEthSpec};
+use lighthouse_types::{EthSpec, Hash256};
 use slog::info;
 use tokio::{
-    sync::mpsc,
-    time::{interval_at, Instant},
+    signal,
+    sync::{mpsc, watch},
 };
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
-    direct_indexer::{BlockMessage, Indexer},
-    network::{
-        augmented_network_service::{AugmentedNetworkService, NetworkCommand, RequestId},
-        peer_db::PeerDb,
-        worker::Worker,
-    },
+    direct_indexer::Indexer,
+    network::augmented_network_service::{AugmentedNetworkService, NetworkCommand, RequestId},
 };
 
 pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
-    let (mut environment, _) = build_environment(EnvironmentBuilder::mainnet())?;
+    let (environment, _) = build_environment(EnvironmentBuilder::mainnet())?;
     let context = environment.core_context();
     let beacon_context = BeaconContext::build(&context)?;
     let executor = context.executor;
@@ -46,11 +42,21 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     fs::create_dir_all(base_dir.clone() + "/blocks/v/").unwrap();
     fs::create_dir_all(base_dir.clone() + "/validators").unwrap();
 
-    let indexer = Indexer::new(base_dir, beacon_context, log.clone());
+    environment.runtime().block_on(async move {
+        let (shutdown_handle, mut shutdown_complete) = mpsc::channel(1);
+        let (shutdown_request, shutdown_trigger) = watch::channel(());
+        let indexer = Indexer::new(base_dir, beacon_context, log);
 
-    indexer.spawn(executor);
+        indexer.spawn(executor, shutdown_handle, shutdown_trigger);
 
-    environment.block_until_shutdown_requested().unwrap();
+        wait_shutdown_signal().await;
+
+        let _ = shutdown_request.send(());
+
+        // When every sender has gone out of scope, the recv call
+        // will return with an error. We ignore the error.
+        let _ = shutdown_complete.recv().await;
+    });
 
     Ok(())
 }
@@ -131,4 +137,13 @@ fn build_environment<E: EthSpec>(
         .build()?;
 
     Ok((environment, eth2_network_config))
+}
+
+async fn wait_shutdown_signal() {
+    match signal::ctrl_c().await {
+        Ok(()) => {}
+        Err(err) => {
+            eprintln!("Unable to listen for shutdown signal: {}", err);
+        }
+    }
 }
