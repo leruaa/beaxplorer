@@ -16,7 +16,7 @@ pub async fn fetch_all<T>(
 ) -> Result<Vec<ModelWithId<T>>, DeserializeError>
 where
     T: DeserializeOwned + Serialize + Send,
-    ModelWithId<T>: ToPath<u64>,
+    ModelWithId<T>: ToPath,
 {
     let mut futures = vec![];
 

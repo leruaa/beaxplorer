@@ -15,7 +15,7 @@ pub struct ModelWithId<M: Serialize + Send> {
 impl<T> AsPath for ModelWithId<T>
 where
     T: Serialize + Send,
-    ModelWithId<T>: ToPath<u64>,
+    ModelWithId<T>: ToPath,
 {
     fn as_path(&self, base: &str) -> String {
         Self::to_path(base, self.id)
@@ -26,7 +26,7 @@ where
 impl<T> ModelWithId<T>
 where
     T: Serialize + DeserializeOwned + Send,
-    ModelWithId<T>: ToPath<u64>,
+    ModelWithId<T>: ToPath,
 {
     pub fn from_path(base_path: &str, id: u64) -> T {
         let path = Self::to_path(base_path, id);
