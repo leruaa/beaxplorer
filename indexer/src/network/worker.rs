@@ -1,8 +1,9 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
 
 use itertools::Itertools;
 use lighthouse_network::{NetworkEvent, Response};
 use lighthouse_types::Hash256;
+use parking_lot::RwLock;
 use slog::{debug, info, warn, Logger};
 use store::EthSpec;
 use tokio::sync::mpsc::UnboundedSender;
@@ -22,7 +23,7 @@ pub struct Worker<E: EthSpec> {
     network_command_send: UnboundedSender<NetworkCommand>,
     block_send: UnboundedSender<BlockMessage<E>>,
     block_range_request_state: BlockRangeRequest,
-    block_by_root_requests_state: BlockByRootRequests,
+    block_by_root_requests_state: Arc<RwLock<BlockByRootRequests>>,
     proposed_block_roots: HashSet<Hash256>,
     log: Logger,
 }
@@ -32,6 +33,7 @@ impl<E: EthSpec> Worker<E> {
         peer_db: PeerDb<E>,
         network_command_send: UnboundedSender<NetworkCommand>,
         block_send: UnboundedSender<BlockMessage<E>>,
+        block_by_root_requests_state: Arc<RwLock<BlockByRootRequests>>,
         log: Logger,
     ) -> Self {
         Worker {
@@ -39,7 +41,7 @@ impl<E: EthSpec> Worker<E> {
             network_command_send,
             block_send,
             block_range_request_state: BlockRangeRequest::new(),
-            block_by_root_requests_state: BlockByRootRequests::new(),
+            block_by_root_requests_state,
             proposed_block_roots: HashSet::new(),
             log,
         }
@@ -55,6 +57,7 @@ impl<E: EthSpec> Worker<E> {
                 self.block_range_request_state
                     .peer_connected(&peer_id, &self.network_command_send);
                 self.block_by_root_requests_state
+                    .write()
                     .peer_connected(&peer_id, &self.network_command_send)
             }
 
@@ -64,6 +67,7 @@ impl<E: EthSpec> Worker<E> {
                     self.request_block_range();
                 }
                 self.block_by_root_requests_state
+                    .write()
                     .peer_disconnected(&peer_id);
             }
 
@@ -79,6 +83,7 @@ impl<E: EthSpec> Worker<E> {
                 peer_id,
             } => {
                 self.block_by_root_requests_state
+                    .write()
                     .failed_request(&root, &peer_id);
             }
 
@@ -101,12 +106,14 @@ impl<E: EthSpec> Worker<E> {
                         .collect::<Vec<_>>();
 
                     for (slot, root) in unknown_blocks {
-                        self.block_by_root_requests_state.request_block_by_root(
-                            &slot,
-                            &root,
-                            &self.network_command_send,
-                            &self.peer_db,
-                        )
+                        self.block_by_root_requests_state
+                            .write()
+                            .request_block_by_root(
+                                &slot,
+                                &root,
+                                &self.network_command_send,
+                                &self.peer_db,
+                            )
                     }
 
                     for message in self.block_range_request_state.block_found(block) {
@@ -124,26 +131,23 @@ impl<E: EthSpec> Worker<E> {
                 id: RequestId::Block(root),
                 response: Response::BlocksByRoot(block),
             } => {
-                if self.block_by_root_requests_state.exists(&root) {
+                if self.block_by_root_requests_state.read().exists(&root) {
                     if let Some(block) = block {
-                        if self.block_by_root_requests_state.block_found(&root) {
+                        if self.block_by_root_requests_state.write().block_found(&root) {
                             info!(self.log, "An orphaned block has been found"; "slot" => block.message().slot(), "root" => %block.canonical_root());
                             self.peer_db.add_great_peer(peer_id);
                             self.block_send.send(BlockMessage::Orphaned(block)).unwrap();
                         }
                     } else {
-                        self.block_by_root_requests_state.block_not_found(&root);
+                        self.block_by_root_requests_state
+                            .write()
+                            .block_not_found(&root);
                     }
                 }
             }
 
             _ => {}
         }
-    }
-
-    pub fn notify(&self) {
-        self.block_range_request_state.notify(&self.log);
-        self.block_by_root_requests_state.notify(&self.log);
     }
 
     fn request_block_range(&mut self) {

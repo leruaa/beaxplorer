@@ -1,5 +1,6 @@
 pub mod attestation;
 pub mod block;
+pub mod block_request;
 pub mod committee;
 pub mod epoch;
 pub mod meta;

@@ -1,12 +1,15 @@
 use std::{
     collections::{hash_map::Entry, HashMap, HashSet},
+    fmt::{Debug, Display},
     iter::FromIterator,
 };
 
 use lighthouse_network::{rpc::BlocksByRootRequest, PeerId, Request};
 use lighthouse_types::{EthSpec, Hash256, Slot};
-use slog::{debug, Logger};
 use tokio::sync::mpsc::UnboundedSender;
+use types::block_request::{BlockRequestModel, BlockRequestModelWithId};
+
+use crate::persistable::PersistableIterator;
 
 use super::{
     augmented_network_service::{NetworkCommand, RequestId},
@@ -14,9 +17,15 @@ use super::{
 };
 
 #[derive(Debug, Eq, PartialEq)]
-enum BlockByRootRequestState {
+pub enum BlockByRootRequestState {
     AwaitingPeer,
     Requesting(HashSet<PeerId>),
+}
+
+impl Display for BlockByRootRequestState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&self, f)
+    }
 }
 
 #[derive(Debug)]
@@ -26,10 +35,10 @@ pub enum BlockNotFoundResult {
     NotFound,
 }
 
-struct RequestAttempts {
-    failed_count: u64,
-    not_found_count: u64,
-    current_state: BlockByRootRequestState,
+pub struct RequestAttempts {
+    pub failed_count: u64,
+    pub not_found_count: u64,
+    pub current_state: BlockByRootRequestState,
 }
 
 impl RequestAttempts {
@@ -185,9 +194,19 @@ impl BlockByRootRequests {
         });
     }
 
-    pub fn notify(&self, log: &Logger) {
-        for (root, req) in &self.requests {
-            debug!(log, "Block root {root} status"; "state" => ?req.current_state, "failed" => req.failed_count, "not found" => req.not_found_count);
-        }
+    pub fn persist(&self, base_dir: &str) {
+        self.requests
+            .iter()
+            .enumerate()
+            .map(|(index, (root, attempts))| BlockRequestModelWithId {
+                id: index as u64,
+                model: BlockRequestModel {
+                    root: root.to_string(),
+                    failed_count: attempts.failed_count,
+                    not_found_count: attempts.not_found_count,
+                    state: attempts.current_state.to_string(),
+                },
+            })
+            .persist(base_dir);
     }
 }

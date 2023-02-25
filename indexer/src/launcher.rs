@@ -40,6 +40,7 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     fs::create_dir_all(base_dir.clone() + "/blocks/a/").unwrap();
     fs::create_dir_all(base_dir.clone() + "/blocks/c/").unwrap();
     fs::create_dir_all(base_dir.clone() + "/blocks/v/").unwrap();
+    fs::create_dir_all(base_dir.clone() + "/block_requests").unwrap();
     fs::create_dir_all(base_dir.clone() + "/validators").unwrap();
 
     environment.runtime().block_on(async move {

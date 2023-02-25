@@ -9,6 +9,7 @@ use std::{
 use futures::Future;
 
 use lighthouse_types::{BeaconState, BlindedPayload, ChainSpec};
+use parking_lot::RwLock;
 use slog::{info, warn, Logger};
 use state_processing::{
     per_block_processing, per_epoch_processing::process_epoch, per_slot_processing,
@@ -31,7 +32,8 @@ use types::{
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
     network::{
-        augmented_network_service::AugmentedNetworkService, peer_db::PeerDb, worker::Worker,
+        augmented_network_service::AugmentedNetworkService,
+        block_by_root_requests::BlockByRootRequests, peer_db::PeerDb, worker::Worker,
     },
     persistable::Persistable,
     types::{
@@ -62,6 +64,7 @@ pub struct Indexer<E: EthSpec> {
     beacon_context: BeaconContext<E>,
     beacon_state: BeaconState<E>,
     spec: ChainSpec,
+    block_by_root_requests_state: Arc<RwLock<BlockByRootRequests>>,
     blocks_by_epoch: HashMap<Epoch, HashMap<Slot, BlockMessage<E>>>,
     log: Logger,
 }
@@ -74,6 +77,7 @@ impl<E: EthSpec> Indexer<E> {
             beacon_context: beacon_context.clone(),
             beacon_state: beacon_context.genesis_state.clone(),
             spec: beacon_context.spec,
+            block_by_root_requests_state: Arc::new(RwLock::new(BlockByRootRequests::new())),
             blocks_by_epoch: HashMap::new(),
             log,
         }
@@ -98,6 +102,7 @@ impl<E: EthSpec> Indexer<E> {
                     PeerDb::new(network_globals.clone(), self.log.clone()),
                     network_command_send.clone(),
                     block_send,
+                    self.block_by_root_requests_state.clone(),
                     self.log.clone(),
                 );
 
@@ -111,7 +116,6 @@ impl<E: EthSpec> Indexer<E> {
                         Some(block_message) = block_recv.recv() => self.handle_block_message(block_message),
                         _ = interval.tick() => {
                             info!(self.log, "Status"; "connected peers" => network_globals.connected_peers());
-                            worker.notify();
                         },
                         _ = shutdown_trigger.changed() => {
                             info!(self.log, "Shutting down indexer...");
@@ -163,10 +167,11 @@ impl<E: EthSpec> Indexer<E> {
 
                     self.persist_epoch(&epoch, blocks_by_slot);
                     self.current_epoch = Epoch::new(self.current_epoch.as_u64() + 1);
+                    self.persist_block_roots();
                 }
             }
         } else if let BlockMessage::Orphaned(block) = block_message {
-            // Presist orphaned even if we get them too late
+            // Persist orphaned even if we get them too late
             self.persist_existing_block(BlockStatus::Orphaned(block), &slot, &epoch);
         }
     }
@@ -228,7 +233,22 @@ impl<E: EthSpec> Indexer<E> {
 
         EpochsMeta::new(epoch.as_usize() + 1).persist(&self.base_dir);
         BlocksMeta::new(last_slot.as_usize() + 1).persist(&self.base_dir);
-
+        /*
+            FieldBinaryHeap::<EpochAttestationsCount, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+        FieldBinaryHeap::<EpochDepositsCount, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+        FieldBinaryHeap::<EpochAttesterSlashingsCount, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+        FieldBinaryHeap::<EpochProposerSlashingsCount, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+        FieldBinaryHeap::<EpochEligibleEther, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+        FieldBinaryHeap::<EpochVotedEther, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+        FieldBinaryHeap::<EpochGlobalParticipationRate, EpochModelWithId>::from_model(&epochs)
+            .persist(&epochs_dir);
+         */
         epoch_model.persist(&self.base_dir);
         extended_epoch_model.persist(&self.base_dir);
         block_models.persist(&self.base_dir);
@@ -246,6 +266,13 @@ impl<E: EthSpec> Indexer<E> {
         } else {
             warn!(self.log, "Block {} not persisted", slot);
         }
+    }
+
+    fn persist_block_roots(&self) {
+        info!(self.log, "Persisting pending block roots");
+        self.block_by_root_requests_state
+            .read()
+            .persist(&self.base_dir)
     }
 
     fn apply_blocks(

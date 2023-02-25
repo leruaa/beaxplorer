@@ -3242,6 +3242,7 @@ dependencies = [
  "log",
  "network",
  "ordered-float",
+ "parking_lot 0.12.1",
  "pin-project 1.0.12",
  "rand 0.8.5",
  "rmp",
@@ -8699,6 +8700,7 @@ dependencies = [
 name = "web"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "bytes",
  "console_error_panic_hook",
  "futures",
@@ -8707,6 +8709,7 @@ dependencies = [
  "rmp-serde",
  "serde",
  "serde-wasm-bindgen",
+ "shared",
  "thiserror",
  "types 0.1.0",
  "wasm-bindgen",

@@ -1,6 +1,7 @@
 use crate::{
     attestation::AttestationsModelWithId,
     block::{BlockExtendedModelWithId, BlockModelWithId},
+    block_request::BlockRequestModelWithId,
     committee::CommitteesModelWithId,
     epoch::{EpochExtendedModelWithId, EpochModelWithId},
     validator::ValidatorModelWithId,
@@ -60,5 +61,11 @@ impl ToPath for AttestationsModelWithId {
 impl ToPath for ValidatorModelWithId {
     fn to_path(base: &str, id: u64) -> String {
         format!("{}/validators/{}.msg", base, id)
+    }
+}
+
+impl ToPath for BlockRequestModelWithId {
+    fn to_path(base: &str, id: u64) -> String {
+        format!("{}/block_requests/{}.msg", base, id)
     }
 }
