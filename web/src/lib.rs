@@ -1,4 +1,5 @@
 use js_sys::Error;
+use serde::Serialize;
 use thiserror::Error;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
@@ -35,10 +36,8 @@ impl From<DeserializeError> for JsValue {
     }
 }
 
-pub fn to_js<T: types::Serialize + ?Sized>(value: &T) -> Result<JsValue, DeserializeError> {
+pub fn to_js<T: Serialize + ?Sized>(value: &T) -> Result<JsValue, DeserializeError> {
     value
         .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
         .map_err(Into::into)
-
-    //serde_wasm_bindgen::to_value(value).map_err(Into::into)
 }

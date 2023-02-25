@@ -7,7 +7,7 @@ use types::{
     validator::ValidatorsMeta,
 };
 
-pub trait Persistable: Send {
+pub trait Persistable {
     fn persist(self, base_dir: &str);
 }
 
@@ -34,7 +34,7 @@ impl Persistable for ValidatorsMeta {
 
 impl<M> Persistable for ModelWithId<M>
 where
-    M: Serialize + Send,
+    M: Serialize,
     ModelWithId<M>: AsPath,
 {
     fn persist(self, base_dir: &str) {
@@ -45,7 +45,7 @@ where
 
 impl<M> Persistable for Option<ModelWithId<M>>
 where
-    M: Serialize + Send,
+    M: Serialize,
     ModelWithId<M>: AsPath,
 {
     fn persist(self, base_dir: &str) {
@@ -61,12 +61,28 @@ where
 
 impl<M> Persistable for Vec<ModelWithId<M>>
 where
-    M: Serialize + Send,
+    M: Serialize,
     ModelWithId<M>: AsPath,
 {
     fn persist(self, base_dir: &str) {
         for m in self {
             m.persist(base_dir);
+        }
+    }
+}
+
+pub trait PersistableIterator {
+    fn persist(self, base_dir: &str);
+}
+
+impl<I> PersistableIterator for I
+where
+    I: Iterator,
+    I::Item: Persistable,
+{
+    fn persist(self, base_dir: &str) {
+        for m in self {
+            m.persist(base_dir)
         }
     }
 }

@@ -7,7 +7,7 @@ use crate::path::{AsPath, ToPath};
 #[cfg(feature = "indexing")]
 use rmp_serde;
 
-pub struct ModelWithId<M: Serialize + Send> {
+pub struct ModelWithId<M> {
     pub id: u64,
     pub model: M,
 }
