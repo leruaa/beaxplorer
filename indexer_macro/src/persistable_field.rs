@@ -5,13 +5,13 @@ use syn::{
 
 extern crate proc_macro;
 
-pub struct AttributeMetadata {
+pub struct PersistableFieldAttributeMetadata {
     pub model_type: Type,
     pub field_name: Ident,
     pub field_type: Ident,
 }
 
-impl Parse for AttributeMetadata {
+impl Parse for PersistableFieldAttributeMetadata {
     fn parse(input: ParseStream) -> Result<Self, syn::Error> {
         let model_type = input.parse::<Type>()?;
         input.parse::<Token![,]>()?;
@@ -19,7 +19,7 @@ impl Parse for AttributeMetadata {
         input.parse::<Token![,]>()?;
         let field_type = input.parse::<Ident>()?;
 
-        Ok(AttributeMetadata {
+        Ok(PersistableFieldAttributeMetadata {
             model_type,
             field_name,
             field_type,

@@ -3278,6 +3278,7 @@ dependencies = [
 name = "indexer_macro"
 version = "0.1.0"
 dependencies = [
+ "darling 0.14.3",
  "quote",
  "syn",
 ]
@@ -8263,6 +8264,7 @@ checksum = "497961ef93d974e23eb6f433eb5fe1b7930b659f06d12dec6fc44a8f554c0bba"
 name = "types"
 version = "0.1.0"
 dependencies = [
+ "indexer_macro",
  "rmp-serde",
  "serde",
  "types 0.2.1",

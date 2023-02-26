@@ -3,9 +3,9 @@ pub mod block;
 pub mod block_request;
 pub mod committee;
 pub mod epoch;
-pub mod meta;
 pub mod model;
 pub mod path;
+pub mod persistable;
 pub mod validator;
 pub mod vote;
 

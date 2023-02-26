@@ -2,7 +2,7 @@ use std::ops::Div;
 
 use indexer_macro::persistable_field;
 use ordered_float::OrderedFloat;
-use types::epoch::EpochModelWithId;
+use types::{block_request::BlockRequestModelWithId, epoch::EpochModelWithId};
 
 use crate::orderable::Orderable;
 
@@ -43,3 +43,6 @@ impl PersistableField<EpochModelWithId> for EpochGlobalParticipationRate {
         (value.id, OrderedFloat(global_participation_rate)).into()
     }
 }
+
+#[persistable_field(BlockRequestModelWithId, root, String)]
+pub struct BlockRootRequestRoot;

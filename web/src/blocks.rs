@@ -1,12 +1,11 @@
 use js_sys::Promise;
-use types::attestation::{AttestationModel, AttestationsModelWithId};
+use types::attestation::{AttestationModel, AttestationModelsWithId};
 use types::block::{
     BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId, BlocksMeta,
 };
-use types::committee::{CommitteeModel, CommitteesModelWithId};
-use types::meta::Meta;
+use types::committee::{CommitteeModel, CommitteeModelsWithId};
 use types::path::ToPath;
-use types::vote::{VoteModel, VotesModelWithId};
+use types::vote::{VoteModel, VoteModelsWithId};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
@@ -31,7 +30,7 @@ impl Blocks {
     #[wasm_bindgen]
     pub async fn build(base_url: String) -> Result<Blocks, JsValue> {
         let url = base_url + "/data";
-        let meta = fetch(BlocksMeta::to_path(&*url)).await?;
+        let meta = fetch(BlocksMeta::to_path(&*url, ())).await?;
 
         Ok(Blocks::new(url, meta))
     }
@@ -48,7 +47,7 @@ impl Blocks {
     }
 
     pub fn committees(&self, block: u64) -> Promise {
-        let committees_url = CommitteesModelWithId::to_path(&self.base_url, block);
+        let committees_url = CommitteeModelsWithId::to_path(&self.base_url, block);
 
         future_to_promise(async move {
             let committees = fetch::<Vec<CommitteeModel>>(committees_url)
@@ -61,7 +60,7 @@ impl Blocks {
     }
 
     pub fn votes(&self, block: u64) -> Promise {
-        let votes_url = VotesModelWithId::to_path(&self.base_url, block);
+        let votes_url = VoteModelsWithId::to_path(&self.base_url, block);
 
         future_to_promise(async move {
             let votes = fetch::<Vec<VoteModel>>(votes_url)
@@ -75,7 +74,7 @@ impl Blocks {
     }
 
     pub fn attestations(&self, block: u64) -> Promise {
-        let attestations_url = AttestationsModelWithId::to_path(&self.base_url, block);
+        let attestations_url = AttestationModelsWithId::to_path(&self.base_url, block);
 
         future_to_promise(async move {
             let r = fetch::<Vec<AttestationModel>>(attestations_url)

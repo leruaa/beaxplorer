@@ -1,12 +1,9 @@
 use js_sys::Promise;
-use types::path::ToPath;
-use types::{
-    epoch::{
-        EpochExtendedModel, EpochExtendedModelWithId, EpochExtendedView, EpochModel,
-        EpochModelWithId, EpochView, EpochsMeta,
-    },
-    meta::Meta,
+use types::epoch::{
+    EpochExtendedModel, EpochExtendedModelWithId, EpochExtendedView, EpochModel, EpochModelWithId,
+    EpochView, EpochsMeta,
 };
+use types::path::ToPath;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
@@ -27,7 +24,7 @@ impl Epochs {
     #[wasm_bindgen]
     pub async fn build(base_url: String) -> Result<Epochs, JsValue> {
         let url = base_url + "/data";
-        let meta = fetch(EpochsMeta::to_path(&*url)).await?;
+        let meta = fetch(EpochsMeta::to_path(&*url, ())).await?;
 
         Ok(Epochs::new(url, meta))
     }

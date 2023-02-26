@@ -7,9 +7,10 @@ use std::{
 use lighthouse_network::{rpc::BlocksByRootRequest, PeerId, Request};
 use lighthouse_types::{EthSpec, Hash256, Slot};
 use tokio::sync::mpsc::UnboundedSender;
-use types::block_request::{BlockRequestModel, BlockRequestModelWithId};
-
-use crate::persistable::PersistableIterator;
+use types::{
+    block_request::{BlockRequestModel, BlockRequestModelWithId},
+    persistable::PersistableIterator,
+};
 
 use super::{
     augmented_network_service::{NetworkCommand, RequestId},

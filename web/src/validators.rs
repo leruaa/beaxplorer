@@ -1,9 +1,6 @@
 use js_sys::Promise;
 use types::path::ToPath;
-use types::{
-    meta::Meta,
-    validator::{ValidatorModel, ValidatorModelWithId, ValidatorView, ValidatorsMeta},
-};
+use types::validator::{ValidatorModel, ValidatorModelWithId, ValidatorView, ValidatorsMeta};
 use wasm_bindgen::prelude::*;
 
 use crate::{fetcher::fetch, get::by_id, page::page, to_js};
@@ -23,7 +20,7 @@ impl Validators {
     #[wasm_bindgen]
     pub async fn build(base_url: String) -> Result<Validators, JsValue> {
         let url = base_url + "/data";
-        let meta = fetch(ValidatorsMeta::to_path(&*url)).await?;
+        let meta = fetch(ValidatorsMeta::to_path(&*url, ())).await?;
 
         Ok(Validators::new(url, meta))
     }

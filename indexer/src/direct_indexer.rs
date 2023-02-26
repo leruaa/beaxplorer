@@ -27,6 +27,7 @@ use tokio::{
 use types::{
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
+    persistable::Persistable,
 };
 
 use crate::{
@@ -35,7 +36,6 @@ use crate::{
         augmented_network_service::AugmentedNetworkService,
         block_by_root_requests::BlockByRootRequests, peer_db::PeerDb, worker::Worker,
     },
-    persistable::Persistable,
     types::{
         consolidated_block::{BlockStatus, ConsolidatedBlock},
         consolidated_epoch::ConsolidatedEpoch,

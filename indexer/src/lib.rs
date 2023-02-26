@@ -8,6 +8,5 @@ pub mod field_binary_heap;
 pub mod launcher;
 mod network;
 pub mod orderable;
-pub mod persistable;
 mod persistable_fields;
 pub mod types;

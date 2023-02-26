@@ -1,9 +1,12 @@
+use indexer_macro::Persistable;
 use serde::Deserialize;
 use serde::Serialize;
 
 use crate::model::ModelWithId;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/blocks/a")]
+#[persistable(index = "collection")]
 pub struct AttestationModel {
     pub slot: u64,
     pub aggregation_bits: Vec<bool>,
@@ -13,8 +16,6 @@ pub struct AttestationModel {
     pub target: u64,
     pub signature: String,
 }
-
-pub type AttestationsModelWithId = ModelWithId<Vec<AttestationModel>>;
 
 #[cfg(feature = "indexing")]
 impl<T: lighthouse_types::EthSpec> From<&lighthouse_types::Attestation<T>> for AttestationModel {

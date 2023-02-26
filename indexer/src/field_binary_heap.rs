@@ -2,8 +2,9 @@ use std::{collections::BinaryHeap, fs::File, io::BufWriter};
 
 use rmp_serde::Serializer;
 use serde::Serialize;
+use types::persistable::Persistable;
 
-use crate::{orderable::Orderable, persistable::Persistable, persistable_fields::PersistableField};
+use crate::{orderable::Orderable, persistable_fields::PersistableField};
 
 pub struct FieldBinaryHeap<F: PersistableField<M>, M> {
     inner: BinaryHeap<Orderable<F::Field>>,

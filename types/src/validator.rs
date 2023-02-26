@@ -1,9 +1,12 @@
+use indexer_macro::Persistable;
 use serde::Deserialize;
 use serde::Serialize;
 
 use crate::model::ModelWithId;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/validators")]
+#[persistable(index = "model")]
 pub struct ValidatorModel {
     pub pubkey: Vec<u8>,
     pub pubkey_hex: String,
@@ -18,8 +21,6 @@ pub struct ValidatorModel {
     pub exit_epoch: Option<u64>,
     pub status: String,
 }
-
-pub type ValidatorModelWithId = ModelWithId<ValidatorModel>;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct ValidatorView {
@@ -37,7 +38,8 @@ impl From<ValidatorModelWithId> for ValidatorView {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/validators/meta")]
 pub struct ValidatorsMeta {
     pub count: usize,
 }

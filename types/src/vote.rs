@@ -1,8 +1,11 @@
 use crate::model::ModelWithId;
+use indexer_macro::Persistable;
 use serde::Deserialize;
 use serde::Serialize;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/blocks/v")]
+#[persistable(index = "collection")]
 pub struct VoteModel {
     pub slot: u64,
     pub committee_index: u64,
@@ -18,14 +21,12 @@ impl<E: lighthouse_types::EthSpec> From<&lighthouse_types::Attestation<E>> for V
     }
 }
 
-pub type VotesModelWithId = ModelWithId<Vec<VoteModel>>;
-
 #[cfg(feature = "indexing")]
 impl<E: lighthouse_types::EthSpec>
     From<(
         &lighthouse_types::Slot,
         Vec<lighthouse_types::Attestation<E>>,
-    )> for VotesModelWithId
+    )> for VoteModelsWithId
 {
     fn from(
         value: (
@@ -33,7 +34,7 @@ impl<E: lighthouse_types::EthSpec>
             Vec<lighthouse_types::Attestation<E>>,
         ),
     ) -> Self {
-        VotesModelWithId {
+        VoteModelsWithId {
             id: value.0.as_u64(),
             model: value.1.iter().map(VoteModel::from).collect::<Vec<_>>(),
         }

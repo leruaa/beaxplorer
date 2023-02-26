@@ -6,7 +6,7 @@ use std::{
 use lighthouse_types::{Epoch, EthSpec, Slot};
 use store::SignedBeaconBlock;
 use types::{
-    attestation::{AttestationModel, AttestationsModelWithId},
+    attestation::{AttestationModel, AttestationModelsWithId},
     block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId},
 };
 
@@ -172,7 +172,7 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockExtendedModelWithId {
     }
 }
 
-impl<E: EthSpec> From<&ConsolidatedBlock<E>> for AttestationsModelWithId {
+impl<E: EthSpec> From<&ConsolidatedBlock<E>> for AttestationModelsWithId {
     fn from(value: &ConsolidatedBlock<E>) -> Self {
         let attestations = if let Some(block) = value.block() {
             block
@@ -186,7 +186,7 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for AttestationsModelWithId {
             vec![]
         };
 
-        AttestationsModelWithId {
+        AttestationModelsWithId {
             id: value.slot.as_u64(),
             model: attestations,
         }

@@ -4,8 +4,11 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use crate::model::ModelWithId;
+use indexer_macro::Persistable;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/epochs")]
+#[persistable(index = "model")]
 pub struct EpochModel {
     pub timestamp: u64,
     pub proposer_slashings_count: usize,
@@ -15,8 +18,6 @@ pub struct EpochModel {
     pub eligible_ether: u64,
     pub voted_ether: u64,
 }
-
-pub type EpochModelWithId = ModelWithId<EpochModel>;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct EpochView {
@@ -41,15 +42,15 @@ impl From<EpochModelWithId> for EpochView {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/epochs/e")]
+#[persistable(index = "model")]
 pub struct EpochExtendedModel {
     pub voluntary_exits_count: usize,
     pub validators_count: usize,
     pub average_validator_balance: u64,
     pub total_validator_balance: u64,
 }
-
-pub type EpochExtendedModelWithId = ModelWithId<EpochExtendedModel>;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct EpochExtendedView {
@@ -76,7 +77,8 @@ impl From<(u64, EpochModel, EpochExtendedModel)> for EpochExtendedView {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/epochs/meta")]
 pub struct EpochsMeta {
     pub count: usize,
 }

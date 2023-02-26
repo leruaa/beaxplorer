@@ -1,10 +1,13 @@
 use crate::model::ModelWithId;
+use indexer_macro::Persistable;
 use serde::Deserialize;
 use serde::Serialize;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/blocks")]
+#[persistable(index = "model")]
 pub struct BlockModel {
     pub epoch: u64,
     pub proposer_slashings_count: usize,
@@ -16,9 +19,9 @@ pub struct BlockModel {
     pub status: String,
 }
 
-pub type BlockModelWithId = ModelWithId<BlockModel>;
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/blocks/e")]
+#[persistable(index = "option")]
 pub struct BlockExtendedModel {
     pub block_root: Vec<u8>,
     pub parent_root: Vec<u8>,
@@ -33,10 +36,9 @@ pub struct BlockExtendedModel {
     pub eth1data_block_hash: Vec<u8>,
 }
 
-pub type BlockExtendedModelWithId = ModelWithId<Option<BlockExtendedModel>>;
-
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/blocks/meta")]
 pub struct BlocksMeta {
     pub count: usize,
 }
