@@ -1,22 +1,37 @@
 use std::ops::Div;
 
+use ordered_float::OrderedFloat;
 use serde::Deserialize;
 use serde::Serialize;
 
 use crate::model::ModelWithId;
+use crate::utils::Orderable;
 use indexer_macro::Persistable;
 
 #[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
 #[persistable(prefix = "/epochs")]
 #[persistable(index = "model")]
+#[persistable(sortable_field(
+    name = "global_participation_rate",
+    ty = "OrderedFloat<f64>",
+    with = "get_global_participation_rate"
+))]
 pub struct EpochModel {
     pub timestamp: u64,
     pub proposer_slashings_count: usize,
     pub attester_slashings_count: usize,
+    #[persistable(sortable)]
     pub attestations_count: usize,
     pub deposits_count: usize,
     pub eligible_ether: u64,
     pub voted_ether: u64,
+}
+
+// global_participation_rate
+fn get_global_participation_rate(value: &EpochModelWithId) -> Orderable<OrderedFloat<f64>> {
+    let global_participation_rate =
+        (value.model.voted_ether as f64).div(value.model.eligible_ether as f64);
+    (value.id, OrderedFloat(global_participation_rate)).into()
 }
 
 #[derive(Serialize, Debug, Clone)]

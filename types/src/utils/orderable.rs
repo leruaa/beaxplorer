@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 #[derive(Eq)]
-pub struct Orderable<O: Ord + Eq> {
+pub struct Orderable<O: Ord> {
     pub id: u64,
     pub ordering: O,
 }

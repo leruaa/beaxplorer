@@ -4,17 +4,15 @@ use std::{
     iter::FromIterator,
 };
 
-use lighthouse_network::{rpc::BlocksByRootRequest, PeerId, Request};
-use lighthouse_types::{EthSpec, Hash256, Slot};
-use tokio::sync::mpsc::UnboundedSender;
-use types::{
-    block_request::{BlockRequestModel, BlockRequestModelWithId},
-    persistable::PersistableIterator,
-};
-
 use super::{
     augmented_network_service::{NetworkCommand, RequestId},
     peer_db::PeerDb,
+};
+use lighthouse_network::{rpc::BlocksByRootRequest, PeerId, Request};
+use lighthouse_types::{EthSpec, Hash256, Slot};
+use tokio::sync::mpsc::UnboundedSender;
+use types::block_request::{
+    BlockRequestModel, BlockRequestModelWithId, PersistIteratorBlockRequestModel,
 };
 
 #[derive(Debug, Eq, PartialEq)]
@@ -202,7 +200,7 @@ impl BlockByRootRequests {
             .map(|(index, (root, attempts))| BlockRequestModelWithId {
                 id: index as u64,
                 model: BlockRequestModel {
-                    root: root.to_string(),
+                    root: root.as_bytes().to_vec(),
                     failed_count: attempts.failed_count,
                     not_found_count: attempts.not_found_count,
                     state: attempts.current_state.to_string(),

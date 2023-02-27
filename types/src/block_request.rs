@@ -7,7 +7,7 @@ use crate::model::ModelWithId;
 #[persistable(prefix = "/block_requests")]
 #[persistable(index = "model")]
 pub struct BlockRequestModel {
-    pub root: String,
+    pub root: Vec<u8>,
     pub failed_count: u64,
     pub not_found_count: u64,
     pub state: String,
