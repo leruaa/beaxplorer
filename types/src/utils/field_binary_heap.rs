@@ -5,6 +5,7 @@ use serde::Serialize;
 
 use super::Orderable;
 
+#[derive(Default)]
 pub struct FieldBinaryHeap<F: Ord> {
     inner: BinaryHeap<Orderable<F>>,
 }

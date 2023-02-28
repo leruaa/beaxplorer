@@ -1,5 +1,7 @@
 use std::ops::Div;
 
+use indexer_macro::ToPath;
+use indexer_macro::ToPathWithId;
 use ordered_float::OrderedFloat;
 use serde::Deserialize;
 use serde::Serialize;
@@ -8,14 +10,14 @@ use crate::model::ModelWithId;
 use crate::utils::Orderable;
 use indexer_macro::Persistable;
 
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/epochs")]
+#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
 #[persistable(index = "model")]
 #[persistable(sortable_field(
     name = "global_participation_rate",
     ty = "OrderedFloat<f64>",
     with = "get_global_participation_rate"
 ))]
+#[to_path(prefix = "/epochs")]
 pub struct EpochModel {
     pub timestamp: u64,
     pub proposer_slashings_count: usize,
@@ -57,9 +59,9 @@ impl From<EpochModelWithId> for EpochView {
     }
 }
 
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/epochs/e")]
+#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
 #[persistable(index = "model")]
+#[to_path(prefix = "/epochs/e")]
 pub struct EpochExtendedModel {
     pub voluntary_exits_count: usize,
     pub validators_count: usize,
@@ -92,8 +94,8 @@ impl From<(u64, EpochModel, EpochExtendedModel)> for EpochExtendedView {
     }
 }
 
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/epochs/meta")]
+#[derive(ToPath, Serialize, Deserialize, Debug, Clone)]
+#[to_path(prefix = "/epochs/meta")]
 pub struct EpochsMeta {
     pub count: usize,
 }

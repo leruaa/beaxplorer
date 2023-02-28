@@ -1,11 +1,11 @@
-use indexer_macro::Persistable;
+use indexer_macro::{Persistable, ToPathWithId};
 use serde::{Deserialize, Serialize};
 
 use crate::model::ModelWithId;
 
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/block_requests")]
+#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
 #[persistable(index = "model")]
+#[to_path(prefix = "/block_requests")]
 pub struct BlockRequestModel {
     pub root: Vec<u8>,
     pub failed_count: u64,

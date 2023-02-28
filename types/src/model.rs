@@ -15,12 +15,20 @@ pub struct ModelWithId<M> {
 #[cfg(feature = "indexing")]
 impl<T> ModelWithId<T>
 where
-    T: Serialize + DeserializeOwned + Send,
-    ModelWithId<T>: ToPath<u64>,
+    T: DeserializeOwned + ToPath<u64>,
 {
     pub fn from_path(base_path: &str, id: u64) -> T {
-        let path = Self::to_path(base_path, id);
+        let path = T::to_path(base_path, id);
         let file = File::open(path).unwrap();
         rmp_serde::from_read::<_, T>(file).unwrap()
+    }
+}
+
+impl<T, Id> ToPath<Id> for ModelWithId<T>
+where
+    T: ToPath<Id>,
+{
+    fn to_path(base_dir: &str, id: Id) -> String {
+        T::to_path(base_dir, id)
     }
 }

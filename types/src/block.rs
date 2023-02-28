@@ -1,13 +1,15 @@
 use crate::model::ModelWithId;
 use indexer_macro::Persistable;
+use indexer_macro::ToPath;
+use indexer_macro::ToPathWithId;
 use serde::Deserialize;
 use serde::Serialize;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/blocks")]
+#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
 #[persistable(index = "model")]
+#[to_path(prefix = "/blocks")]
 pub struct BlockModel {
     pub epoch: u64,
     pub proposer_slashings_count: usize,
@@ -19,9 +21,9 @@ pub struct BlockModel {
     pub status: String,
 }
 
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/blocks/e")]
+#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
 #[persistable(index = "option")]
+#[to_path(prefix = "/blocks/e")]
 pub struct BlockExtendedModel {
     pub block_root: Vec<u8>,
     pub parent_root: Vec<u8>,
@@ -37,8 +39,8 @@ pub struct BlockExtendedModel {
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/blocks/meta")]
+#[derive(ToPath, Serialize, Deserialize, Debug, Clone)]
+#[to_path(prefix = "/blocks/meta")]
 pub struct BlocksMeta {
     pub count: usize,
 }

@@ -10,12 +10,22 @@ pub trait Persistable {
 
 impl<M> Persistable for ModelWithId<M>
 where
-    M: Serialize,
-    ModelWithId<M>: ToPath<u64>,
+    M: Serialize + ToPath<u64>,
 {
     fn persist(&self, base_dir: &str) {
-        let path = Self::to_path(base_dir, self.id);
+        let path = M::to_path(base_dir, self.id);
         let mut f = BufWriter::new(File::create(path).unwrap());
         self.model.serialize(&mut Serializer::new(&mut f)).unwrap();
+    }
+}
+
+impl<T> Persistable for T
+where
+    T: Serialize + ToPath<()>,
+{
+    fn persist(&self, base_dir: &str) {
+        let path = T::to_path(base_dir, ());
+        let mut f = BufWriter::new(File::create(path).unwrap());
+        self.serialize(&mut Serializer::new(&mut f)).unwrap();
     }
 }

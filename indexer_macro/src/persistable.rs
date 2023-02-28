@@ -5,8 +5,7 @@ use syn::{Ident, Path, Type};
 #[darling(attributes(persistable))]
 pub struct PersistableOpts {
     pub ident: Ident,
-    pub prefix: String,
-    pub index: Option<Index>,
+    pub index: Index,
     #[darling(multiple)]
     #[darling(rename = "sortable_field")]
     pub sortable_fields: Vec<SortableField>,

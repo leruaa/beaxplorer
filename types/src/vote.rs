@@ -1,11 +1,12 @@
 use crate::model::ModelWithId;
 use indexer_macro::Persistable;
+use indexer_macro::ToPathWithId;
 use serde::Deserialize;
 use serde::Serialize;
 
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/blocks/v")]
+#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
 #[persistable(index = "collection")]
+#[to_path(prefix = "/blocks/v")]
 pub struct VoteModel {
     pub slot: u64,
     pub committee_index: u64,

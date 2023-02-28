@@ -1,12 +1,14 @@
 use indexer_macro::Persistable;
+use indexer_macro::ToPath;
+use indexer_macro::ToPathWithId;
 use serde::Deserialize;
 use serde::Serialize;
 
 use crate::model::ModelWithId;
 
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/validators")]
+#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
 #[persistable(index = "model")]
+#[to_path(prefix = "/validators")]
 pub struct ValidatorModel {
     pub pubkey: Vec<u8>,
     pub pubkey_hex: String,
@@ -38,8 +40,8 @@ impl From<ValidatorModelWithId> for ValidatorView {
     }
 }
 
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/validators/meta")]
+#[derive(ToPath, Serialize, Deserialize, Debug, Clone)]
+#[to_path(prefix = "/validators/meta")]
 pub struct ValidatorsMeta {
     pub count: usize,
 }

@@ -1,12 +1,13 @@
 use indexer_macro::Persistable;
+use indexer_macro::ToPathWithId;
 use serde::Deserialize;
 use serde::Serialize;
 
 use crate::model::ModelWithId;
 
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/blocks/a")]
+#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
 #[persistable(index = "collection")]
+#[to_path(prefix = "/blocks/a")]
 pub struct AttestationModel {
     pub slot: u64,
     pub aggregation_bits: Vec<bool>,
