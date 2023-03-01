@@ -28,6 +28,7 @@ use types::{
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
     persistable::Persistable,
+    path::FromPath,
 };
 
 use crate::{
