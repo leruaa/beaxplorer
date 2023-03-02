@@ -6,6 +6,8 @@ use ordered_float::OrderedFloat;
 use serde::Deserialize;
 use serde::Serialize;
 
+use crate::meta::Meta;
+use crate::meta::WithMeta;
 use crate::model::ModelWithId;
 use crate::utils::Orderable;
 use indexer_macro::Persistable;
@@ -27,6 +29,10 @@ pub struct EpochModel {
     pub deposits_count: usize,
     pub eligible_ether: u64,
     pub voted_ether: u64,
+}
+
+impl WithMeta for EpochModel {
+    type MetaType = EpochsMeta;
 }
 
 // global_participation_rate
@@ -103,5 +109,11 @@ pub struct EpochsMeta {
 impl EpochsMeta {
     pub fn new(count: usize) -> Self {
         EpochsMeta { count }
+    }
+}
+
+impl Meta for EpochsMeta {
+    fn count(&self) -> usize {
+        self.count
     }
 }

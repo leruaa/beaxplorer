@@ -1,3 +1,5 @@
+use crate::meta::Meta;
+use crate::meta::WithMeta;
 use crate::model::ModelWithId;
 use indexer_macro::Persistable;
 use indexer_macro::ToPath;
@@ -19,6 +21,10 @@ pub struct BlockModel {
     pub voluntary_exits_count: usize,
     pub proposer: u64,
     pub status: String,
+}
+
+impl WithMeta for BlockModel {
+    type MetaType = BlocksMeta;
 }
 
 #[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
@@ -48,5 +54,11 @@ pub struct BlocksMeta {
 impl BlocksMeta {
     pub fn new(count: usize) -> Self {
         BlocksMeta { count }
+    }
+}
+
+impl Meta for BlocksMeta {
+    fn count(&self) -> usize {
+        self.count
     }
 }
