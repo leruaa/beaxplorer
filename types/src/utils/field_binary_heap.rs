@@ -27,13 +27,17 @@ impl<F: Ord> FieldBinaryHeap<F> {
         self.inner.push(item);
     }
 
-    pub fn persist(self, base_dir: &str, field_name: &str) {
+    pub fn persist(self, base_dir: &str, field_name: &str) -> Result<(), String> {
         for (i, chunk) in self.inner.into_sorted_vec().chunks(10).enumerate() {
             let indexes: Vec<u64> = chunk.iter().map(|x| x.id).collect();
+            let path = format!("{}/s/{}/{}.msg", base_dir, field_name, i + 1);
             let mut f = BufWriter::new(
-                File::create(format!("{}/s/{}/{}.msg", base_dir, field_name, i + 1)).unwrap(),
+                File::create(&path).map_err(|_| format!("File not found: {}", path))?,
             );
-            indexes.serialize(&mut Serializer::new(&mut f)).unwrap();
+            indexes
+                .serialize(&mut Serializer::new(&mut f))
+                .map_err(|err| err.to_string())?;
         }
+        Ok(())
     }
 }

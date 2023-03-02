@@ -107,7 +107,7 @@ pub fn persistable(input: TokenStream) -> TokenStream {
                         }
                     }
 
-                    fn persist_sortables(self, base_dir: &str)
+                    fn persist_sortables(self, base_dir: &str) -> Result<(), String>
                     where
                         Self: Sized,
                     {
@@ -117,7 +117,9 @@ pub fn persistable(input: TokenStream) -> TokenStream {
                             #( #heap_fields.push(#orderables); )*
                         }
 
-                        #( #heap_fields.persist(base_dir, #field_names); )*
+                        #( #heap_fields.persist(&prefixed_dir, #field_names)?; )*
+
+                        Ok(())
                     }
                 }
 
