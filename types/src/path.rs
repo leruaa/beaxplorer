@@ -1,6 +1,8 @@
 use serde::de::DeserializeOwned;
 
 pub trait ToPath<Id> {
+    fn prefix() -> String;
+
     fn to_path(base_dir: &str, id: Id) -> String;
 }
 
@@ -8,6 +10,10 @@ impl<T, Id> ToPath<Id> for Option<T>
 where
     T: ToPath<Id>,
 {
+    fn prefix() -> String {
+        T::prefix()
+    }
+
     fn to_path(base_dir: &str, id: Id) -> String {
         T::to_path(base_dir, id)
     }
@@ -17,6 +23,10 @@ impl<T, Id> ToPath<Id> for Vec<T>
 where
     T: ToPath<Id>,
 {
+    fn prefix() -> String {
+        T::prefix()
+    }
+
     fn to_path(base_dir: &str, id: Id) -> String {
         T::to_path(base_dir, id)
     }

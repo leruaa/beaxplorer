@@ -16,6 +16,10 @@ impl<T> ToPath<u64> for ModelWithId<T>
 where
     T: ToPath<u64>,
 {
+    fn prefix() -> String {
+        T::prefix()
+    }
+
     fn to_path(base_dir: &str, id: u64) -> String {
         T::to_path(base_dir, id)
     }

@@ -17,6 +17,10 @@ pub fn to_path(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         impl crate::path::ToPath<()> for #st {
+            fn prefix() -> String {
+                String::from(#prefix)
+            }
+
             fn to_path(base: &str, id: ()) -> String {
                 format!("{}/{}.msg", base, #prefix)
             }
@@ -35,6 +39,10 @@ pub fn to_path_with_id(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         impl crate::path::ToPath<u64> for #st {
+            fn prefix() -> String {
+                String::from(#prefix)
+            }
+
             fn to_path(base: &str, id: u64) -> String {
                 format!("{}/{}/{}.msg", base, #prefix, id)
             }
@@ -111,6 +119,8 @@ pub fn persistable(input: TokenStream) -> TokenStream {
                     where
                         Self: Sized,
                     {
+                        let prefix = <Self::Item as crate::path::ToPath<u64>>::prefix();
+                        let prefixed_dir = format!("{}/{}", base_dir, prefix);
                         #( let mut #heap_fields = crate::utils::FieldBinaryHeap::<#heap_types>::new(); )*
 
                         for m in self {
