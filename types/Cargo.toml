@@ -6,14 +6,14 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-indexing = ["lighthouse_types", "rmp-serde"]
+indexing = ["lighthouse_types"]
 wasm = ["wasm-bindgen"]
 
 [dependencies]
 indexer_macro = { path = "../indexer_macro" }
 
 serde = { version = "1.0", features = ["derive"] }
-rmp-serde = { version = "^0.15", optional = true }
+rmp-serde = { version = "^0.15" }
 lighthouse_types = { package = "types", git = "https://github.com/sigp/lighthouse", branch = "stable", optional = true }
 wasm-bindgen = { version = "=0.2.78", optional = true }
 ordered-float = "2.0"

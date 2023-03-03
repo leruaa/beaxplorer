@@ -9,7 +9,6 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-shared = { path = "../shared" }
 types = { path = "../types", features = ["wasm"] }
 
 futures = "0.3"
