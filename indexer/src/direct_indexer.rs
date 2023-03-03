@@ -234,22 +234,7 @@ impl<E: EthSpec> Indexer<E> {
 
         EpochsMeta::new(epoch.as_usize() + 1).persist(&self.base_dir);
         BlocksMeta::new(last_slot.as_usize() + 1).persist(&self.base_dir);
-        /*
-            FieldBinaryHeap::<EpochAttestationsCount, EpochModelWithId>::from_model(&epochs)
-            .persist(&epochs_dir);
-        FieldBinaryHeap::<EpochDepositsCount, EpochModelWithId>::from_model(&epochs)
-            .persist(&epochs_dir);
-        FieldBinaryHeap::<EpochAttesterSlashingsCount, EpochModelWithId>::from_model(&epochs)
-            .persist(&epochs_dir);
-        FieldBinaryHeap::<EpochProposerSlashingsCount, EpochModelWithId>::from_model(&epochs)
-            .persist(&epochs_dir);
-        FieldBinaryHeap::<EpochEligibleEther, EpochModelWithId>::from_model(&epochs)
-            .persist(&epochs_dir);
-        FieldBinaryHeap::<EpochVotedEther, EpochModelWithId>::from_model(&epochs)
-            .persist(&epochs_dir);
-        FieldBinaryHeap::<EpochGlobalParticipationRate, EpochModelWithId>::from_model(&epochs)
-            .persist(&epochs_dir);
-         */
+
         epoch_model.persist(&self.base_dir);
         extended_epoch_model.persist(&self.base_dir);
         block_models.persist(&self.base_dir);

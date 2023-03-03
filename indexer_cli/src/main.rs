@@ -18,7 +18,8 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
+        Commands::BuildDatabase { reset } => launcher::start_indexer(reset, cli.base_dir).unwrap(),
+        Commands::UpdateIndexes => launcher::update_indexes(cli.base_dir).unwrap(),
         Commands::Discover => launcher::start_discovery().unwrap(),
-        Commands::Index { reset, base_dir } => launcher::start_indexer(reset, base_dir).unwrap(),
     }
 }

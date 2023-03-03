@@ -5,16 +5,19 @@ use clap::{Parser, Subcommand};
 pub struct Cli {
     #[clap(subcommand)]
     pub command: Commands,
+
+    #[clap(long, default_value = "../web/public/data")]
+    pub base_dir: String,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    Discover,
-
-    Index {
+    BuildDatabase {
         #[clap(long)]
         reset: bool,
-        #[clap(long, default_value = "../web/public/data")]
-        base_dir: String,
     },
+
+    UpdateIndexes,
+
+    Discover,
 }

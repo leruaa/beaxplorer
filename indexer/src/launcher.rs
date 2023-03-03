@@ -9,6 +9,7 @@ use tokio::{
     signal,
     sync::{mpsc, watch},
 };
+use types::epoch::{EpochModelWithId, PersistIteratorEpochModel};
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
@@ -58,6 +59,14 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
         // will return with an error. We ignore the error.
         let _ = shutdown_complete.recv().await;
     });
+
+    Ok(())
+}
+
+pub fn update_indexes(base_dir: String) -> Result<(), String> {
+    let all_epochs = EpochModelWithId::all(&base_dir);
+
+    all_epochs.into_iter().persist_sortables(&base_dir)?;
 
     Ok(())
 }

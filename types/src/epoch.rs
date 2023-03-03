@@ -22,12 +22,17 @@ use indexer_macro::Persistable;
 #[to_path(prefix = "/epochs")]
 pub struct EpochModel {
     pub timestamp: u64,
+    #[persistable(sortable)]
     pub proposer_slashings_count: usize,
+    #[persistable(sortable)]
     pub attester_slashings_count: usize,
     #[persistable(sortable)]
     pub attestations_count: usize,
+    #[persistable(sortable)]
     pub deposits_count: usize,
+    #[persistable(sortable)]
     pub eligible_ether: u64,
+    #[persistable(sortable)]
     pub voted_ether: u64,
 }
 

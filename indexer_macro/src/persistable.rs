@@ -13,6 +13,7 @@ pub struct PersistableOpts {
 }
 
 #[derive(FromField)]
+#[darling(attributes(persistable))]
 pub struct Field {
     pub ident: Option<Ident>,
     pub ty: Type,

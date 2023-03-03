@@ -1,8 +1,9 @@
-use std::fs::File;
+use serde::de::DeserializeOwned;
 
-use serde::{de::DeserializeOwned, Serialize};
-
-use crate::path::{FromPath, ToPath};
+use crate::{
+    meta::{Meta, WithMeta},
+    path::{FromPath, ToPath},
+};
 
 #[cfg(feature = "indexing")]
 use rmp_serde;
@@ -10,6 +11,31 @@ use rmp_serde;
 pub struct ModelWithId<M> {
     pub id: u64,
     pub model: M,
+}
+
+impl<M> ModelWithId<M> {
+    pub fn new(id: u64, model: M) -> Self {
+        Self { id, model }
+    }
+}
+
+impl<T> ModelWithId<T>
+where
+    T: DeserializeOwned + ToPath<u64> + WithMeta,
+    <T as WithMeta>::MetaType: Meta,
+{
+    pub fn all(base_path: &str) -> Vec<ModelWithId<T>> {
+        let meta = T::meta(base_path);
+        let mut all_models = vec![];
+
+        for i in 1..meta.count() {
+            let id = i as u64;
+            let m = T::from_path(base_path, id);
+            all_models.push(ModelWithId::new(id, m))
+        }
+
+        all_models
+    }
 }
 
 impl<T> ToPath<u64> for ModelWithId<T>
