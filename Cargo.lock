@@ -8721,7 +8721,6 @@ dependencies = [
  "rmp-serde",
  "serde",
  "serde-wasm-bindgen",
- "shared",
  "thiserror",
  "types 0.1.0",
  "wasm-bindgen",
