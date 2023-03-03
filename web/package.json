@@ -8,6 +8,7 @@
     "reindex": "cd ../indexer_cli && cargo run -- --reset"
   },
   "devDependencies": {
+    "@types/node": "18.14.4",
     "@types/react": "^17.0.35",
     "autoprefixer": "^10.4.0",
     "postcss": "^8.3.11",
