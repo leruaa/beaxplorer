@@ -105,6 +105,7 @@ impl From<(u64, EpochModel, EpochExtendedModel)> for EpochExtendedView {
     }
 }
 
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 #[derive(ToPath, Serialize, Deserialize, Debug, Clone)]
 #[to_path(prefix = "/epochs/meta")]
 pub struct EpochsMeta {
