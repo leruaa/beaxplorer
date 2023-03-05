@@ -1,16 +1,17 @@
 use std::ops::Div;
 
-use indexer_macro::ToPath;
-use indexer_macro::ToPathWithId;
-use ordered_float::OrderedFloat;
-use serde::Deserialize;
-use serde::Serialize;
-
 use crate::meta::Meta;
 use crate::meta::WithMeta;
 use crate::model::ModelWithId;
 use crate::utils::Orderable;
 use indexer_macro::Persistable;
+use indexer_macro::ToPath;
+use indexer_macro::ToPathWithId;
+use ordered_float::OrderedFloat;
+use serde::Deserialize;
+use serde::Serialize;
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
 #[persistable(index = "model")]
@@ -45,29 +46,6 @@ fn get_global_participation_rate(value: &EpochModelWithId) -> Orderable<OrderedF
     let global_participation_rate =
         (value.model.voted_ether as f64).div(value.model.eligible_ether as f64);
     (value.id, OrderedFloat(global_participation_rate)).into()
-}
-
-#[derive(Serialize, Debug, Clone)]
-pub struct EpochView {
-    pub epoch: u64,
-    #[serde(flatten)]
-    pub model: EpochModel,
-    pub finalized: bool,
-    pub global_participation_rate: f64,
-}
-
-impl From<EpochModelWithId> for EpochView {
-    fn from(value: EpochModelWithId) -> Self {
-        let global_participation_rate =
-            (value.model.voted_ether as f64).div(value.model.eligible_ether as f64);
-
-        EpochView {
-            epoch: value.id,
-            model: value.model,
-            finalized: global_participation_rate >= 2f64 / 3f64,
-            global_participation_rate,
-        }
-    }
 }
 
 #[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
