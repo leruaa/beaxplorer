@@ -11,9 +11,12 @@ use ordered_float::OrderedFloat;
 use serde::Deserialize;
 use serde::Serialize;
 #[cfg(feature = "wasm")]
+use tsify::Tsify;
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(feature = "wasm", derive(Tsify))]
 #[persistable(index = "model")]
 #[persistable(sortable_field(
     name = "global_participation_rate",
@@ -21,6 +24,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
     with = "get_global_participation_rate"
 ))]
 #[to_path(prefix = "/epochs")]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub struct EpochModel {
     pub timestamp: u64,
     #[persistable(sortable)]
@@ -49,8 +53,10 @@ fn get_global_participation_rate(value: &EpochModelWithId) -> Orderable<OrderedF
 }
 
 #[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(feature = "wasm", derive(Tsify))]
 #[persistable(index = "model")]
 #[to_path(prefix = "/epochs/e")]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub struct EpochExtendedModel {
     pub voluntary_exits_count: usize,
     pub validators_count: usize,
