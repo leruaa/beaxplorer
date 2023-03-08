@@ -1,4 +1,5 @@
 module.exports = {
+  assetPrefix: process.env.ASSET_PREFIX,
   experimental: { esmExternals: true },
   webpack(config, { isServer, dev }) {
     config.experiments = {
