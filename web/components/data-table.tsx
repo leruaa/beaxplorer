@@ -1,40 +1,14 @@
 import { useEffect } from "react";
 import cx from 'classnames';
-import { useTable, usePagination, useSortBy } from "react-table";
+import { Table, flexRender } from "@tanstack/react-table";
 
-export default ({ columns, data, fetchData, loading, pageIndex: initialPageIndex, pageCount: controlledPageCount, sortBy: initialSortBy }) => {
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    prepareRow,
-    page,
-    canPreviousPage,
-    canNextPage,
-    pageOptions,
-    pageCount,
-    gotoPage,
-    nextPage,
-    previousPage,
-    setPageSize,
-    state: { pageIndex, pageSize, sortBy },
-  } = useTable(
-    {
-      columns,
-      data,
-      initialState: { pageIndex: initialPageIndex, sortBy: initialSortBy },
-      manualPagination: true,
-      pageCount: controlledPageCount,
-      manualSortBy: true,
-      disableSortRemove: true
-    },
-    useSortBy,
-    usePagination
-  )
+interface DataTableProps {
+  table: Table<any>;
+}
 
-  useEffect(() => {
-    fetchData({ pageIndex, pageSize, sortBy })
-  }, [fetchData, pageIndex, pageSize, sortBy]);
+export default ({ table }: DataTableProps) => {
+
+  const state = table.getState();
 
   return (
     // apply the table props
@@ -44,9 +18,9 @@ export default ({ columns, data, fetchData, loading, pageIndex: initialPageIndex
           Show
           &nbsp;
           <select
-            value={pageSize}
+            value={state.pagination.pageSize}
             onChange={e => {
-              setPageSize(Number(e.target.value))
+              table.setPageSize(Number(e.target.value))
             }}
           >
             {[10, 20, 30, 40, 50].map(pageSize => (
@@ -59,19 +33,23 @@ export default ({ columns, data, fetchData, loading, pageIndex: initialPageIndex
           entries
         </span>
       </div>
-      <table {...getTableProps()}>
+      <table>
         <thead>
           {// Loop over the header rows
-            headerGroups.map(headerGroup => (
+            table.getHeaderGroups().map(headerGroup => (
               // Apply the header row props
-              <tr {...headerGroup.getHeaderGroupProps()}>
+              <tr key={headerGroup.id}>
                 {// Loop over the headers in each row
-                  headerGroup.headers.map(column => (
+                  headerGroup.headers.map(header => (
                     // Apply the header cell props
-                    <th className={cx({ sorting: column.isSorted })} {...column.getHeaderProps(column.getSortByToggleProps())}>
-                      {// Render the header
-                        column.render('Header')}
-                      <span className={`sort ${column.isSorted ? (column.isSortedDesc ? 'desc' : 'asc') : 'neutral'}`}>
+                    <th
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      className={cx({ sorting: header.column.getIsSorted() })}
+                      onClick={header.column.getToggleSortingHandler()}
+                    >
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                      <span className={`sort ${header.column.getIsSorted() ? header.column.getIsSorted() : 'neutral'}`}>
                       </span>
                     </th>
                   ))}
@@ -79,36 +57,29 @@ export default ({ columns, data, fetchData, loading, pageIndex: initialPageIndex
             ))}
         </thead>
         {/* Apply the table body props */}
-        <tbody {...getTableBodyProps()}>
+        <tbody>
           {// Loop over the table rows
-            page.map(row => {
-              // Prepare the row for display
-              prepareRow(row)
-              return (
-                // Apply the row props
-                <tr {...row.getRowProps()}>
-                  {// Loop over the rows cells
-                    row.cells.map(cell => {
-                      // Apply the cell props
-                      return (
-                        <td className={cx({ sorting: cell.column.isSorted })} {...cell.getCellProps()}>
-                          {// Render the cell contents
-                            cell.render('Cell')}
-                        </td>
-                      )
-                    })}
-                </tr>
-              )
-            })}
+            table.getRowModel().rows.map(row => (
+              <tr key={row.id}>
+                {row.getVisibleCells().map(cell => (
+                  <td key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                )
+                )}
+              </tr>
+            )
+            )
+          }
         </tbody>
       </table>
 
       <div className="pagination justify-end">
-        <button onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
+        <button onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
           First
         </button>
         &nbsp;
-        <button onClick={() => previousPage()} disabled={!canPreviousPage}>
+        <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
           {'<'}
         </button>
         &nbsp;
@@ -116,20 +87,20 @@ export default ({ columns, data, fetchData, loading, pageIndex: initialPageIndex
           <input
             className="w-20"
             type="number"
-            value={pageIndex + 1}
+            defaultValue={table.getState().pagination.pageIndex + 1}
             onChange={e => {
               const page = e.target.value ? Number(e.target.value) - 1 : 0
-              gotoPage(page)
+              table.setPageIndex(page)
             }}
           />
-          &nbsp;of {pageOptions.length}
+          &nbsp;of {table.getPageCount()}
         </span>
         &nbsp;
-        <button onClick={() => nextPage()} disabled={!canNextPage}>
+        <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
           {'>'}
         </button>
         &nbsp;
-        <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
+        <button onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
           Last
         </button>
       </div>

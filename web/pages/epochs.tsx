@@ -1,4 +1,3 @@
-import { useMemo, useCallback, useState } from "react";
 import { useRouter } from 'next/router'
 import moment from "moment";
 import Moment from 'react-moment';
@@ -7,16 +6,20 @@ import Number from "../components/number";
 import Ethers from "../components/ethers";
 import Percentage from "../components/percentage";
 import Breadcrumb from "../components/breadcrumb";
-import { Epochs } from "../pkg";
+import useDataTable from "../hooks/data-table";
+import { App, EpochExtendedView, getEpochMeta, getEpochs } from "../pkg";
+import { createColumnHelper } from "@tanstack/react-table";
 
 
-export async function getServerSideProps(context) {
-  const epochs = await Epochs.build("http://localhost:3000");
-  const pageIndex = parseInt(context.query.page, 10) - 1;
+export async function getStaticProps() {
+  const host = process.env.HOST;
+  const app = new App("http://localhost:3000");
+  const meta = await getEpochMeta(app);
   return {
     props: {
-      epochs: await epochs.page(pageIndex || 0, 10, "default", false),
-      pageIndex
+      host,
+      epochs: [],//await getEpochs(app, 0, 10, "default", false, meta.count),
+      epochsCount: meta.count
     }
   }
 }
@@ -25,111 +28,64 @@ export default (props) => {
 
   const router = useRouter()
   const { page } = router.query
-  const epochsMemo = useMemo(async () => await Epochs.build("http://localhost:3000"), []);
+  const app = new App(props.host);
+  const columnHelper = createColumnHelper<EpochExtendedView>()
 
   const columns = [
-    {
-      accessor: "epoch",
-      Header: "Epoch",
-      Cell: ({ value }) => <a href={`/epoch/${value}`}><Number value={value} /></a>
-    },
-    {
-      accessor: "timestamp",
-      Header: "Time",
-      Cell: ({ value }) =>
-        <span title={moment.unix(value).format("L LTS")}>
-          <Moment unix fromNow date={value} />
+    columnHelper.accessor("epoch", {
+      header: "Epoch",
+      cell: props => <a href={`/epoch/${props.getValue()}`}><Number value={props.getValue()} /></a>
+    }),
+    columnHelper.accessor("timestamp", {
+      header: "Time",
+      cell: props =>
+        <span title={moment.unix(props.getValue()).format("L LTS")}>
+          <Moment unix fromNow date={props.getValue()} />
         </span>
-    },
-    {
-      accessor: "attestations_count",
-      Header: "Attestations",
-      Cell: ({ value }) => <Number value={value} />
-    },
-    {
-      accessor: "deposits_count",
-      Header: "Deposits",
-      Cell: ({ value }) => <Number value={value} />
-    },
-    {
-      accessor: (row, rowIndex) => { return { p: row.proposer_slashings_count, a: row.attester_slashings_count } },
-      Header: "Slashings P / A",
-      Cell: ({ value }) =>
-        <>
-          <Number value={value.p} /> / <Number value={value.a} />
-        </>
-    },
-    {
-      accessor: "finalized",
-      Header: "Finalized",
-      Cell: ({ value }) => value ? "Yes" : "No"
-    },
-    {
-      accessor: "eligible_ether",
-      Header: "Eligible",
-      Cell: ({ value }) => <Ethers value={value} />
-    },
-    {
-      accessor: "voted_ether",
-      Header: "Voted",
-      Cell: ({ value }) => <Ethers value={value} />
-    },
-    {
-      accessor: "global_participation_rate",
-      Header: "Rate",
-      Cell: ({ value }) => <Percentage value={value} />
-    }
+    }),
+    columnHelper.accessor("attestations_count", {
+      header: "Attestations",
+      cell: props => <Number value={props.getValue()} />
+    }),
+    columnHelper.accessor("deposits_count", {
+      header: "Deposits",
+      cell: props => <Number value={props.getValue()} />
+    }),
+    columnHelper.accessor(
+      (row, rowIndex) => ({ p: row.proposer_slashings_count, a: row.attester_slashings_count }),
+      {
+        header: "Slashings P / A",
+        cell: props =>
+          <>
+            <Number value={props.getValue().p} /> / <Number value={props.getValue().a} />
+          </>
+      }),
+    columnHelper.accessor("finalized", {
+      header: "Finalized",
+      cell: props => props.getValue() ? "Yes" : "No"
+    }),
+    columnHelper.accessor("eligible_ether", {
+      header: "Eligible",
+      cell: props => <Ethers value={props.getValue()} />
+    }),
+    columnHelper.accessor("voted_ether", {
+      header: "Voted",
+      cell: props => <Ethers value={props.getValue()} />
+    }),
+    columnHelper.accessor("global_participation_rate", {
+      header: "Rate",
+      cell: props => <Percentage value={props.getValue()} />
+    })
   ];
 
-  const getEpochsCount = useMemo(
-    async (): Promise<number> => {
-      const epochs = await epochsMemo;
-      const meta = await epochs.meta();
-      return meta.count;
-    },
-    [],
-  );
-
-  const [pageCount, setPageCount] = useState(100);
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async ({ pageSize, pageIndex, sortBy }) => {
-    if (pageIndex == props.pageIndex) {
-      setData(props.epochs);
-    }
-    else {
-      const epochs = await epochsMemo;
-      let sortId = sortBy.length > 0 ? sortBy[0].id : "epoch";
-      let sortDesc = sortBy.length > 0 ? sortBy[0].desc : false;
-
-      if (["epoch", "timestamp"].indexOf(sortId) > -1) sortId = "default";
-
-      setData(
-        await epochs.page(
-          pageIndex,
-          pageSize,
-          sortId,
-          sortDesc
-        )
-      );
-      setPageCount(Math.ceil(await getEpochsCount / pageSize));
-    }
-  }, []);
+  const table = useDataTable(app, "epochs", getEpochs, columns, props.epochsCount);
 
   return (
     <>
       <Breadcrumb breadcrumb={{ parts: [{ text: "Epochs", icon: "clock" }] }} />
       <section className="container mx-auto">
         <div className="tabular-data">
-          <DataTable
-            columns={useMemo(() => columns, [])}
-            data={data}
-            fetchData={fetchData}
-            loading={loading}
-            pageIndex={page ? parseInt(page as string, 10) - 1 : 0}
-            pageCount={pageCount}
-            sortBy={useMemo(() => [{ id: "epoch", desc: false }], [])}
-          />
+          <DataTable table={table} />
         </div>
       </section>
     </>

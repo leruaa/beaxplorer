@@ -3,6 +3,7 @@ use serde::Serialize;
 use thiserror::Error;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
+pub mod app;
 pub mod blocks;
 pub mod epochs;
 mod fetcher;
@@ -14,8 +15,15 @@ pub mod views;
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    pub fn log(s: &str);
+    #[wasm_bindgen(typescript_type = "EpochExtendedView[]")]
+    pub type EpochArray;
+
+    #[wasm_bindgen(typescript_type = "BlockExtendedView[]")]
+    pub type BlockArray;
+
+    #[wasm_bindgen(typescript_type = "ValidatorView[]")]
+    pub type ValidatorArray;
+
 }
 
 #[derive(Error, Debug)]
