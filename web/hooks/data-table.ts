@@ -1,12 +1,21 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, Table, useReactTable } from "@tanstack/react-table";
-import { useQuery } from "react-query";
-import { App } from "../pkg/web";
+import { useQuery } from "@tanstack/react-query";
+import { App, getRange } from "../pkg/web";
 
-type Fetcher<T> = (app: App, pageIndex: number, pageSize: number, sortId: string, sortDesc: boolean, totalCount: number) => Promise<T[]>
+type Fetcher<T> = (app: App, id: bigint) => Promise<T>
 
+async function fetchAll<T>(app: App, fetcher: Fetcher<T>, range: BigUint64Array): Promise<T[]> {
+  let promises = [];
 
-export default function useDataTable<T>(app: App, key: string, fetcher: Fetcher<T>, columns, totalCount: number): Table<T> {
+  for (let id of range) {
+    promises.push(fetcher(app, id));
+  }
+
+  return Promise.all(promises);
+}
+
+export default function useDataTable<T>(app: App, plural: string, fetcher: Fetcher<T>, columns, totalCount: number): Table<T> {
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -36,15 +45,28 @@ export default function useDataTable<T>(app: App, key: string, fetcher: Fetcher<
     }),
     [sorting]);
 
-  const query = useQuery(
-    [key, pageIndex, pageSize, sortId, sortDesc],
-    () => fetcher(app, pageIndex, pageSize, sortId, sortDesc, totalCount)
+  const range = useQuery(
+    ["range", plural, pageIndex, pageSize, sortId, sortDesc],
+    () => getRange(app, plural, pageIndex, pageSize, sortId, sortDesc, totalCount)
   );
+
+  const rangeKey = useMemo(() => range.data?.join("|"), [range]);
+
+  const query = useQuery(
+    ["models", plural, rangeKey],
+    () => fetchAll(app, fetcher, range.data),
+    {
+      enabled: !!rangeKey,
+      keepPreviousData: true
+    }
+  );
+
+  const defaultData = useMemo(() => [], [])
 
   return useReactTable(
     {
       columns: useMemo(() => columns, []),
-      data: query.data ?? [],
+      data: query.data ?? defaultData,
       pageCount,
       state: {
         sorting, pagination,
@@ -54,6 +76,7 @@ export default function useDataTable<T>(app: App, key: string, fetcher: Fetcher<
       getCoreRowModel: getCoreRowModel(),
       getSortedRowModel: getSortedRowModel(),
       manualPagination: true,
+      debugTable: true
     }
   );
 }
