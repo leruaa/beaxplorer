@@ -1,15 +1,20 @@
 use indexer_macro::{Persistable, ToPath, ToPathWithId};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
+use tsify::Tsify;
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{meta::Meta, model::ModelWithId};
 
 #[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(feature = "wasm", derive(Tsify))]
 #[persistable(index = "model")]
 #[to_path(prefix = "/block_requests")]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
+#[serde(rename_all = "camelCase")]
 pub struct BlockRequestModel {
-    pub root: Vec<u8>,
+    pub root: String,
     pub failed_count: u64,
     pub not_found_count: u64,
     pub state: String,
