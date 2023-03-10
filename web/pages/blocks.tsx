@@ -7,16 +7,17 @@ import Number from "../components/number";
 import Ethers from "../components/ethers";
 import Percentage from "../components/percentage";
 import Breadcrumb from "../components/breadcrumb";
-import { Blocks } from "../pkg";
+import { App, getBlockMeta } from "../pkg";
 
 
 export async function getServerSideProps(context) {
-  const blocks = await Blocks.build("http://localhost:3000");
-  const pageIndex = parseInt(context.query.page, 10) - 1;
+  const host = process.env.HOST;
+  const app = new App("http://localhost:3000");
+  const meta = await getBlockMeta(app);
   return {
     props: {
-      blocks: await blocks.page(pageIndex || 0, 10, "default", false),
-      pageIndex
+      blocks: []: //await blocks.page(pageIndex || 0, 10, "default", false),
+      blocksCount: meta.count;
     }
   }
 }

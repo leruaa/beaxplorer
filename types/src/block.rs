@@ -7,11 +7,15 @@ use indexer_macro::ToPathWithId;
 use serde::Deserialize;
 use serde::Serialize;
 #[cfg(feature = "wasm")]
+use tsify::Tsify;
+#[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(feature = "wasm", derive(Tsify))]
 #[persistable(index = "model")]
 #[to_path(prefix = "/blocks")]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub struct BlockModel {
     pub epoch: u64,
     pub proposer_slashings_count: usize,
@@ -28,8 +32,10 @@ impl WithMeta for BlockModel {
 }
 
 #[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(feature = "wasm", derive(Tsify))]
 #[persistable(index = "option")]
 #[to_path(prefix = "/blocks/e")]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub struct BlockExtendedModel {
     pub block_root: Vec<u8>,
     pub parent_root: Vec<u8>,

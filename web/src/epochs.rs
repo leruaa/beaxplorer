@@ -1,7 +1,6 @@
 use crate::app::App;
-use crate::views::epochs::{EpochExtendedView, EpochView};
-use crate::EpochArray;
-use crate::{fetcher::fetch, page::page};
+use crate::fetcher::fetch;
+use crate::views::epochs::EpochExtendedView;
 
 use types::epoch::{
     EpochExtendedModel, EpochExtendedModelWithId, EpochModel, EpochModelWithId, EpochsMeta,

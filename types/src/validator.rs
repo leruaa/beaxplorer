@@ -8,6 +8,9 @@ use crate::meta::Meta;
 use crate::meta::WithMeta;
 use crate::model::ModelWithId;
 
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::wasm_bindgen;
+
 #[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
 #[persistable(index = "model")]
 #[to_path(prefix = "/validators")]
@@ -30,22 +33,7 @@ impl WithMeta for ValidatorModel {
     type MetaType = ValidatorsMeta;
 }
 
-#[derive(Serialize, Debug, Clone)]
-pub struct ValidatorView {
-    pub validator_index: u64,
-    #[serde(flatten)]
-    pub model: ValidatorModel,
-}
-
-impl From<ValidatorModelWithId> for ValidatorView {
-    fn from(value: ValidatorModelWithId) -> Self {
-        ValidatorView {
-            validator_index: value.id,
-            model: value.model,
-        }
-    }
-}
-
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 #[derive(ToPath, Serialize, Deserialize, Debug, Clone)]
 #[to_path(prefix = "/validators/meta")]
 pub struct ValidatorsMeta {

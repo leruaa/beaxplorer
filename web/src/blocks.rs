@@ -1,4 +1,4 @@
-use js_sys::Promise;
+use js_sys::Array;
 use types::attestation::{AttestationModel, AttestationModelsWithId};
 use types::block::{
     BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId, BlocksMeta,
@@ -7,105 +7,71 @@ use types::committee::{CommitteeModel, CommitteeModelsWithId};
 use types::path::ToPath;
 use types::vote::{VoteModel, VoteModelsWithId};
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::future_to_promise;
 
+use crate::app::App;
 use crate::views::attestations::AttestationView;
-use crate::views::blocks::{BlockExtendedView, BlockView};
+use crate::views::blocks::BlockExtendedView;
 use crate::views::committees::CommitteeView;
 use crate::views::votes::VoteView;
-use crate::{fetcher::fetch, page::page, to_js};
+use crate::{AttestationArray, CommitteeArray, VoteArray};
 
-#[wasm_bindgen]
-pub struct Blocks {
-    base_url: String,
-    meta: BlocksMeta,
+use crate::{fetcher::fetch, to_js};
+
+#[wasm_bindgen(js_name = "getBlock")]
+pub async fn get_block(app: &App, block: u64) -> Result<BlockExtendedView, JsValue> {
+    let block_url = BlockModelWithId::to_path(&app.base_url(), block);
+    let extended_block_url = BlockExtendedModelWithId::to_path(&app.base_url(), block);
+
+    let model = fetch::<BlockModel>(block_url).await?;
+    let extended_model = fetch::<BlockExtendedModel>(extended_block_url).await?;
+    Ok(BlockExtendedView::from((block, model, extended_model)))
 }
 
-#[wasm_bindgen]
-impl Blocks {
-    fn new(base_url: String, meta: BlocksMeta) -> Blocks {
-        Blocks { base_url, meta }
-    }
+#[wasm_bindgen(js_name = "getCommittees")]
+pub async fn get_committees(app: &App, block: u64) -> Result<CommitteeArray, JsValue> {
+    let committees_url = CommitteeModelsWithId::to_path(&app.base_url(), block);
 
-    #[wasm_bindgen]
-    pub async fn build(base_url: String) -> Result<Blocks, JsValue> {
-        let url = base_url + "/data";
-        let meta = fetch(BlocksMeta::to_path(&*url, ())).await?;
+    fetch::<Vec<CommitteeModel>>(committees_url)
+        .await?
+        .into_iter()
+        .map(CommitteeView::from)
+        .map(|v| to_js(&v))
+        .collect::<Result<Array, _>>()
+        .map(|a| a.unchecked_into())
+        .map_err(Into::into)
+}
 
-        Ok(Blocks::new(url, meta))
-    }
+#[wasm_bindgen(js_name = "getVotes")]
+pub async fn get_votes(app: &App, block: u64) -> Result<VoteArray, JsValue> {
+    let votes_url = VoteModelsWithId::to_path(&app.base_url(), block);
 
-    pub fn get(&self, block: u64) -> Promise {
-        let block_url = BlockModelWithId::to_path(&self.base_url, block);
-        let extended_block_url = BlockExtendedModelWithId::to_path(&self.base_url, block);
+    fetch::<Vec<VoteModel>>(votes_url)
+        .await?
+        .into_iter()
+        .map(VoteView::from)
+        .map(|v| to_js(&v))
+        .collect::<Result<Array, _>>()
+        .map(|a| a.unchecked_into())
+        .map_err(Into::into)
+}
 
-        future_to_promise(async move {
-            let model = fetch::<BlockModel>(block_url).await?;
-            let extended_model = fetch::<BlockExtendedModel>(extended_block_url).await?;
-            to_js::<BlockExtendedView>(&(block, model, extended_model).into()).map_err(Into::into)
-        })
-    }
+#[wasm_bindgen(js_name = "getAttestations")]
+pub async fn get_attestations(app: &App, block: u64) -> Result<AttestationArray, JsValue> {
+    let attestations_url = AttestationModelsWithId::to_path(&app.base_url(), block);
 
-    pub fn committees(&self, block: u64) -> Promise {
-        let committees_url = CommitteeModelsWithId::to_path(&self.base_url, block);
+    fetch::<Vec<AttestationModel>>(attestations_url)
+        .await?
+        .into_iter()
+        .map(AttestationView::from)
+        .map(|v| to_js(&v))
+        .collect::<Result<Array, _>>()
+        .map(|a| a.unchecked_into())
+        .map_err(Into::into)
+}
 
-        future_to_promise(async move {
-            let committees = fetch::<Vec<CommitteeModel>>(committees_url)
-                .await?
-                .into_iter()
-                .map(CommitteeView::from)
-                .collect::<Vec<_>>();
-            to_js(&committees).map_err(Into::into)
-        })
-    }
+#[wasm_bindgen(js_name = "getBlockMeta")]
+pub async fn get_block_meta(app: &App) -> Result<BlocksMeta, JsValue> {
+    let meta_url = BlocksMeta::to_path(&app.base_url(), ());
 
-    pub fn votes(&self, block: u64) -> Promise {
-        let votes_url = VoteModelsWithId::to_path(&self.base_url, block);
-
-        future_to_promise(async move {
-            let votes = fetch::<Vec<VoteModel>>(votes_url)
-                .await?
-                .into_iter()
-                .map(VoteView::from)
-                .collect::<Vec<_>>();
-
-            to_js(&votes).map_err(Into::into)
-        })
-    }
-
-    pub fn attestations(&self, block: u64) -> Promise {
-        let attestations_url = AttestationModelsWithId::to_path(&self.base_url, block);
-
-        future_to_promise(async move {
-            let r = fetch::<Vec<AttestationModel>>(attestations_url)
-                .await?
-                .into_iter()
-                .map(AttestationView::from)
-                .collect::<Vec<_>>();
-
-            to_js(&r).map_err(Into::into)
-        })
-    }
-
-    pub fn page(
-        &self,
-        page_index: usize,
-        page_size: usize,
-        sort_id: String,
-        sort_desc: bool,
-    ) -> Promise {
-        page::<BlockModel, BlockView>(
-            self.base_url.clone(),
-            "blocks".to_string(),
-            page_index,
-            page_size,
-            sort_id,
-            sort_desc,
-            self.meta.count,
-        )
-    }
-
-    pub fn meta(&self) -> Result<JsValue, JsValue> {
-        to_js(&self.meta).map_err(Into::into)
-    }
+    fetch::<BlocksMeta>(meta_url).await.map_err(Into::into)
 }

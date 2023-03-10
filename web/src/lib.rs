@@ -7,7 +7,6 @@ pub mod app;
 pub mod blocks;
 pub mod epochs;
 mod fetcher;
-mod get;
 mod page;
 pub mod sort;
 pub mod validators;
@@ -15,11 +14,14 @@ pub mod views;
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(typescript_type = "EpochExtendedView[]")]
-    pub type EpochArray;
+    #[wasm_bindgen(typescript_type = "CommitteeView[]")]
+    pub type CommitteeArray;
 
-    #[wasm_bindgen(typescript_type = "BlockExtendedView[]")]
-    pub type BlockArray;
+    #[wasm_bindgen(typescript_type = "VoteView[]")]
+    pub type VoteArray;
+
+    #[wasm_bindgen(typescript_type = "AttestationView[]")]
+    pub type AttestationArray;
 
     #[wasm_bindgen(typescript_type = "ValidatorView[]")]
     pub type ValidatorArray;
