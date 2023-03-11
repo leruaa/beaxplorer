@@ -90,6 +90,10 @@ impl BlockByRootRequests {
         }
     }
 
+    pub fn count(&self) -> usize {
+        self.requests.len()
+    }
+
     pub fn exists(&self, root: &Hash256) -> bool {
         self.requests.contains_key(root)
     }

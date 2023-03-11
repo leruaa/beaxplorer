@@ -5,7 +5,10 @@ use tsify::Tsify;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use crate::{meta::Meta, model::ModelWithId};
+use crate::{
+    meta::{Meta, WithMeta},
+    model::ModelWithId,
+};
 
 #[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
 #[cfg_attr(feature = "wasm", derive(Tsify))]
@@ -18,6 +21,10 @@ pub struct BlockRequestModel {
     pub failed_count: u64,
     pub not_found_count: u64,
     pub state: String,
+}
+
+impl WithMeta for BlockRequestModel {
+    type MetaType = BlockRequestsMeta;
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
