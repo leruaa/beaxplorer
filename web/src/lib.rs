@@ -4,6 +4,7 @@ use thiserror::Error;
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 pub mod app;
+pub mod block_requests;
 pub mod blocks;
 pub mod epochs;
 mod fetcher;

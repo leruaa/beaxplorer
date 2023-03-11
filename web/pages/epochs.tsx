@@ -25,9 +25,6 @@ export async function getStaticProps() {
 }
 
 export default (props) => {
-
-  const router = useRouter()
-  const { page } = router.query
   const app = new App(props.host);
   const columnHelper = createColumnHelper<EpochExtendedView>()
 
