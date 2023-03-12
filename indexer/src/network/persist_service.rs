@@ -31,7 +31,7 @@ use crate::{
     },
 };
 
-pub struct PersistWorker<E: EthSpec> {
+pub struct PersistService<E: EthSpec> {
     base_dir: String,
     current_epoch: Epoch,
     blocks_by_epoch: HashMap<Epoch, HashMap<Slot, BlockMessage<E>>>,
@@ -41,7 +41,7 @@ pub struct PersistWorker<E: EthSpec> {
     log: Logger,
 }
 
-impl<E: EthSpec> PersistWorker<E> {
+impl<E: EthSpec> PersistService<E> {
     pub fn new(
         base_dir: String,
         beacon_context: Arc<BeaconContext<E>>,

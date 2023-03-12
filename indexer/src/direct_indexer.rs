@@ -23,7 +23,7 @@ use crate::{
     network::{
         augmented_network_service::AugmentedNetworkService,
         block_by_root_requests::BlockByRootRequests,
-        workers::block_by_root_requests_worker::BlockByRootRequestsWorker, peer_db::PeerDb, worker::Worker, workers::persist_worker::PersistWorker,
+        workers::block_by_root_requests_worker::BlockByRootRequestsWorker, peer_db::PeerDb, workers::{block_range_request_worker::BlockRangeRequestWorker}, persist_service::PersistService,
     },
 };
 
@@ -97,7 +97,7 @@ impl Indexer {
                     AugmentedNetworkService::start(executor, beacon_context)
                         .await.unwrap();
 
-                let mut worker = Worker::new(
+                let mut block_range_request_worker = BlockRangeRequestWorker::new(
                     PeerDb::new(network_globals.clone(), log.clone()),
                     network_command_send.clone(),
                     block_send.clone(),
@@ -119,7 +119,7 @@ impl Indexer {
                 loop {
                     tokio::select! {
                         Some(event) = network_event_recv.recv() => {
-                            worker.handle_event(&event);
+                            block_range_request_worker.handle_event(&event);
                             block_by_root_requests_worker.handle_event(&event)
                         },
                         
@@ -147,13 +147,13 @@ impl Indexer {
         mut shutdown_trigger: Receiver<()>,
     ) {
         let log = self.log.clone();
-        let mut persist_worker = PersistWorker::new(base_dir, beacon_context, block_by_root_requests, log.clone());
+        let mut persist_service = PersistService::new(base_dir, beacon_context, block_by_root_requests, log.clone());
 
         executor.spawn(async move {
 
             loop {
                 tokio::select! {
-                    Some(block_message) = block_recv.recv() => persist_worker.handle_block_message(block_message),
+                    Some(block_message) = block_recv.recv() => persist_service.handle_block_message(block_message),
                     _ = shutdown_trigger.changed() => {
                         info!(log, "Shutting down indexer...");
                         return;

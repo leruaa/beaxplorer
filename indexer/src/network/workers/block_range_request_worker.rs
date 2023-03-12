@@ -8,17 +8,17 @@ use slog::{debug, warn, Logger};
 use store::EthSpec;
 use tokio::sync::mpsc::UnboundedSender;
 
-use crate::direct_indexer::BlockMessage;
-
-use super::{
-    augmented_network_service::{NetworkCommand, RequestId},
-    block_by_root_requests::BlockByRootRequests,
-    block_range_request::{BlockRangeRequest, BlockRangeRequestState},
+use crate::{
+    direct_indexer::BlockMessage,
+    network::{
+        augmented_network_service::{NetworkCommand, RequestId},
+        block_by_root_requests::BlockByRootRequests,
+        block_range_request::{BlockRangeRequest, BlockRangeRequestState},
+        peer_db::PeerDb,
+    },
 };
 
-use super::peer_db::PeerDb;
-
-pub struct Worker<E: EthSpec> {
+pub struct BlockRangeRequestWorker<E: EthSpec> {
     peer_db: PeerDb<E>,
     network_command_send: UnboundedSender<NetworkCommand>,
     block_send: UnboundedSender<BlockMessage<E>>,
@@ -28,7 +28,7 @@ pub struct Worker<E: EthSpec> {
     log: Logger,
 }
 
-impl<E: EthSpec> Worker<E> {
+impl<E: EthSpec> BlockRangeRequestWorker<E> {
     pub fn new(
         peer_db: PeerDb<E>,
         network_command_send: UnboundedSender<NetworkCommand>,
@@ -36,7 +36,7 @@ impl<E: EthSpec> Worker<E> {
         block_by_root_requests: Arc<RwLock<BlockByRootRequests>>,
         log: Logger,
     ) -> Self {
-        Worker {
+        BlockRangeRequestWorker {
             peer_db,
             network_command_send,
             block_send,
