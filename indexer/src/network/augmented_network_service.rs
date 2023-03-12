@@ -52,7 +52,7 @@ pub enum NetworkCommand {
 impl<E: EthSpec> AugmentedNetworkService<E> {
     pub async fn start(
         executor: TaskExecutor,
-        beacon_context: &BeaconContext<E>,
+        beacon_context: Arc<BeaconContext<E>>,
     ) -> Result<
         (
             UnboundedSender<NetworkCommand>,

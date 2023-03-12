@@ -50,12 +50,12 @@ impl<E: EthSpec> Worker<E> {
     pub fn handle_event(&mut self, event: &NetworkEvent<RequestId, E>) {
         match &event {
             NetworkEvent::PeerConnectedOutgoing(peer_id) => {
-                if self.peer_db.is_known_great_peer(&peer_id) {
+                if self.peer_db.is_known_great_peer(peer_id) {
                     self.peer_db.add_great_peer(*peer_id);
                 }
 
                 self.block_range_request_state
-                    .peer_connected(&peer_id, &self.network_command_send);
+                    .peer_connected(peer_id, &self.network_command_send);
             }
 
             NetworkEvent::PeerDisconnected(peer_id) => {

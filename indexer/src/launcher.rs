@@ -47,9 +47,15 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     environment.runtime().block_on(async move {
         let (shutdown_handle, mut shutdown_complete) = mpsc::channel(1);
         let (shutdown_request, shutdown_trigger) = watch::channel(());
-        let indexer = Indexer::new(base_dir, beacon_context, log);
+        let indexer = Indexer::new(log);
 
-        indexer.spawn(executor, shutdown_handle, shutdown_trigger);
+        indexer.spawn_services(
+            base_dir,
+            executor,
+            Arc::new(beacon_context),
+            shutdown_handle,
+            shutdown_trigger,
+        );
 
         wait_shutdown_signal().await;
 

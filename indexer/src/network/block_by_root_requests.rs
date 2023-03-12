@@ -19,6 +19,7 @@ use types::block_request::{
 pub enum BlockByRootRequestState {
     AwaitingPeer,
     Requesting(HashSet<PeerId>),
+    Found,
 }
 
 impl Display for BlockByRootRequestState {
@@ -64,6 +65,7 @@ impl RequestAttempts {
                 true
             }
             BlockByRootRequestState::Requesting(peers) => peers.insert(*peer_id),
+            _ => false,
         }
     }
 
@@ -79,6 +81,16 @@ impl RequestAttempts {
     }
 }
 
+impl From<BlockRequestModel> for RequestAttempts {
+    fn from(value: BlockRequestModel) -> Self {
+        Self {
+            failed_count: value.failed_count,
+            not_found_count: value.not_found_count,
+            current_state: BlockByRootRequestState::AwaitingPeer,
+        }
+    }
+}
+
 pub struct BlockByRootRequests {
     requests: HashMap<Hash256, RequestAttempts>,
 }
@@ -88,6 +100,19 @@ impl BlockByRootRequests {
         BlockByRootRequests {
             requests: HashMap::new(),
         }
+    }
+
+    pub fn from_block_requests(block_requests: Vec<BlockRequestModelWithId>) -> Self {
+        let mut block_by_root_requests = BlockByRootRequests::new();
+
+        for block_request in block_requests {
+            block_by_root_requests.requests.insert(
+                block_request.model.root.parse().unwrap(),
+                block_request.model.into(),
+            );
+        }
+
+        block_by_root_requests
     }
 
     pub fn count(&self) -> usize {
@@ -131,7 +156,12 @@ impl BlockByRootRequests {
     }
 
     pub fn block_found(&mut self, root: &Hash256) -> bool {
-        self.requests.remove(root).is_some()
+        if let Entry::Occupied(mut e) = self.requests.entry(*root) {
+            e.get_mut().current_state = BlockByRootRequestState::Found;
+            true
+        } else {
+            false
+        }
     }
 
     pub fn block_not_found(&mut self, root: &Hash256) -> BlockNotFoundResult {
@@ -204,7 +234,7 @@ impl BlockByRootRequests {
             .map(|(index, (root, attempts))| BlockRequestModelWithId {
                 id: index as u64,
                 model: BlockRequestModel {
-                    root: root.as_bytes().to_vec(),
+                    root: format!("{root:#?}"),
                     failed_count: attempts.failed_count,
                     not_found_count: attempts.not_found_count,
                     state: attempts.current_state.to_string(),

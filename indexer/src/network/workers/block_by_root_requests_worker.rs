@@ -6,11 +6,12 @@ use parking_lot::RwLock;
 use slog::{info, Logger};
 use tokio::sync::mpsc::UnboundedSender;
 
-use crate::direct_indexer::BlockMessage;
-
-use super::{
-    augmented_network_service::{NetworkCommand, RequestId},
-    block_by_root_requests::BlockByRootRequests,
+use crate::{
+    direct_indexer::BlockMessage,
+    network::{
+        augmented_network_service::{NetworkCommand, RequestId},
+        block_by_root_requests::BlockByRootRequests,
+    },
 };
 
 pub struct BlockByRootRequestsWorker<E: EthSpec> {
