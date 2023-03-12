@@ -26,16 +26,18 @@ use tokio::{
 };
 use types::{
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
+    block_request::BlockRequestsMeta,
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
-    persistable::Persistable,
     path::FromPath,
+    persistable::Persistable,
 };
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
     network::{
         augmented_network_service::AugmentedNetworkService,
-        block_by_root_requests::BlockByRootRequests, peer_db::PeerDb, worker::Worker,
+        block_by_root_requests::BlockByRootRequests,
+        block_by_root_requests_worker::BlockByRootRequestsWorker, peer_db::PeerDb, worker::Worker,
     },
     types::{
         consolidated_block::{BlockStatus, ConsolidatedBlock},
@@ -65,7 +67,7 @@ pub struct Indexer<E: EthSpec> {
     beacon_context: BeaconContext<E>,
     beacon_state: BeaconState<E>,
     spec: ChainSpec,
-    block_by_root_requests_state: Arc<RwLock<BlockByRootRequests>>,
+    block_by_root_requests: Arc<RwLock<BlockByRootRequests>>,
     blocks_by_epoch: HashMap<Epoch, HashMap<Slot, BlockMessage<E>>>,
     log: Logger,
 }
@@ -78,7 +80,7 @@ impl<E: EthSpec> Indexer<E> {
             beacon_context: beacon_context.clone(),
             beacon_state: beacon_context.genesis_state.clone(),
             spec: beacon_context.spec,
-            block_by_root_requests_state: Arc::new(RwLock::new(BlockByRootRequests::new())),
+            block_by_root_requests: Arc::new(RwLock::new(BlockByRootRequests::new())),
             blocks_by_epoch: HashMap::new(),
             log,
         }
@@ -102,9 +104,16 @@ impl<E: EthSpec> Indexer<E> {
                 let mut worker = Worker::new(
                     PeerDb::new(network_globals.clone(), self.log.clone()),
                     network_command_send.clone(),
-                    block_send,
-                    self.block_by_root_requests_state.clone(),
+                    block_send.clone(),
+                    self.block_by_root_requests.clone(),
                     self.log.clone(),
+                );
+
+                let mut block_by_root_requests_worker = BlockByRootRequestsWorker::new(
+                    network_command_send.clone(),
+                    block_send,
+                    self.block_by_root_requests.clone(),
+                    self.log.clone()
                 );
 
                 let start_instant = Instant::now();
@@ -113,7 +122,10 @@ impl<E: EthSpec> Indexer<E> {
 
                 loop {
                     tokio::select! {
-                        Some(event) = network_event_recv.recv() => worker.handle_event(event),
+                        Some(event) = network_event_recv.recv() => {
+                            worker.handle_event(&event);
+                            block_by_root_requests_worker.handle_event(&event)
+                        },
                         Some(block_message) = block_recv.recv() => self.handle_block_message(block_message),
                         _ = interval.tick() => {
                             info!(self.log, "Status"; "connected peers" => network_globals.connected_peers());
@@ -255,10 +267,11 @@ impl<E: EthSpec> Indexer<E> {
     }
 
     fn persist_block_roots(&self) {
+        let block_by_root_requests_state = self.block_by_root_requests.read();
+
         info!(self.log, "Persisting pending block roots");
-        self.block_by_root_requests_state
-            .read()
-            .persist(&self.base_dir)
+        block_by_root_requests_state.persist(&self.base_dir);
+        BlockRequestsMeta::new(block_by_root_requests_state.count()).persist(&self.base_dir);
     }
 
     fn apply_blocks(

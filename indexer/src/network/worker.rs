@@ -4,7 +4,7 @@ use itertools::Itertools;
 use lighthouse_network::{NetworkEvent, Response};
 use lighthouse_types::Hash256;
 use parking_lot::RwLock;
-use slog::{debug, info, warn, Logger};
+use slog::{debug, warn, Logger};
 use store::EthSpec;
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -23,7 +23,7 @@ pub struct Worker<E: EthSpec> {
     network_command_send: UnboundedSender<NetworkCommand>,
     block_send: UnboundedSender<BlockMessage<E>>,
     block_range_request_state: BlockRangeRequest,
-    block_by_root_requests_state: Arc<RwLock<BlockByRootRequests>>,
+    block_by_root_requests: Arc<RwLock<BlockByRootRequests>>,
     proposed_block_roots: HashSet<Hash256>,
     log: Logger,
 }
@@ -33,7 +33,7 @@ impl<E: EthSpec> Worker<E> {
         peer_db: PeerDb<E>,
         network_command_send: UnboundedSender<NetworkCommand>,
         block_send: UnboundedSender<BlockMessage<E>>,
-        block_by_root_requests_state: Arc<RwLock<BlockByRootRequests>>,
+        block_by_root_requests: Arc<RwLock<BlockByRootRequests>>,
         log: Logger,
     ) -> Self {
         Worker {
@@ -41,34 +41,28 @@ impl<E: EthSpec> Worker<E> {
             network_command_send,
             block_send,
             block_range_request_state: BlockRangeRequest::new(),
-            block_by_root_requests_state,
+            block_by_root_requests,
             proposed_block_roots: HashSet::new(),
             log,
         }
     }
 
-    pub fn handle_event(&mut self, event: NetworkEvent<RequestId, E>) {
-        match event {
+    pub fn handle_event(&mut self, event: &NetworkEvent<RequestId, E>) {
+        match &event {
             NetworkEvent::PeerConnectedOutgoing(peer_id) => {
                 if self.peer_db.is_known_great_peer(&peer_id) {
-                    self.peer_db.add_great_peer(peer_id);
+                    self.peer_db.add_great_peer(*peer_id);
                 }
 
                 self.block_range_request_state
                     .peer_connected(&peer_id, &self.network_command_send);
-                self.block_by_root_requests_state
-                    .write()
-                    .peer_connected(&peer_id, &self.network_command_send)
             }
 
             NetworkEvent::PeerDisconnected(peer_id) => {
-                if self.block_range_request_state.matches(&peer_id) {
+                if self.block_range_request_state.matches(peer_id) {
                     debug!(self.log, "Range request cancelled");
                     self.request_block_range();
                 }
-                self.block_by_root_requests_state
-                    .write()
-                    .peer_disconnected(&peer_id);
             }
 
             NetworkEvent::RPCFailed {
@@ -76,15 +70,6 @@ impl<E: EthSpec> Worker<E> {
                 ..
             } => {
                 self.request_block_range();
-            }
-
-            NetworkEvent::RPCFailed {
-                id: RequestId::Block(root),
-                peer_id,
-            } => {
-                self.block_by_root_requests_state
-                    .write()
-                    .failed_request(&root, &peer_id);
             }
 
             NetworkEvent::ResponseReceived {
@@ -106,43 +91,21 @@ impl<E: EthSpec> Worker<E> {
                         .collect::<Vec<_>>();
 
                     for (slot, root) in unknown_blocks {
-                        self.block_by_root_requests_state
-                            .write()
-                            .request_block_by_root(
-                                &slot,
-                                &root,
-                                &self.network_command_send,
-                                &self.peer_db,
-                            )
+                        self.block_by_root_requests.write().request_block_by_root(
+                            &slot,
+                            &root,
+                            &self.network_command_send,
+                            &self.peer_db,
+                        )
                     }
 
-                    for message in self.block_range_request_state.block_found(block) {
+                    for message in self.block_range_request_state.block_found(block.clone()) {
                         self.block_send.send(message).unwrap();
                     }
                 } else {
                     // A block range response has finished, request another one
                     debug!(self.log, "Range request completed"; "start slot" => start_slot);
                     self.request_block_range();
-                }
-            }
-
-            NetworkEvent::ResponseReceived {
-                peer_id,
-                id: RequestId::Block(root),
-                response: Response::BlocksByRoot(block),
-            } => {
-                if self.block_by_root_requests_state.read().exists(&root) {
-                    if let Some(block) = block {
-                        if self.block_by_root_requests_state.write().block_found(&root) {
-                            info!(self.log, "An orphaned block has been found"; "slot" => block.message().slot(), "root" => %block.canonical_root());
-                            self.peer_db.add_great_peer(peer_id);
-                            self.block_send.send(BlockMessage::Orphaned(block)).unwrap();
-                        }
-                    } else {
-                        self.block_by_root_requests_state
-                            .write()
-                            .block_not_found(&root);
-                    }
                 }
             }
 
