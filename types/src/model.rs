@@ -51,9 +51,9 @@ where
     }
 }
 
-impl<M> FromPath<M, u64> for ModelWithId<M>
+impl<Id, M> FromPath<Id, M> for ModelWithId<Id, M>
 where
-    M: ToPath<u64> + DeserializeOwned,
+    M: ToPath<Id> + DeserializeOwned,
 {
     fn from_path(base_dir: &str, id: &Id) -> M {
         let path = M::to_path(base_dir, &id);

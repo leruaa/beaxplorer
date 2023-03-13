@@ -32,11 +32,11 @@ where
     }
 }
 
-pub trait FromPath<M, Id> {
+pub trait FromPath<Id, M> {
     fn from_path(base_dir: &str, id: &Id) -> M;
 }
 
-impl<M, Id> FromPath<M, Id> for M
+impl<Id, M> FromPath<Id, M> for M
 where
     M: ToPath<Id> + DeserializeOwned,
 {
