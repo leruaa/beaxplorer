@@ -13,7 +13,7 @@ where
     M: Serialize + ToPath<u64>,
 {
     fn persist(&self, base_dir: &str) {
-        let path = M::to_path(base_dir, self.id);
+        let path = M::to_path(base_dir, &self.id);
         let mut f = BufWriter::new(File::create(path).unwrap());
         self.model.serialize(&mut Serializer::new(&mut f)).unwrap();
     }
@@ -24,7 +24,7 @@ where
     T: Serialize + ToPath<()>,
 {
     fn persist(&self, base_dir: &str) {
-        let path = T::to_path(base_dir, ());
+        let path = T::to_path(base_dir, &());
         let mut f = BufWriter::new(File::create(path).unwrap());
         self.serialize(&mut Serializer::new(&mut f)).unwrap();
     }

@@ -30,7 +30,7 @@ where
 
         for i in 1..meta.count() {
             let id = i as u64;
-            let m = T::from_path(base_path, id);
+            let m = T::from_path(base_path, &id);
             all_models.push(ModelWithId::new(id, m))
         }
 
@@ -46,7 +46,7 @@ where
         T::prefix()
     }
 
-    fn to_path(base_dir: &str, id: u64) -> String {
+    fn to_path(base_dir: &str, id: &Id) -> String {
         T::to_path(base_dir, id)
     }
 }
@@ -55,8 +55,8 @@ impl<M> FromPath<M, u64> for ModelWithId<M>
 where
     M: ToPath<u64> + DeserializeOwned,
 {
-    fn from_path(base_dir: &str, id: u64) -> M {
-        let path = M::to_path(base_dir, id);
+    fn from_path(base_dir: &str, id: &Id) -> M {
+        let path = M::to_path(base_dir, &id);
         let file = std::fs::File::open(path).unwrap();
         rmp_serde::from_read::<_, M>(file).unwrap()
     }

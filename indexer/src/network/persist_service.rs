@@ -170,7 +170,7 @@ impl<E: EthSpec> PersistService<E> {
     }
 
     fn persist_existing_block(&self, block_status: BlockStatus<E>, slot: &Slot, epoch: &Epoch) {
-        let block_model = BlockModelWithId::from_path(&self.base_dir, slot.as_u64());
+        let block_model = BlockModelWithId::from_path(&self.base_dir, &slot.as_u64());
 
         if block_model.status == "Missed" {
             let block = ConsolidatedBlock::new(block_status, *slot, *epoch, block_model.proposer);
