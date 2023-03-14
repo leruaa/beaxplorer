@@ -2,11 +2,11 @@
   "source": "src/index.html",
   "scripts": {
     "dev": "next dev",
-    "dev-code-server": "HOST=https://code.aurel.cloud/proxy/3000 ASSET_PREFIX=/proxy/3000 next dev",
+    "dev-code-server": "HOST=https://code.aurel.cloud/proxy/3000 ASSET_PREFIX=/proxy/3000 next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "wasm": "wasm-pack build",
     "start": "next start",
-    "reindex": "cd ../indexer_cli && cargo run -- --reset"
+    "reindex": "cd ../indexer_cli && cargo run -- build-database --reset"
   },
   "devDependencies": {
     "@types/node": "18.14.4",

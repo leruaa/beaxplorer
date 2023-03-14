@@ -19,8 +19,8 @@ use crate::{fetcher::fetch, to_js};
 
 #[wasm_bindgen(js_name = "getBlock")]
 pub async fn get_block(app: &App, block: u64) -> Result<BlockExtendedView, JsValue> {
-    let block_url = BlockModelWithId::to_path(&app.base_url(), block);
-    let extended_block_url = BlockExtendedModelWithId::to_path(&app.base_url(), block);
+    let block_url = BlockModelWithId::to_path(&app.base_url(), &block);
+    let extended_block_url = BlockExtendedModelWithId::to_path(&app.base_url(), &block);
 
     let model = fetch::<BlockModel>(block_url).await?;
     let extended_model = fetch::<BlockExtendedModel>(extended_block_url).await?;
@@ -29,7 +29,7 @@ pub async fn get_block(app: &App, block: u64) -> Result<BlockExtendedView, JsVal
 
 #[wasm_bindgen(js_name = "getCommittees")]
 pub async fn get_committees(app: &App, block: u64) -> Result<CommitteeArray, JsValue> {
-    let committees_url = CommitteeModelsWithId::to_path(&app.base_url(), block);
+    let committees_url = CommitteeModelsWithId::to_path(&app.base_url(), &block);
 
     fetch::<Vec<CommitteeModel>>(committees_url)
         .await?
@@ -43,7 +43,7 @@ pub async fn get_committees(app: &App, block: u64) -> Result<CommitteeArray, JsV
 
 #[wasm_bindgen(js_name = "getVotes")]
 pub async fn get_votes(app: &App, block: u64) -> Result<VoteArray, JsValue> {
-    let votes_url = VoteModelsWithId::to_path(&app.base_url(), block);
+    let votes_url = VoteModelsWithId::to_path(&app.base_url(), &block);
 
     fetch::<Vec<VoteModel>>(votes_url)
         .await?
@@ -57,7 +57,7 @@ pub async fn get_votes(app: &App, block: u64) -> Result<VoteArray, JsValue> {
 
 #[wasm_bindgen(js_name = "getAttestations")]
 pub async fn get_attestations(app: &App, block: u64) -> Result<AttestationArray, JsValue> {
-    let attestations_url = AttestationModelsWithId::to_path(&app.base_url(), block);
+    let attestations_url = AttestationModelsWithId::to_path(&app.base_url(), &block);
 
     fetch::<Vec<AttestationModel>>(attestations_url)
         .await?
@@ -71,7 +71,7 @@ pub async fn get_attestations(app: &App, block: u64) -> Result<AttestationArray,
 
 #[wasm_bindgen(js_name = "getBlockMeta")]
 pub async fn get_block_meta(app: &App) -> Result<BlocksMeta, JsValue> {
-    let meta_url = BlocksMeta::to_path(&app.base_url(), ());
+    let meta_url = BlocksMeta::to_path(&app.base_url(), &());
 
     fetch::<BlocksMeta>(meta_url).await.map_err(Into::into)
 }
