@@ -8,9 +8,9 @@ pub trait Persistable {
     fn persist(&self, base_dir: &str);
 }
 
-impl<M> Persistable for ModelWithId<M>
+impl<Id, M> Persistable for ModelWithId<Id, M>
 where
-    M: Serialize + ToPath<u64>,
+    M: Serialize + ToPath<Id>,
 {
     fn persist(&self, base_dir: &str) {
         let path = M::to_path(base_dir, &self.id);

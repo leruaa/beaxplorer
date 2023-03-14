@@ -8,23 +8,23 @@ use crate::{
 #[cfg(feature = "indexing")]
 use rmp_serde;
 
-pub struct ModelWithId<M> {
-    pub id: u64,
+pub struct ModelWithId<Id, M> {
+    pub id: Id,
     pub model: M,
 }
 
-impl<M> ModelWithId<M> {
-    pub fn new(id: u64, model: M) -> Self {
+impl<Id, M> ModelWithId<Id, M> {
+    pub fn new(id: Id, model: M) -> Self {
         Self { id, model }
     }
 }
 
-impl<T> ModelWithId<T>
+impl<T> ModelWithId<u64, T>
 where
     T: DeserializeOwned + ToPath<u64> + WithMeta,
     <T as WithMeta>::MetaType: Meta,
 {
-    pub fn all(base_path: &str) -> Vec<ModelWithId<T>> {
+    pub fn all(base_path: &str) -> Vec<ModelWithId<u64, T>> {
         let meta = T::meta(base_path);
         let mut all_models = vec![];
 
@@ -38,9 +38,9 @@ where
     }
 }
 
-impl<T> ToPath<u64> for ModelWithId<T>
+impl<T, Id> ToPath<Id> for ModelWithId<Id, T>
 where
-    T: ToPath<u64>,
+    T: ToPath<Id>,
 {
     fn prefix() -> String {
         T::prefix()
