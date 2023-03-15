@@ -126,30 +126,6 @@ pub fn persistable(input: TokenStream) -> TokenStream {
             Some(quote! {
                 pub type #model_with_id = ModelWithId<#model_ty>;
 
-                impl #model_with_id {
-                #(
-                    pub fn #all_from_fields(
-                        base_dir: &str,
-                    ) -> Result<Vec<#model_with_id>, String> {
-                        let mut models = vec![];
-                        let meta = <#model_ident as crate::meta::WithMeta>::meta(base_dir);
-
-                        for i in 1..(meta.count / 10 + 1) {
-                            let path = format!("{}/s/{}/{}.msg", base_dir, #field_names, i + 1);
-                            let file = std::fs::File::open(&path).map_err(|_| format!("File not found: {}", path))?;
-                            let ids = rmp_serde::from_read::<_, Vec<#model_id>>(file).map_err(|err| err.to_string())?;
-
-                            for id in ids {
-                                let model = <#model_ident as crate::path::FromPath<#model_ty>>::from_path(base_dir, &id);
-                                models.push(ModelWithId::new(id, model))
-                            }
-                        }
-
-                        Ok(models)
-                    }
-                )*
-                }
-
                 impl crate::persistable::Persistable for Vec<#model_with_id>
                 {
                     fn persist(&self, base_dir: &str) {
