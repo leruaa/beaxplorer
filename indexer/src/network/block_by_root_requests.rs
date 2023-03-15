@@ -107,7 +107,7 @@ impl BlockByRootRequests {
 
         for block_request in block_requests {
             block_by_root_requests.requests.insert(
-                block_request.model.root.parse().unwrap(),
+                block_request.id.parse().unwrap(),
                 block_request.model.into(),
             );
         }
@@ -230,11 +230,9 @@ impl BlockByRootRequests {
     pub fn persist(&self, base_dir: &str) {
         self.requests
             .iter()
-            .enumerate()
-            .map(|(index, (root, attempts))| BlockRequestModelWithId {
-                id: index as u64,
+            .map(|(root, attempts)| BlockRequestModelWithId {
+                id: format!("{root:#?}"),
                 model: BlockRequestModel {
-                    root: format!("{root:#?}"),
                     failed_count: attempts.failed_count,
                     not_found_count: attempts.not_found_count,
                     state: attempts.current_state.to_string(),

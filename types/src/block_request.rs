@@ -1,4 +1,4 @@
-use indexer_macro::{Persistable, ToPath, ToPathWithId};
+use indexer_macro::Persistable;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm")]
 use tsify::Tsify;
@@ -20,7 +20,6 @@ use crate::{
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 #[serde(rename_all = "camelCase")]
 pub struct BlockRequestModel {
-    pub root: String,
     pub failed_count: u64,
     pub not_found_count: u64,
     pub state: String,
