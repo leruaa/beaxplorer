@@ -8,12 +8,15 @@ use wasm_bindgen::prelude::wasm_bindgen;
 use crate::{
     meta::{Meta, WithMeta},
     model::ModelWithId,
+    utils::Orderable,
 };
 
-#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
 #[cfg_attr(feature = "wasm", derive(Tsify))]
-#[persistable(index = "model")]
-#[to_path(prefix = "/block_requests")]
+#[persistable(id = "String")]
+#[persistable(model = "default")]
+#[persistable(prefix = "/block_requests")]
+#[persistable(sortable_field(name = "root", ty = "String", with = "get_root"))]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 #[serde(rename_all = "camelCase")]
 pub struct BlockRequestModel {
@@ -23,13 +26,17 @@ pub struct BlockRequestModel {
     pub state: String,
 }
 
+fn get_root(value: &BlockRequestModelWithId) -> Orderable<String, String> {
+    (value.id.clone(), value.id.clone()).into()
+}
+
 impl WithMeta for BlockRequestModel {
     type MetaType = BlockRequestsMeta;
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
-#[derive(ToPath, Serialize, Deserialize, Debug, Clone)]
-#[to_path(prefix = "/block_requests/meta")]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/block_requests/meta")]
 pub struct BlockRequestsMeta {
     pub count: usize,
 }

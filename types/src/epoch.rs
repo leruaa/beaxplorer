@@ -5,8 +5,6 @@ use crate::meta::WithMeta;
 use crate::model::ModelWithId;
 use crate::utils::Orderable;
 use indexer_macro::Persistable;
-use indexer_macro::ToPath;
-use indexer_macro::ToPathWithId;
 use ordered_float::OrderedFloat;
 use serde::Deserialize;
 use serde::Serialize;
@@ -15,15 +13,15 @@ use tsify::Tsify;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
-#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
 #[cfg_attr(feature = "wasm", derive(Tsify))]
-#[persistable(index = "model")]
+#[persistable(model = "default")]
 #[persistable(sortable_field(
     name = "global_participation_rate",
     ty = "OrderedFloat<f64>",
     with = "get_global_participation_rate"
 ))]
-#[to_path(prefix = "/epochs")]
+#[persistable(prefix = "/epochs")]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub struct EpochModel {
     pub timestamp: u64,
@@ -41,21 +39,20 @@ pub struct EpochModel {
     pub voted_ether: u64,
 }
 
-impl WithMeta for EpochModel {
-    type MetaType = EpochsMeta;
-}
-
-// global_participation_rate
-fn get_global_participation_rate(value: &EpochModelWithId) -> Orderable<OrderedFloat<f64>> {
+fn get_global_participation_rate(value: &EpochModelWithId) -> Orderable<u64, OrderedFloat<f64>> {
     let global_participation_rate =
         (value.model.voted_ether as f64).div(value.model.eligible_ether as f64);
     (value.id, OrderedFloat(global_participation_rate)).into()
 }
 
-#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
+impl WithMeta for EpochModel {
+    type MetaType = EpochsMeta;
+}
+
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
 #[cfg_attr(feature = "wasm", derive(Tsify))]
-#[persistable(index = "model")]
-#[to_path(prefix = "/epochs/e")]
+#[persistable(model = "default")]
+#[persistable(prefix = "/epochs/e")]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub struct EpochExtendedModel {
     pub voluntary_exits_count: usize,
@@ -90,8 +87,8 @@ impl From<(u64, EpochModel, EpochExtendedModel)> for EpochExtendedView {
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
-#[derive(ToPath, Serialize, Deserialize, Debug, Clone)]
-#[to_path(prefix = "/epochs/meta")]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/epochs/meta")]
 pub struct EpochsMeta {
     pub count: usize,
 }

@@ -5,7 +5,9 @@ use syn::{Ident, Path, Type};
 #[darling(attributes(persistable))]
 pub struct PersistableOpts {
     pub ident: Ident,
-    pub index: Index,
+    pub id: Option<Type>,
+    pub model: Option<Model>,
+    pub prefix: String,
     #[darling(multiple)]
     #[darling(rename = "sortable_field")]
     pub sortable_fields: Vec<SortableField>,
@@ -48,9 +50,9 @@ impl From<Field> for Option<SortableField> {
 }
 
 #[derive(Default, FromMeta)]
-pub enum Index {
+pub enum Model {
     #[default]
-    Model,
+    Default,
     Option,
     Collection,
 }

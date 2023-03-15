@@ -2,8 +2,6 @@ use crate::meta::Meta;
 use crate::meta::WithMeta;
 use crate::model::ModelWithId;
 use indexer_macro::Persistable;
-use indexer_macro::ToPath;
-use indexer_macro::ToPathWithId;
 use serde::Deserialize;
 use serde::Serialize;
 #[cfg(feature = "wasm")]
@@ -11,10 +9,10 @@ use tsify::Tsify;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
-#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
 #[cfg_attr(feature = "wasm", derive(Tsify))]
-#[persistable(index = "model")]
-#[to_path(prefix = "/blocks")]
+#[persistable(model = "default")]
+#[persistable(prefix = "/blocks")]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub struct BlockModel {
     pub epoch: u64,
@@ -31,10 +29,10 @@ impl WithMeta for BlockModel {
     type MetaType = BlocksMeta;
 }
 
-#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
 #[cfg_attr(feature = "wasm", derive(Tsify))]
-#[persistable(index = "option")]
-#[to_path(prefix = "/blocks/e")]
+#[persistable(model = "option")]
+#[persistable(prefix = "/blocks/e")]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub struct BlockExtendedModel {
     pub block_root: Vec<u8>,
@@ -51,8 +49,8 @@ pub struct BlockExtendedModel {
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
-#[derive(ToPath, Serialize, Deserialize, Debug, Clone)]
-#[to_path(prefix = "/blocks/meta")]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/blocks/meta")]
 pub struct BlocksMeta {
     pub count: usize,
 }

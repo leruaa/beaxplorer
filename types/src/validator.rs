@@ -1,6 +1,4 @@
 use indexer_macro::Persistable;
-use indexer_macro::ToPath;
-use indexer_macro::ToPathWithId;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -11,9 +9,9 @@ use crate::model::ModelWithId;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
-#[derive(Persistable, ToPathWithId, Serialize, Deserialize, Debug, Clone)]
-#[persistable(index = "model")]
-#[to_path(prefix = "/validators")]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(model = "default")]
+#[persistable(prefix = "/validators")]
 pub struct ValidatorModel {
     pub pubkey: Vec<u8>,
     pub pubkey_hex: String,
@@ -34,8 +32,8 @@ impl WithMeta for ValidatorModel {
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
-#[derive(ToPath, Serialize, Deserialize, Debug, Clone)]
-#[to_path(prefix = "/validators/meta")]
+#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[persistable(prefix = "/validators/meta")]
 pub struct ValidatorsMeta {
     pub count: usize,
 }
