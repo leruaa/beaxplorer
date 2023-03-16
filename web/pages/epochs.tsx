@@ -9,6 +9,7 @@ import Breadcrumb from "../components/breadcrumb";
 import useDataTable from "../hooks/data-table";
 import { App, EpochExtendedView, getEpochMeta, getEpoch } from "../pkg";
 import { createColumnHelper } from "@tanstack/react-table";
+import Link from 'next/link';
 
 
 export async function getStaticProps() {
@@ -31,7 +32,9 @@ export default (props) => {
   const columns = [
     columnHelper.accessor("epoch", {
       header: "Epoch",
-      cell: props => <a href={`/epoch/${props.getValue()}`}><Number value={props.getValue()} /></a>
+      cell: props => <Link href={`/epoch/${props.getValue()}`}>
+        {props.getValue()}
+      </Link>
     }),
     columnHelper.accessor("timestamp", {
       header: "Time",

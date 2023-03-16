@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router'
 import Breadcrumb from "../../components/breadcrumb";
 import Percentage from "../../components/percentage";
+import Ethers from "../../components/ethers";
 import { App, getEpochExtended } from '../../pkg/web';
 
 
@@ -58,7 +59,7 @@ export default (props) => {
               <dt>Slashings P / A</dt>
               <dd>{epoch.proposer_slashings_count} / {epoch.attester_slashings_count}</dd>
               <dt>Voting Participation</dt>
-              <dd>{epoch.eligible_ether} ETH of {epoch.voted_ether} ETH (<Percentage value={epoch.global_participation_rate} />)</dd>
+              <dd><Ethers value={epoch.eligible_ether} /> of <Ethers value={epoch.voted_ether} /> (<Percentage value={epoch.global_participation_rate} />)</dd>
             </dl>
           </div>
         </section>
