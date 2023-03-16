@@ -20,9 +20,12 @@ use crate::{
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 #[serde(rename_all = "camelCase")]
 pub struct BlockRequestModel {
-    pub failed_count: u64,
-    pub not_found_count: u64,
+    pub possible_slots: Vec<u64>,
     pub state: String,
+    pub active_request_count: usize,
+    pub failed_count: usize,
+    pub not_found_count: usize,
+    pub found_by: String,
 }
 
 fn get_root(value: &BlockRequestModelWithId) -> Orderable<String, String> {

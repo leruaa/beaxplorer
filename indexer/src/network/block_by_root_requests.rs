@@ -22,6 +22,15 @@ pub enum BlockByRootRequestState {
     Found,
 }
 
+impl BlockByRootRequestState {
+    pub fn active_request_count(&self) -> usize {
+        match &self {
+            BlockByRootRequestState::Requesting(peers) => peers.len(),
+            _ => 0,
+        }
+    }
+}
+
 impl Display for BlockByRootRequestState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(&self, f)
@@ -36,32 +45,38 @@ pub enum BlockNotFoundResult {
 }
 
 pub struct RequestAttempts {
-    pub failed_count: u64,
-    pub not_found_count: u64,
-    pub current_state: BlockByRootRequestState,
+    pub possible_slots: HashSet<Slot>,
+    pub state: BlockByRootRequestState,
+    pub failed_count: usize,
+    pub not_found_count: usize,
+    pub found_by: Option<Hash256>,
 }
 
 impl RequestAttempts {
     pub fn awaiting_peer() -> Self {
         RequestAttempts {
+            possible_slots: HashSet::new(),
+            state: BlockByRootRequestState::AwaitingPeer,
             failed_count: 0,
             not_found_count: 0,
-            current_state: BlockByRootRequestState::AwaitingPeer,
+            found_by: None,
         }
     }
 
     pub fn requesting(peers: HashSet<PeerId>) -> Self {
         RequestAttempts {
+            possible_slots: HashSet::new(),
             failed_count: 0,
             not_found_count: 0,
-            current_state: BlockByRootRequestState::Requesting(peers),
+            state: BlockByRootRequestState::Requesting(peers),
+            found_by: None,
         }
     }
 
     pub fn insert_peer(&mut self, peer_id: &PeerId) -> bool {
-        match &mut self.current_state {
+        match &mut self.state {
             BlockByRootRequestState::AwaitingPeer => {
-                self.current_state = BlockByRootRequestState::Requesting(HashSet::from([*peer_id]));
+                self.state = BlockByRootRequestState::Requesting(HashSet::from([*peer_id]));
                 true
             }
             BlockByRootRequestState::Requesting(peers) => peers.insert(*peer_id),
@@ -70,11 +85,11 @@ impl RequestAttempts {
     }
 
     pub fn remove_peer(&mut self, peer_id: &PeerId) {
-        if let BlockByRootRequestState::Requesting(peers) = &mut self.current_state {
+        if let BlockByRootRequestState::Requesting(peers) = &mut self.state {
             if peers.remove(peer_id) {
                 self.failed_count += 1;
                 if peers.is_empty() {
-                    self.current_state = BlockByRootRequestState::AwaitingPeer;
+                    self.state = BlockByRootRequestState::AwaitingPeer;
                 }
             }
         }
@@ -84,9 +99,11 @@ impl RequestAttempts {
 impl From<BlockRequestModel> for RequestAttempts {
     fn from(value: BlockRequestModel) -> Self {
         Self {
+            possible_slots: HashSet::new(),
+            state: BlockByRootRequestState::AwaitingPeer,
             failed_count: value.failed_count,
             not_found_count: value.not_found_count,
-            current_state: BlockByRootRequestState::AwaitingPeer,
+            found_by: value.found_by.parse().ok(),
         }
     }
 }
@@ -157,7 +174,11 @@ impl BlockByRootRequests {
 
     pub fn block_found(&mut self, root: &Hash256) -> bool {
         if let Entry::Occupied(mut e) = self.requests.entry(*root) {
-            e.get_mut().current_state = BlockByRootRequestState::Found;
+            if e.get().found_by.is_none() {
+                e.get_mut().found_by = Some(*root);
+            }
+
+            e.get_mut().state = BlockByRootRequestState::Found;
             true
         } else {
             false
@@ -181,12 +202,12 @@ impl BlockByRootRequests {
 
     pub fn request_block_by_root<E: EthSpec>(
         &mut self,
-        _slot: &Slot,
+        slot: &Slot,
         root: &Hash256,
         network_command_send: &UnboundedSender<NetworkCommand>,
         peer_db: &PeerDb<E>,
     ) {
-        self.requests.entry(*root).or_insert_with(|| {
+        let attempt = self.requests.entry(*root).or_insert_with(|| {
             let (connected_great_peers, disconnected_great_peers) = peer_db.get_trusted_peers();
 
             for (peer_id, _) in &connected_great_peers {
@@ -225,6 +246,8 @@ impl BlockByRootRequests {
                 ))
             }
         });
+
+        attempt.possible_slots.insert(*slot);
     }
 
     pub fn persist(&self, base_dir: &str) {
@@ -233,9 +256,19 @@ impl BlockByRootRequests {
             .map(|(root, attempts)| BlockRequestModelWithId {
                 id: format!("{root:#?}"),
                 model: BlockRequestModel {
+                    possible_slots: attempts
+                        .possible_slots
+                        .iter()
+                        .map(|s| s.as_u64())
+                        .collect::<Vec<_>>(),
+                    state: attempts.state.to_string(),
+                    active_request_count: attempts.state.active_request_count(),
                     failed_count: attempts.failed_count,
                     not_found_count: attempts.not_found_count,
-                    state: attempts.current_state.to_string(),
+                    found_by: attempts
+                        .found_by
+                        .map(|r| format!("{r:#?}"))
+                        .unwrap_or_default(),
                 },
             })
             .persist(base_dir);
