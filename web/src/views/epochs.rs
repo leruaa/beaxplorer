@@ -2,7 +2,7 @@ use std::ops::Div;
 
 use serde::Serialize;
 use tsify::Tsify;
-use types::epoch::{EpochExtendedModel, EpochModel, EpochModelWithId};
+use types::epoch::{EpochExtendedModel, EpochModel};
 use wasm_bindgen::JsValue;
 
 use crate::to_js;
@@ -17,14 +17,13 @@ pub struct EpochView {
     pub global_participation_rate: f64,
 }
 
-impl From<EpochModelWithId> for EpochView {
-    fn from(value: EpochModelWithId) -> Self {
-        let global_participation_rate =
-            (value.model.voted_ether as f64).div(value.model.eligible_ether as f64);
+impl From<(u64, EpochModel)> for EpochView {
+    fn from((epoch, model): (u64, EpochModel)) -> Self {
+        let global_participation_rate = (model.voted_ether as f64).div(model.eligible_ether as f64);
 
         EpochView {
-            epoch: value.id,
-            model: value.model,
+            epoch,
+            model,
             finalized: global_participation_rate >= 2f64 / 3f64,
             global_participation_rate,
         }
@@ -54,6 +53,12 @@ impl From<(u64, EpochModel, EpochExtendedModel)> for EpochExtendedView {
             global_participation_rate,
             extended_model,
         }
+    }
+}
+
+impl From<EpochView> for JsValue {
+    fn from(val: EpochView) -> Self {
+        to_js(&val).unwrap()
     }
 }
 
