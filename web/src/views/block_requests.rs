@@ -8,13 +8,14 @@ use crate::to_js;
 #[derive(Serialize, Tsify, Debug, Clone)]
 #[tsify(into_wasm_abi)]
 pub struct BlockRequestView {
+    pub root: String,
     #[serde(flatten)]
     pub model: BlockRequestModel,
 }
 
-impl From<BlockRequestModel> for BlockRequestView {
-    fn from(model: BlockRequestModel) -> Self {
-        BlockRequestView { model }
+impl From<(String, BlockRequestModel)> for BlockRequestView {
+    fn from((root, model): (String, BlockRequestModel)) -> Self {
+        BlockRequestView { root, model }
     }
 }
 
