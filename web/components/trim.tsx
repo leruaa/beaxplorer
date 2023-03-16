@@ -1,8 +1,8 @@
 
-export default ({ value, regEx, groups }) => {
+export default ({ value, regEx, groups, className }) => {
   const formatted = value.replace(regEx, groups);
 
   return (
-    <span>{formatted}</span>
+    <span className={className}>{formatted}</span>
   )
 }

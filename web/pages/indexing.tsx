@@ -1,5 +1,7 @@
 import { createColumnHelper } from "@tanstack/react-table";
+import Link from "next/link";
 import DataTable from "../components/data-table";
+import Root from "../components/root";
 import useDataTable from "../hooks/data-table";
 import { App, BlockRequestView, getBlockRequest, getBlockRequestMeta } from "../pkg/web";
 
@@ -24,11 +26,17 @@ export default (props) => {
   const columns = [
     columnHelper.accessor("root", {
       header: "Root",
-      cell: props => <span className="font-mono">{props.getValue()}</span>
+      cell: props =>
+        <Root className="font-mono" value={props.getValue()} />
     }),
+    columnHelper.accessor("state", { header: "State" }),
+    columnHelper.accessor("activeRequestCount", { header: "Active requests count" }),
     columnHelper.accessor("failedCount", { header: "Failed count" }),
     columnHelper.accessor("notFoundCount", { header: "Not found count" }),
-    columnHelper.accessor("state", { header: "State" }),
+    columnHelper.accessor("foundBy", {
+      header: "Found by",
+      cell: props => <Root value={props.getValue()} />
+    }),
   ]
 
   const table = useDataTable(app, "block_requests", getBlockRequest, columns, props.blockRequestsCount, "root");
