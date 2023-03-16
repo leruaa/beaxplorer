@@ -20,6 +20,6 @@ fn main() {
     match cli.command {
         Commands::BuildDatabase { reset } => launcher::start_indexer(reset, cli.base_dir).unwrap(),
         Commands::UpdateIndexes => launcher::update_indexes(cli.base_dir).unwrap(),
-        Commands::Discover => launcher::start_discovery().unwrap(),
+        Commands::SearchOrphans => launcher::search_orphans(cli.base_dir).unwrap(),
     }
 }

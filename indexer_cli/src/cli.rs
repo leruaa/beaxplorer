@@ -19,5 +19,5 @@ pub enum Commands {
 
     UpdateIndexes,
 
-    Discover,
+    SearchOrphans,
 }

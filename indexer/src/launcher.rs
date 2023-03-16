@@ -1,20 +1,30 @@
-use std::fs;
+use std::{fs, sync::Arc};
 
 use environment::{Environment, EnvironmentBuilder, LoggerConfig};
 use eth2_network_config::{Eth2NetworkConfig, DEFAULT_HARDCODED_NETWORK};
-use lighthouse_network::{rpc::BlocksByRootRequest, NetworkEvent, Request};
-use lighthouse_types::{EthSpec, Hash256};
-use slog::info;
+use lighthouse_types::{EthSpec, MainnetEthSpec};
+use parking_lot::RwLock;
+
 use tokio::{
     signal,
-    sync::{mpsc, watch},
+    sync::{
+        mpsc::{self, unbounded_channel},
+        watch,
+    },
 };
-use types::epoch::{EpochModelWithId, PersistIteratorEpochModel};
+use types::{
+    block_request::{BlockRequestModelWithId, PersistIteratorBlockRequestModel},
+    epoch::{EpochModelWithId, PersistIteratorEpochModel},
+};
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
-    direct_indexer::Indexer,
-    network::augmented_network_service::{AugmentedNetworkService, NetworkCommand, RequestId},
+    direct_indexer::{BlockMessage, Indexer},
+    network::{
+        augmented_network_service::AugmentedNetworkService,
+        block_by_root_requests::BlockByRootRequests,
+        workers::block_by_root_requests_worker::BlockByRootRequestsWorker,
+    },
 };
 
 pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
@@ -42,6 +52,7 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     fs::create_dir_all(base_dir.clone() + "/blocks/c/").unwrap();
     fs::create_dir_all(base_dir.clone() + "/blocks/v/").unwrap();
     fs::create_dir_all(base_dir.clone() + "/block_requests").unwrap();
+    fs::create_dir_all(base_dir.clone() + "/block_requests/s/root/").unwrap();
     fs::create_dir_all(base_dir.clone() + "/validators").unwrap();
 
     environment.runtime().block_on(async move {
@@ -70,55 +81,46 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
 }
 
 pub fn update_indexes(base_dir: String) -> Result<(), String> {
-    let all_epochs = EpochModelWithId::all(&base_dir);
+    let all_epochs = EpochModelWithId::all(&base_dir)?;
+    let all_block_requests = BlockRequestModelWithId::all(&base_dir)?;
 
     all_epochs.into_iter().persist_sortables(&base_dir)?;
+
+    all_block_requests
+        .into_iter()
+        .persist_sortables(&base_dir)?;
 
     Ok(())
 }
 
-pub fn start_discovery() -> Result<(), String> {
+pub fn search_orphans(base_dir: String) -> Result<(), String> {
     let (mut environment, _) = build_environment(EnvironmentBuilder::mainnet())?;
     let context = environment.core_context();
-    let beacon_context = BeaconContext::build(&context)?;
+    let beacon_context = Arc::new(BeaconContext::build(&context)?);
     let executor = context.executor;
     let log = executor.log().clone();
 
     executor.clone().spawn(
         async move {
-            let (network_send, mut behavior_recv, network_globals) =
-                AugmentedNetworkService::start(executor.clone(), &beacon_context)
+            let (network_command_send, mut network_event_recv, network_globals) =
+                AugmentedNetworkService::start(executor.clone(), beacon_context)
                     .await
                     .unwrap();
 
-            let unknown: Hash256 =
-                "0x2f864ae1a78365ae6fcc8d2a52355eeaeb6f4b568ddbb0ff2ffaa1d9406a7fe8"
-                    .parse()
-                    .unwrap();
+            let (block_send, mut block_recv) = unbounded_channel::<BlockMessage<MainnetEthSpec>>();
 
-            while let Some(event) = behavior_recv.recv().await {
-                match event {
-                    NetworkEvent::PeerConnectedOutgoing(peer_id) => network_send
-                        .send(NetworkCommand::SendRequest {
-                            peer_id,
-                            request_id: RequestId::Block(unknown),
-                            request: Box::new(Request::BlocksByRoot(BlocksByRootRequest {
-                                block_roots: vec![unknown].into(),
-                            })),
-                        })
-                        .unwrap(),
+            let block_requests = BlockRequestModelWithId::all(&base_dir).unwrap();
+            let block_by_root_requests = BlockByRootRequests::from_block_requests(block_requests);
 
-                    NetworkEvent::ResponseReceived { peer_id, .. } => {
-                        if let Some(i) = network_globals.peers.read().peer_info(&peer_id) {
-                            info!(log, "Block found by {peer_id} ({:?})", i.client().kind);
-                            for a in i.listening_addresses() {
-                                info!(log, "Address: {}", a);
-                            }
-                        }
-                    }
+            let mut block_by_root_requests_worker = BlockByRootRequestsWorker::new(
+                network_command_send.clone(),
+                block_send,
+                Arc::new(RwLock::new(block_by_root_requests)),
+                log.clone(),
+            );
 
-                    _ => {}
-                }
+            while let Some(event) = network_event_recv.recv().await {
+                block_by_root_requests_worker.handle_event(&event)
             }
         },
         "discovery",
