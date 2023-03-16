@@ -22,13 +22,16 @@ export default (props) => {
   const columnHelper = createColumnHelper<BlockRequestView>();
 
   const columns = [
-    columnHelper.accessor("root", { header: "Root" }),
+    columnHelper.accessor("root", {
+      header: "Root",
+      cell: props => <span className="font-mono">{props.getValue()}</span>
+    }),
     columnHelper.accessor("failedCount", { header: "Failed count" }),
     columnHelper.accessor("notFoundCount", { header: "Not found count" }),
     columnHelper.accessor("state", { header: "State" }),
   ]
 
-  const table = useDataTable(app, "block_requests", getBlockRequest, columns, props.blockRequestsCount);
+  const table = useDataTable(app, "block_requests", getBlockRequest, columns, props.blockRequestsCount, "root");
 
   return (
     <>

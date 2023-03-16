@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, Table, useReactTable } from "@tanstack/react-table";
 import { useQuery } from "@tanstack/react-query";
-import { App, getRange } from "../pkg/web";
+import { App, getRangeAsNumbers, getRangeAsStrings, getDefaultRange } from "../pkg/web";
 
-type Fetcher<T> = (app: App, id: bigint) => Promise<T>
+type Fetcher<T> = (app: App, id: bigint | string) => Promise<T>
 
-async function fetchAll<T>(app: App, fetcher: Fetcher<T>, range: BigUint64Array): Promise<T[]> {
+async function fetchAll<T>(app: App, fetcher: Fetcher<T>, range: BigUint64Array | string[]): Promise<T[]> {
   let promises = [];
 
   for (let id of range) {
@@ -15,7 +15,7 @@ async function fetchAll<T>(app: App, fetcher: Fetcher<T>, range: BigUint64Array)
   return Promise.all(promises);
 }
 
-export default function useDataTable<T>(app: App, plural: string, fetcher: Fetcher<T>, columns, totalCount: number): Table<T> {
+export default function useDataTable<T>(app: App, plural: string, fetcher: Fetcher<T>, columns, totalCount: number, defaultSort = "default"): Table<T> {
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -40,7 +40,7 @@ export default function useDataTable<T>(app: App, plural: string, fetcher: Fetch
 
   const { sortId, sortDesc } = useMemo(
     () => ({
-      sortId: sorting.length == 0 ? "default" : sorting[0].id,
+      sortId: sorting.length == 0 ? defaultSort : sorting[0].id,
       sortDesc: sorting.length == 0 ? false : sorting[0].desc
     }),
     [sorting]);
@@ -78,4 +78,26 @@ export default function useDataTable<T>(app: App, plural: string, fetcher: Fetch
       manualPagination: true
     }
   );
+}
+
+async function getRange(
+  app: App,
+  modelPlural: string,
+  pageIndex: number,
+  pageSize: number,
+  sortId: string,
+  sortDesc: boolean,
+  totalCount: number
+): Promise<BigUint64Array | string[]> {
+  if (sortId === "default") {
+    return getDefaultRange(pageIndex, pageSize, sortDesc, totalCount);
+  }
+  else {
+    switch (modelPlural) {
+      case "block_requests":
+        return getRangeAsStrings(app, modelPlural, pageIndex, pageSize, sortId, sortDesc, totalCount);
+      default:
+        return getRangeAsNumbers(app, modelPlural, pageIndex, pageSize, sortId, sortDesc, totalCount);
+    }
+  }
 }

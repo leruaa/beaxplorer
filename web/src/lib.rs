@@ -15,6 +15,9 @@ pub mod views;
 
 #[wasm_bindgen]
 extern "C" {
+    #[wasm_bindgen(typescript_type = "string[]")]
+    pub type StringArray;
+
     #[wasm_bindgen(typescript_type = "CommitteeView[]")]
     pub type CommitteeArray;
 
@@ -26,7 +29,6 @@ extern "C" {
 
     #[wasm_bindgen(typescript_type = "ValidatorView[]")]
     pub type ValidatorArray;
-
 }
 
 #[derive(Error, Debug)]
