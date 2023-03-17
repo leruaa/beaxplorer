@@ -4,16 +4,11 @@ use std::{
     iter::FromIterator,
 };
 
-use super::{
-    augmented_network_service::{NetworkCommand, RequestId},
-    peer_db::PeerDb,
-};
+use super::augmented_network_service::{NetworkCommand, RequestId};
 use lighthouse_network::{rpc::BlocksByRootRequest, PeerId, Request};
 use lighthouse_types::{EthSpec, Hash256, Slot};
 use tokio::sync::mpsc::UnboundedSender;
-use types::block_request::{
-    BlockRequestModel, BlockRequestModelWithId, PersistIteratorBlockRequestModel,
-};
+use types::block_request::{BlockRequestModel, BlockRequestModelWithId};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum BlockByRootRequestState {
@@ -147,15 +142,7 @@ impl BlockByRootRequests {
     ) {
         self.requests.iter_mut().for_each(|(root, req)| {
             if req.insert_peer(peer_id) {
-                network_send
-                    .send(NetworkCommand::SendRequest {
-                        peer_id: *peer_id,
-                        request_id: RequestId::Block(*root),
-                        request: Box::new(Request::BlocksByRoot(BlocksByRootRequest {
-                            block_roots: vec![*root].into(),
-                        })),
-                    })
-                    .unwrap();
+                send_block_by_root_request(network_send, *peer_id, *root)
             }
         });
     }
@@ -205,53 +192,30 @@ impl BlockByRootRequests {
         slot: &Slot,
         root: &Hash256,
         network_command_send: &UnboundedSender<NetworkCommand>,
-        peer_db: &PeerDb<E>,
+        connected_good_peers: &Vec<PeerId>,
     ) {
         let attempt = self.requests.entry(*root).or_insert_with(|| {
-            let (connected_great_peers, disconnected_great_peers) = peer_db.get_trusted_peers();
-
-            for (peer_id, _) in &connected_great_peers {
-                network_command_send
-                    .send(NetworkCommand::SendRequest {
-                        peer_id: *peer_id,
-                        request_id: RequestId::Block(*root),
-                        request: Box::new(Request::BlocksByRoot(BlocksByRootRequest {
-                            block_roots: vec![*root].into(),
-                        })),
-                    })
-                    .unwrap();
-            }
-
-            /*
-            for (peer_id, _) in &disconnected_great_peers {
-                network_send
-                    .send(NetworkMessage::DialPeer(*peer_id))
-                    .unwrap()
-            }
-             */
-
-            if connected_great_peers.is_empty() {
-                /*
-                for a in peer_db.get_great_peers_known_addresses() {
-                    network_send.send(NetworkMessage::Dial(a)).unwrap();
-                }
-                 */
-
+            if connected_good_peers.is_empty() {
                 RequestAttempts::awaiting_peer()
             } else {
+                for peer_id in connected_good_peers {
+                    send_block_by_root_request(network_command_send, *peer_id, *root);
+                }
+
                 RequestAttempts::requesting(HashSet::from_iter(
-                    connected_great_peers
-                        .into_iter()
-                        .map(|(peer_id, _)| peer_id),
+                    connected_good_peers.iter().copied(),
                 ))
             }
         });
 
         attempt.possible_slots.insert(*slot);
     }
+}
 
-    pub fn persist(&self, base_dir: &str) {
-        self.requests
+impl From<&BlockByRootRequests> for Vec<BlockRequestModelWithId> {
+    fn from(value: &BlockByRootRequests) -> Self {
+        value
+            .requests
             .iter()
             .map(|(root, attempts)| BlockRequestModelWithId {
                 id: format!("{root:#?}"),
@@ -271,6 +235,22 @@ impl BlockByRootRequests {
                         .unwrap_or_default(),
                 },
             })
-            .persist(base_dir);
+            .collect::<Vec<_>>()
     }
+}
+
+fn send_block_by_root_request(
+    network_send: &UnboundedSender<NetworkCommand>,
+    peer_id: PeerId,
+    root: Hash256,
+) {
+    network_send
+        .send(NetworkCommand::SendRequest {
+            peer_id,
+            request_id: RequestId::Block(root),
+            request: Box::new(Request::BlocksByRoot(BlocksByRootRequest {
+                block_roots: vec![root].into(),
+            })),
+        })
+        .unwrap();
 }

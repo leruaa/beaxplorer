@@ -7,7 +7,6 @@ use std::{
 use lighthouse_types::{
     BeaconState, BlindedPayload, ChainSpec, Epoch, EthSpec, SignedBeaconBlock, Slot,
 };
-use parking_lot::RwLock;
 use slog::{info, warn, Logger};
 use state_processing::{
     per_block_processing, per_epoch_processing::process_epoch, per_slot_processing,
@@ -15,21 +14,39 @@ use state_processing::{
 };
 use types::{
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
-    block_request::BlockRequestsMeta,
+    block_request::{BlockRequestModelWithId, BlockRequestsMeta},
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
+    good_peer::{GoodPeerModelWithId, GoodPeersMeta},
     path::FromPath,
     persistable::Persistable,
 };
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
-    direct_indexer::BlockMessage,
-    network::block_by_root_requests::BlockByRootRequests,
     types::{
         consolidated_block::{BlockStatus, ConsolidatedBlock},
         consolidated_epoch::ConsolidatedEpoch,
     },
 };
+
+pub enum PersistMessage<E: EthSpec> {
+    Block(BlockMessage<E>),
+    BlockRequests(Vec<BlockRequestModelWithId>),
+    GoodPeers(Vec<GoodPeerModelWithId>),
+}
+
+impl<E: EthSpec> PersistMessage<E> {
+    pub fn new_ophan_block(block: Arc<SignedBeaconBlock<E>>) -> Self {
+        PersistMessage::Block(BlockMessage::Orphaned(block))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum BlockMessage<E: EthSpec> {
+    Proposed(Arc<SignedBeaconBlock<E>>),
+    Orphaned(Arc<SignedBeaconBlock<E>>),
+    Missed(Slot),
+}
 
 pub struct PersistService<E: EthSpec> {
     base_dir: String,
@@ -37,29 +54,32 @@ pub struct PersistService<E: EthSpec> {
     blocks_by_epoch: HashMap<Epoch, HashMap<Slot, BlockMessage<E>>>,
     spec: ChainSpec,
     beacon_state: BeaconState<E>,
-    block_by_root_requests: Arc<RwLock<BlockByRootRequests>>,
     log: Logger,
 }
 
 impl<E: EthSpec> PersistService<E> {
-    pub fn new(
-        base_dir: String,
-        beacon_context: Arc<BeaconContext<E>>,
-        block_by_root_requests: Arc<RwLock<BlockByRootRequests>>,
-        log: Logger,
-    ) -> Self {
+    pub fn new(base_dir: String, beacon_context: Arc<BeaconContext<E>>, log: Logger) -> Self {
         Self {
             base_dir,
             current_epoch: Epoch::new(0),
             blocks_by_epoch: HashMap::new(),
             spec: beacon_context.spec.clone(),
             beacon_state: beacon_context.genesis_state.clone(),
-            block_by_root_requests,
             log,
         }
     }
 
-    pub fn handle_block_message(&mut self, block_message: BlockMessage<E>) {
+    pub fn handle_event(&mut self, message: PersistMessage<E>) {
+        match message {
+            PersistMessage::Block(block_message) => self.handle_block_message(block_message),
+            PersistMessage::BlockRequests(block_requests) => {
+                self.persist_block_requests(block_requests)
+            }
+            PersistMessage::GoodPeers(goood_peers) => self.persist_good_peers(goood_peers),
+        }
+    }
+
+    fn handle_block_message(&mut self, block_message: BlockMessage<E>) {
         let slot = match &block_message {
             BlockMessage::Proposed(block) => block.message().slot(),
             BlockMessage::Orphaned(block) => block.message().slot(),
@@ -96,7 +116,6 @@ impl<E: EthSpec> PersistService<E> {
 
                     self.persist_epoch(&epoch, blocks_by_slot);
                     self.current_epoch = Epoch::new(self.current_epoch.as_u64() + 1);
-                    self.persist_block_roots();
                 }
             }
         } else if let BlockMessage::Orphaned(block) = block_message {
@@ -182,12 +201,18 @@ impl<E: EthSpec> PersistService<E> {
         }
     }
 
-    fn persist_block_roots(&self) {
-        let block_by_root_requests_state = self.block_by_root_requests.read();
+    fn persist_block_requests(&self, block_requests: Vec<BlockRequestModelWithId>) {
+        block_requests.persist(&self.base_dir);
 
-        info!(self.log, "Persisting pending block roots");
-        block_by_root_requests_state.persist(&self.base_dir);
-        BlockRequestsMeta::new(block_by_root_requests_state.count()).persist(&self.base_dir);
+        BlockRequestsMeta::new(block_requests.len()).persist(&self.base_dir);
+        info!(self.log, "Block requests persisted");
+    }
+
+    fn persist_good_peers(&self, good_peers: Vec<GoodPeerModelWithId>) {
+        good_peers.persist(&self.base_dir);
+
+        GoodPeersMeta::new(good_peers.len()).persist(&self.base_dir);
+        info!(self.log, "Good peers persisted");
     }
 
     fn apply_blocks(

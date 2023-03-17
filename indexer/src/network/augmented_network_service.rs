@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use lighthouse_network::{
-    rpc::StatusMessage, service::Network, Context, Multiaddr, NetworkConfig, NetworkEvent,
-    NetworkGlobals, PeerId, Request, Response,
+    rpc::StatusMessage, service::Network, Context, NetworkConfig, NetworkEvent, NetworkGlobals,
+    PeerId, Request, Response,
 };
-use slog::{error, info, Logger, Value};
+use slog::{Logger, Value};
 use store::{EnrForkId, Epoch, EthSpec, ForkContext, Hash256, Slot};
 use task_executor::TaskExecutor;
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};

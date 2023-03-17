@@ -10,7 +10,7 @@ use types::{
     block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId},
 };
 
-use crate::direct_indexer::BlockMessage;
+use crate::network::persist_service::BlockMessage;
 
 #[derive(Debug, Clone)]
 pub enum BlockStatus<E: EthSpec> {

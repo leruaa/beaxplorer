@@ -8,12 +8,12 @@ use futures::Future;
 
 use parking_lot::RwLock;
 use slog::{info, Logger};
-use store::{EthSpec, SignedBeaconBlock, Slot};
+use store::EthSpec;
 use task_executor::TaskExecutor;
 use tokio::{
     sync::{
         mpsc::{unbounded_channel, Sender, UnboundedSender, UnboundedReceiver},
-        watch::Receiver,
+        watch::{Receiver, self},
     },
     time::{interval_at, Instant},
 };
@@ -23,7 +23,7 @@ use crate::{
     network::{
         augmented_network_service::AugmentedNetworkService,
         block_by_root_requests::BlockByRootRequests,
-        workers::block_by_root_requests_worker::BlockByRootRequestsWorker, peer_db::PeerDb, workers::{block_range_request_worker::BlockRangeRequestWorker}, persist_service::PersistService,
+        workers::block_by_root_requests_worker::BlockByRootRequestsWorker, peer_db::PeerDb, workers::{block_range_request_worker::BlockRangeRequestWorker}, persist_service::{PersistService, PersistMessage},
     },
 };
 
@@ -34,13 +34,6 @@ impl libp2p::core::Executor for Executor {
     fn exec(&self, f: Pin<Box<dyn Future<Output = ()> + Send>>) {
         self.0.spawn(f, "libp2p");
     }
-}
-
-#[derive(Debug, Clone)]
-pub enum BlockMessage<E: EthSpec> {
-    Proposed(Arc<SignedBeaconBlock<E>>),
-    Orphaned(Arc<SignedBeaconBlock<E>>),
-    Missed(Slot),
 }
 
 pub struct Indexer {
@@ -62,31 +55,32 @@ impl Indexer {
         _: Sender<()>,
         shutdown_trigger: Receiver<()>,
     ) {
-        let block_by_root_requests = Arc::new(RwLock::new(BlockByRootRequests::new()));
-        let (block_send, block_recv) = unbounded_channel::<BlockMessage<E>>();
+        let (persist_send, persist_recv) =
+                unbounded_channel::<PersistMessage<E>>();
+
+        let (shutdown_persister_request, shutdown_persister_trigger) = watch::channel(());
 
         self.spawn_indexer(
             executor.clone(),
             beacon_context.clone(),
-            block_send,
-            block_by_root_requests.clone(),
-            shutdown_trigger.clone());
+            persist_send,
+            shutdown_persister_request,
+            shutdown_trigger);
 
         self.spawn_persister(
             executor,
             base_dir,
             beacon_context,
-            block_by_root_requests,
-            block_recv,
-            shutdown_trigger);
+            persist_recv,
+            shutdown_persister_trigger);
     }
 
     fn spawn_indexer<E: EthSpec>(
         &self,
         executor: TaskExecutor,
         beacon_context: Arc<BeaconContext<E>>,
-        block_send: UnboundedSender<BlockMessage<E>>,
-        block_by_root_requests: Arc<RwLock<BlockByRootRequests>>,
+        persist_send: UnboundedSender<PersistMessage<E>>,
+        shutdown_persister_request: watch::Sender<()>,
         mut shutdown_trigger: Receiver<()>
     ) {
         let log = self.log.clone();
@@ -97,18 +91,22 @@ impl Indexer {
                     AugmentedNetworkService::start(executor, beacon_context)
                         .await.unwrap();
 
+                let block_by_root_requests = Arc::new(RwLock::new(BlockByRootRequests::new()));
+                let peer_db = Arc::new(PeerDb::new(network_globals.clone(), log.clone()));
+
                 let mut block_range_request_worker = BlockRangeRequestWorker::new(
-                    PeerDb::new(network_globals.clone(), log.clone()),
+                    peer_db.clone(),
                     network_command_send.clone(),
-                    block_send.clone(),
+                    persist_send.clone(),
                     block_by_root_requests.clone(),
                     log.clone(),
                 );
 
                 let mut block_by_root_requests_worker = BlockByRootRequestsWorker::new(
+                    peer_db,
                     network_command_send.clone(),
-                    block_send,
-                    block_by_root_requests.clone(),
+                    persist_send,
+                    block_by_root_requests,
                     log.clone()
                 );
 
@@ -128,6 +126,8 @@ impl Indexer {
                         },
                         _ = shutdown_trigger.changed() => {
                             info!(log, "Shutting down indexer...");
+                            block_by_root_requests_worker.persist();
+                            shutdown_persister_request.send(()).unwrap();
                             return;
                         }
                     }
@@ -142,20 +142,19 @@ impl Indexer {
         executor: TaskExecutor,
         base_dir: String,
         beacon_context: Arc<BeaconContext<E>>,
-        block_by_root_requests: Arc<RwLock<BlockByRootRequests>>,
-        mut block_recv: UnboundedReceiver<BlockMessage<E>>,
+        mut persist_recv: UnboundedReceiver<PersistMessage<E>>,
         mut shutdown_trigger: Receiver<()>,
     ) {
         let log = self.log.clone();
-        let mut persist_service = PersistService::new(base_dir, beacon_context, block_by_root_requests, log.clone());
+        let mut persist_service = PersistService::new(base_dir, beacon_context, log.clone());
 
         executor.spawn(async move {
 
             loop {
                 tokio::select! {
-                    Some(block_message) = block_recv.recv() => persist_service.handle_block_message(block_message),
+                    Some(persist_message) = persist_recv.recv() => persist_service.handle_event(persist_message),
                     _ = shutdown_trigger.changed() => {
-                        info!(log, "Shutting down indexer...");
+                        info!(log, "Shutting down persister...");
                         return;
                     }
                 }

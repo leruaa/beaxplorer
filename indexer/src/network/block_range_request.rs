@@ -2,14 +2,12 @@ use std::sync::Arc;
 
 use lighthouse_network::{rpc::BlocksByRangeRequest, PeerId, Request};
 use lighthouse_types::{EthSpec, SignedBeaconBlock, Slot};
-use slog::{debug, Logger};
 use tokio::sync::mpsc::UnboundedSender;
-
-use crate::direct_indexer::BlockMessage;
 
 use super::{
     augmented_network_service::{NetworkCommand, RequestId},
     peer_db::PeerDb,
+    persist_service::BlockMessage,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -112,9 +110,5 @@ impl BlockRangeRequest {
         }
 
         self.state
-    }
-
-    pub fn notify(&self, log: &Logger) {
-        debug!(log, "Block range status"; "latest slot" => self.latest_slot);
     }
 }

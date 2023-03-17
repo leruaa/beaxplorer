@@ -19,10 +19,11 @@ use types::{
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
-    direct_indexer::{BlockMessage, Indexer},
+    direct_indexer::Indexer,
     network::{
         augmented_network_service::AugmentedNetworkService,
-        block_by_root_requests::BlockByRootRequests,
+        block_by_root_requests::BlockByRootRequests, peer_db::PeerDb,
+        persist_service::PersistMessage,
         workers::block_by_root_requests_worker::BlockByRootRequestsWorker,
     },
 };
@@ -107,14 +108,16 @@ pub fn search_orphans(base_dir: String) -> Result<(), String> {
                     .await
                     .unwrap();
 
-            let (block_send, mut block_recv) = unbounded_channel::<BlockMessage<MainnetEthSpec>>();
-
+            let (persist_send, persist_recv) =
+                unbounded_channel::<PersistMessage<MainnetEthSpec>>();
+            let peer_db = Arc::new(PeerDb::new(network_globals.clone(), log.clone()));
             let block_requests = BlockRequestModelWithId::all(&base_dir).unwrap();
             let block_by_root_requests = BlockByRootRequests::from_block_requests(block_requests);
 
             let mut block_by_root_requests_worker = BlockByRootRequestsWorker::new(
+                peer_db,
                 network_command_send.clone(),
-                block_send,
+                persist_send,
                 Arc::new(RwLock::new(block_by_root_requests)),
                 log.clone(),
             );
