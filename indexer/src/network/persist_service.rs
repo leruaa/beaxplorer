@@ -33,6 +33,7 @@ use crate::{
 
 pub enum PersistMessage<E: EthSpec> {
     Block(BlockMessage<E>),
+    BlockRequest(BlockRequestModelWithId),
     BlockRequests(Vec<BlockRequestModelWithId>),
     GoodPeers(Vec<GoodPeerModelWithId>),
 }
@@ -93,6 +94,7 @@ impl<E: EthSpec> PersistService<E> {
     pub fn handle_event(&mut self, message: PersistMessage<E>) {
         match message {
             PersistMessage::Block(block_message) => self.handle_block_message(block_message),
+            PersistMessage::BlockRequest(block_request) => block_request.persist(&self.base_dir),
             PersistMessage::BlockRequests(block_requests) => {
                 self.persist_block_requests(block_requests)
             }

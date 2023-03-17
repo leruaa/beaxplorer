@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::hash_map::Entry, sync::Arc};
 
 use lighthouse_network::{NetworkEvent, Response};
 use lighthouse_types::EthSpec;
@@ -82,11 +82,20 @@ impl<E: EthSpec> BlockByRootRequestsWorker<E> {
             } => {
                 if self.block_by_root_requests.read().exists(root) {
                     if let Some(block) = block {
-                        if self.block_by_root_requests.write().block_found(root) {
+                        if let Entry::Occupied(attempt) = self
+                            .block_by_root_requests
+                            .write()
+                            .block_found(root, *peer_id)
+                        {
                             info!(self.log, "An orphaned block has been found"; "peer" => ?peer_id, "slot" => block.message().slot(), "root" => %block.canonical_root());
 
                             self.persist_send
                                 .send(PersistMessage::new_ophan_block(block.clone()))
+                                .map_err(|err| err.to_string())
+                                .unwrap();
+
+                            self.persist_send
+                                .send(PersistMessage::BlockRequest((root, attempt.get()).into()))
                                 .map_err(|err| err.to_string())
                                 .unwrap();
 

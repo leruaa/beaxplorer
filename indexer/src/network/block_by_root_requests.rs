@@ -8,99 +8,16 @@ use super::augmented_network_service::{NetworkCommand, RequestId};
 use lighthouse_network::{rpc::BlocksByRootRequest, PeerId, Request};
 use lighthouse_types::{EthSpec, Hash256, Slot};
 use tokio::sync::mpsc::UnboundedSender;
-use types::block_request::{BlockRequestModel, BlockRequestModelWithId};
-
-#[derive(Debug, Eq, PartialEq)]
-pub enum BlockByRootRequestState {
-    AwaitingPeer,
-    Requesting(HashSet<PeerId>),
-    Found,
-}
-
-impl BlockByRootRequestState {
-    pub fn active_request_count(&self) -> usize {
-        match &self {
-            BlockByRootRequestState::Requesting(peers) => peers.len(),
-            _ => 0,
-        }
-    }
-}
-
-impl Display for BlockByRootRequestState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Debug::fmt(&self, f)
-    }
-}
+use types::{
+    block_request::{BlockRequestModel, BlockRequestModelWithId},
+    utils::{BlockByRootRequestState, RequestAttempts},
+};
 
 #[derive(Debug)]
 pub enum BlockNotFoundResult {
     NotRequested,
     Searching,
     NotFound,
-}
-
-pub struct RequestAttempts {
-    pub possible_slots: HashSet<Slot>,
-    pub state: BlockByRootRequestState,
-    pub failed_count: usize,
-    pub not_found_count: usize,
-    pub found_by: Option<Hash256>,
-}
-
-impl RequestAttempts {
-    pub fn awaiting_peer() -> Self {
-        RequestAttempts {
-            possible_slots: HashSet::new(),
-            state: BlockByRootRequestState::AwaitingPeer,
-            failed_count: 0,
-            not_found_count: 0,
-            found_by: None,
-        }
-    }
-
-    pub fn requesting(peers: HashSet<PeerId>) -> Self {
-        RequestAttempts {
-            possible_slots: HashSet::new(),
-            failed_count: 0,
-            not_found_count: 0,
-            state: BlockByRootRequestState::Requesting(peers),
-            found_by: None,
-        }
-    }
-
-    pub fn insert_peer(&mut self, peer_id: &PeerId) -> bool {
-        match &mut self.state {
-            BlockByRootRequestState::AwaitingPeer => {
-                self.state = BlockByRootRequestState::Requesting(HashSet::from([*peer_id]));
-                true
-            }
-            BlockByRootRequestState::Requesting(peers) => peers.insert(*peer_id),
-            _ => false,
-        }
-    }
-
-    pub fn remove_peer(&mut self, peer_id: &PeerId) {
-        if let BlockByRootRequestState::Requesting(peers) = &mut self.state {
-            if peers.remove(peer_id) {
-                self.failed_count += 1;
-                if peers.is_empty() {
-                    self.state = BlockByRootRequestState::AwaitingPeer;
-                }
-            }
-        }
-    }
-}
-
-impl From<BlockRequestModel> for RequestAttempts {
-    fn from(value: BlockRequestModel) -> Self {
-        Self {
-            possible_slots: HashSet::new(),
-            state: BlockByRootRequestState::AwaitingPeer,
-            failed_count: value.failed_count,
-            not_found_count: value.not_found_count,
-            found_by: value.found_by.parse().ok(),
-        }
-    }
 }
 
 pub struct BlockByRootRequests {
@@ -159,17 +76,18 @@ impl BlockByRootRequests {
         };
     }
 
-    pub fn block_found(&mut self, root: &Hash256) -> bool {
-        if let Entry::Occupied(mut e) = self.requests.entry(*root) {
-            if e.get().found_by.is_none() {
-                e.get_mut().found_by = Some(*root);
+    pub fn block_found(
+        &mut self,
+        root: &Hash256,
+        found_by: PeerId,
+    ) -> Entry<Hash256, RequestAttempts> {
+        self.requests.entry(*root).and_modify(|attempts| {
+            if attempts.found_by.is_none() {
+                attempts.found_by = Some(found_by);
             }
 
-            e.get_mut().state = BlockByRootRequestState::Found;
-            true
-        } else {
-            false
-        }
+            attempts.state = BlockByRootRequestState::Found;
+        })
     }
 
     pub fn block_not_found(&mut self, root: &Hash256) -> BlockNotFoundResult {

@@ -8435,6 +8435,7 @@ name = "types"
 version = "0.1.0"
 dependencies = [
  "indexer_macro",
+ "lighthouse_network",
  "ordered-float",
  "rmp-serde",
  "serde",
