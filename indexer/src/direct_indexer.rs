@@ -67,12 +67,13 @@ impl Indexer {
             shutdown_persister_request,
             shutdown_trigger);
 
-        self.spawn_persister(
+        PersistService::spawn(
             executor,
             base_dir,
             beacon_context,
             persist_recv,
-            shutdown_persister_trigger);
+            shutdown_persister_trigger,
+            self.log.clone());
     }
 
     fn spawn_indexer<E: EthSpec>(
@@ -135,31 +136,5 @@ impl Indexer {
             },
             "indexer",
         );
-    }
-
-    fn spawn_persister<E: EthSpec>(
-        &self,
-        executor: TaskExecutor,
-        base_dir: String,
-        beacon_context: Arc<BeaconContext<E>>,
-        mut persist_recv: UnboundedReceiver<PersistMessage<E>>,
-        mut shutdown_trigger: Receiver<()>,
-    ) {
-        let log = self.log.clone();
-        let mut persist_service = PersistService::new(base_dir, beacon_context, log.clone());
-
-        executor.spawn(async move {
-
-            loop {
-                tokio::select! {
-                    Some(persist_message) = persist_recv.recv() => persist_service.handle_event(persist_message),
-                    _ = shutdown_trigger.changed() => {
-                        info!(log, "Shutting down persister...");
-                        return;
-                    }
-                }
-            }
-
-        }, "persist service");
     }
 }

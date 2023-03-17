@@ -22,8 +22,9 @@ use crate::{
     direct_indexer::Indexer,
     network::{
         augmented_network_service::AugmentedNetworkService,
-        block_by_root_requests::BlockByRootRequests, peer_db::PeerDb,
-        persist_service::PersistMessage,
+        block_by_root_requests::BlockByRootRequests,
+        peer_db::PeerDb,
+        persist_service::{PersistMessage, PersistService},
         workers::block_by_root_requests_worker::BlockByRootRequestsWorker,
     },
 };
@@ -54,6 +55,8 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     fs::create_dir_all(base_dir.clone() + "/blocks/v/").unwrap();
     fs::create_dir_all(base_dir.clone() + "/block_requests").unwrap();
     fs::create_dir_all(base_dir.clone() + "/block_requests/s/root/").unwrap();
+    fs::create_dir_all(base_dir.clone() + "/good_peers").unwrap();
+    fs::create_dir_all(base_dir.clone() + "/good_peers/s/id/").unwrap();
     fs::create_dir_all(base_dir.clone() + "/validators").unwrap();
 
     environment.runtime().block_on(async move {
@@ -104,12 +107,13 @@ pub fn search_orphans(base_dir: String) -> Result<(), String> {
     executor.clone().spawn(
         async move {
             let (network_command_send, mut network_event_recv, network_globals) =
-                AugmentedNetworkService::start(executor.clone(), beacon_context)
+                AugmentedNetworkService::start(executor.clone(), beacon_context.clone())
                     .await
                     .unwrap();
 
             let (persist_send, persist_recv) =
                 unbounded_channel::<PersistMessage<MainnetEthSpec>>();
+            let (shutdown_request, shutdown_trigger) = watch::channel(());
             let peer_db = Arc::new(PeerDb::new(network_globals.clone(), log.clone()));
             let block_requests = BlockRequestModelWithId::all(&base_dir).unwrap();
             let block_by_root_requests = BlockByRootRequests::from_block_requests(block_requests);
@@ -119,6 +123,15 @@ pub fn search_orphans(base_dir: String) -> Result<(), String> {
                 network_command_send.clone(),
                 persist_send,
                 Arc::new(RwLock::new(block_by_root_requests)),
+                log.clone(),
+            );
+
+            PersistService::spawn(
+                executor,
+                base_dir,
+                beacon_context,
+                persist_recv,
+                shutdown_trigger,
                 log.clone(),
             );
 

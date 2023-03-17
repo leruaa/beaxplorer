@@ -12,6 +12,8 @@ use state_processing::{
     per_block_processing, per_epoch_processing::process_epoch, per_slot_processing,
     BlockReplayError, BlockSignatureStrategy, ConsensusContext, VerifyBlockRoot,
 };
+use task_executor::TaskExecutor;
+use tokio::sync::{mpsc::UnboundedReceiver, watch};
 use types::{
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
     block_request::{BlockRequestModelWithId, BlockRequestsMeta},
@@ -58,15 +60,34 @@ pub struct PersistService<E: EthSpec> {
 }
 
 impl<E: EthSpec> PersistService<E> {
-    pub fn new(base_dir: String, beacon_context: Arc<BeaconContext<E>>, log: Logger) -> Self {
-        Self {
+    pub fn spawn(
+        executor: TaskExecutor,
+        base_dir: String,
+        beacon_context: Arc<BeaconContext<E>>,
+        mut persist_recv: UnboundedReceiver<PersistMessage<E>>,
+        mut shutdown_trigger: watch::Receiver<()>,
+        log: Logger,
+    ) {
+        let mut persist_service = Self {
             base_dir,
             current_epoch: Epoch::new(0),
             blocks_by_epoch: HashMap::new(),
             spec: beacon_context.spec.clone(),
             beacon_state: beacon_context.genesis_state.clone(),
             log,
-        }
+        };
+
+        executor.spawn(async move {
+            loop {
+                tokio::select! {
+                    Some(persist_message) = persist_recv.recv() => persist_service.handle_event(persist_message),
+                    shutdown_trigger = shutdown_trigger.changed() => {
+                        info!(persist_service.log, "Shutting down persister...");
+                        return;
+                    }
+                }
+            }
+        }, "persist service");
     }
 
     pub fn handle_event(&mut self, message: PersistMessage<E>) {
