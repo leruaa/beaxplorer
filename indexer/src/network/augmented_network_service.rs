@@ -46,7 +46,7 @@ pub enum NetworkCommand {
         request_id: RequestId,
         request: Box<Request>,
     },
-    DialAddress(Multiaddr),
+    DialPeer(PeerId),
 }
 
 impl<E: EthSpec> AugmentedNetworkService<E> {
@@ -181,7 +181,7 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
                 request_id,
                 request,
             } => self.send_request(peer_id, request_id, *request),
-            NetworkCommand::DialAddress(addr) => self.dial(&addr),
+            NetworkCommand::DialPeer(peer_id) => self.dial(&peer_id),
         }
     }
 
@@ -189,10 +189,7 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
         self.service.send_request(peer_id, request_id, request)
     }
 
-    fn dial(&mut self, addr: &Multiaddr) {
-        match self.service.testing_dial(addr.clone()) {
-            Ok(_) => info!(self.log, "Dialed {addr}"),
-            Err(err) => error!(self.log, "Error while dialing {addr}: {err}"),
-        }
+    fn dial(&mut self, peer_id: &PeerId) {
+        self.service.peer_manager_mut().dial_peer(peer_id, None)
     }
 }
