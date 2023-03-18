@@ -21,31 +21,24 @@ impl<Id, M> ModelWithId<Id, M> {
 impl<Id, T> ModelWithId<Id, T>
 where
     T: DeserializeOwned + ToPath<Id>,
-    Id: FromStr,
+    Id: FromStr + Clone,
 {
-    pub fn all(base_path: &str) -> Result<Vec<ModelWithId<Id, T>>, String> {
-        let mut all_models = vec![];
+    pub fn iter(base_path: &str) -> Result<impl Iterator<Item = ModelWithId<Id, T>> + '_, String> {
         let path = format!("{}/{}", base_path, T::prefix());
 
-        for entry in fs::read_dir(path).map_err(|err| err.to_string())? {
-            let entry = entry.map_err(|err| err.to_string())?;
-
-            if entry.file_type().map_or(false, |f| f.is_file()) {
-                if let Ok(file_name) = entry.file_name().into_string() {
-                    if file_name.ends_with(".msg") && !file_name.starts_with("meta") {
-                        let id_as_string = file_name.replace(".msg", "");
-                        let id = id_as_string
-                            .replace(".msg", "")
-                            .parse::<Id>()
-                            .map_err(|_| format!("Failed to parse '{}'", id_as_string))?;
-                        let m = T::from_path(base_path, &id);
-                        all_models.push(ModelWithId::new(id, m))
-                    }
-                }
-            }
-        }
-
-        Ok(all_models)
+        fs::read_dir(path)
+            .map(|r| {
+                r.filter_map(|dir| dir.ok())
+                    .filter(|dir| dir.file_type().map_or(false, |f| f.is_file()))
+                    .filter_map(|dir| dir.file_name().into_string().ok())
+                    .filter(|file_name| {
+                        file_name.ends_with(".msg") && !file_name.starts_with("meta")
+                    })
+                    .map(|file_name| file_name.replace(".msg", ""))
+                    .filter_map(|id| id.replace(".msg", "").parse::<Id>().ok())
+                    .map(move |id| ModelWithId::new(id.clone(), T::from_path(base_path, &id)))
+            })
+            .map_err(|err| err.to_string())
     }
 }
 

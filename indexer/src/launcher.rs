@@ -75,14 +75,11 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
 }
 
 pub fn update_indexes(base_dir: String) -> Result<(), String> {
-    let all_epochs = EpochModelWithId::all(&base_dir)?;
-    let all_block_requests = BlockRequestModelWithId::all(&base_dir)?;
+    let all_epochs = EpochModelWithId::iter(&base_dir)?;
+    let all_block_requests = BlockRequestModelWithId::iter(&base_dir)?;
 
-    all_epochs.into_iter().persist_sortables(&base_dir)?;
-
-    all_block_requests
-        .into_iter()
-        .persist_sortables(&base_dir)?;
+    all_epochs.persist_sortables(&base_dir)?;
+    all_block_requests.persist_sortables(&base_dir)?;
 
     Ok(())
 }
@@ -104,9 +101,11 @@ pub fn search_orphans(base_dir: String) -> Result<(), String> {
             let (persist_send, persist_recv) =
                 unbounded_channel::<PersistMessage<MainnetEthSpec>>();
             let (shutdown_request, shutdown_trigger) = watch::channel(());
+            let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
+            let block_by_root_requests =
+                BlockByRootRequests::from_block_requests(block_requests.collect());
+            let good_peers = GoodPeerModelWithId::iter(&base_dir).unwrap();
             let peer_db = Arc::new(PeerDb::new(network_globals.clone(), log.clone()));
-            let block_requests = BlockRequestModelWithId::all(&base_dir).unwrap();
-            let block_by_root_requests = BlockByRootRequests::from_block_requests(block_requests);
 
             let mut block_by_root_requests_worker = BlockByRootRequestsWorker::new(
                 peer_db,

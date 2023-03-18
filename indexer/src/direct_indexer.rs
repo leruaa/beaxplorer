@@ -92,7 +92,8 @@ impl Indexer {
                     AugmentedNetworkService::start(executor, beacon_context)
                         .await.unwrap();
 
-                let block_by_root_requests = Arc::new(RwLock::new(BlockByRootRequests::new()));
+                let block_requests = BlockRequestModelWithId::iter(base_dir).unwrap();
+                let block_by_root_requests = Arc::new(RwLock::new(BlockByRootRequests::from_block_requests(block_requests.collect())));
                 let peer_db = Arc::new(PeerDb::new(network_globals.clone(), log.clone()));
 
                 let mut block_range_request_worker = BlockRangeRequestWorker::new(
