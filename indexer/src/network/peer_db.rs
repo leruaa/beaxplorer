@@ -15,10 +15,14 @@ pub struct PeerDb<E: EthSpec> {
 type PeerTupleVec<E> = Vec<(PeerId, PeerInfo<E>)>;
 
 impl<E: EthSpec> PeerDb<E> {
-    pub fn new(network_globals: Arc<NetworkGlobals<E>>, log: Logger) -> Self {
+    pub fn new(
+        network_globals: Arc<NetworkGlobals<E>>,
+        good_peers: HashSet<PeerId>,
+        log: Logger,
+    ) -> Self {
         PeerDb {
             network_globals,
-            good_peers: RwLock::new(HashSet::new()),
+            good_peers: RwLock::new(good_peers),
             log,
         }
     }

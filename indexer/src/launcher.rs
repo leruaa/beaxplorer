@@ -18,7 +18,7 @@ use types::{
     block_request::{BlockRequestModel, BlockRequestModelWithId, PersistIteratorBlockRequestModel},
     committee::CommitteeModel,
     epoch::{EpochExtendedModel, EpochModel, EpochModelWithId, PersistIteratorEpochModel},
-    good_peer::GoodPeerModel,
+    good_peer::{GoodPeerModel, GoodPeerModelWithId},
     path::ToPath,
     validator::ValidatorModel,
     vote::VoteModel,
@@ -105,7 +105,11 @@ pub fn search_orphans(base_dir: String) -> Result<(), String> {
             let block_by_root_requests =
                 BlockByRootRequests::from_block_requests(block_requests.collect());
             let good_peers = GoodPeerModelWithId::iter(&base_dir).unwrap();
-            let peer_db = Arc::new(PeerDb::new(network_globals.clone(), log.clone()));
+            let peer_db = Arc::new(PeerDb::new(
+                network_globals.clone(),
+                good_peers.filter_map(|m| m.id.parse().ok()).collect(),
+                log.clone(),
+            ));
 
             let mut block_by_root_requests_worker = BlockByRootRequestsWorker::new(
                 peer_db,

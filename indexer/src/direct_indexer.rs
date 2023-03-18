@@ -17,6 +17,7 @@ use tokio::{
     },
     time::{interval_at, Instant},
 };
+use types::{block_request::BlockRequestModelWithId, good_peer::GoodPeerModelWithId};
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
@@ -62,6 +63,7 @@ impl Indexer {
 
         self.spawn_indexer(
             executor.clone(),
+            base_dir.clone(),
             beacon_context.clone(),
             persist_send,
             shutdown_persister_request,
@@ -79,6 +81,7 @@ impl Indexer {
     fn spawn_indexer<E: EthSpec>(
         &self,
         executor: TaskExecutor,
+        base_dir: String,
         beacon_context: Arc<BeaconContext<E>>,
         persist_send: UnboundedSender<PersistMessage<E>>,
         shutdown_persister_request: watch::Sender<()>,
@@ -92,9 +95,10 @@ impl Indexer {
                     AugmentedNetworkService::start(executor, beacon_context)
                         .await.unwrap();
 
-                let block_requests = BlockRequestModelWithId::iter(base_dir).unwrap();
+                let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
                 let block_by_root_requests = Arc::new(RwLock::new(BlockByRootRequests::from_block_requests(block_requests.collect())));
-                let peer_db = Arc::new(PeerDb::new(network_globals.clone(), log.clone()));
+                let good_peers = GoodPeerModelWithId::iter(&base_dir).unwrap();
+                let peer_db = Arc::new(PeerDb::new(network_globals.clone(), good_peers.filter_map(|m| m.id.parse().ok()).collect(), log.clone()));
 
                 let mut block_range_request_worker = BlockRangeRequestWorker::new(
                     peer_db.clone(),
