@@ -120,6 +120,8 @@ impl Indexer {
                 let interval_duration = Duration::from_secs(1);
                 let mut interval = interval_at(start_instant, interval_duration);
 
+                block_by_root_requests_worker.dial_good_peers();
+                
                 loop {
                     tokio::select! {
                         Some(event) = network_event_recv.recv() => {

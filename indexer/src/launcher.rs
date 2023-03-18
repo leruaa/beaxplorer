@@ -128,6 +128,8 @@ pub fn search_orphans(base_dir: String) -> Result<(), String> {
                 log.clone(),
             );
 
+            block_by_root_requests_worker.dial_good_peers();
+
             while let Some(event) = network_event_recv.recv().await {
                 block_by_root_requests_worker.handle_event(&event)
             }

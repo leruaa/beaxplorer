@@ -58,11 +58,7 @@ impl<E: EthSpec> BlockByRootRequestsWorker<E> {
                 if self.block_by_root_requests.read().count() > 0
                     && !self.peer_db.has_connected_good_peers()
                 {
-                    for peer_id in self.peer_db.get_good_peers().iter() {
-                        self.network_command_send
-                            .send(NetworkCommand::DialPeer(*peer_id))
-                            .unwrap();
-                    }
+                    self.dial_good_peers();
                 }
             }
 
@@ -113,6 +109,14 @@ impl<E: EthSpec> BlockByRootRequestsWorker<E> {
             }
 
             _ => {}
+        }
+    }
+
+    pub fn dial_good_peers(&self) {
+        for peer_id in self.peer_db.get_good_peers().iter() {
+            self.network_command_send
+                .send(NetworkCommand::DialPeer(*peer_id))
+                .unwrap();
         }
     }
 
