@@ -1,4 +1,4 @@
-use std::{fs, sync::Arc};
+use std::sync::Arc;
 
 use environment::{Environment, EnvironmentBuilder, LoggerConfig};
 use eth2_network_config::{Eth2NetworkConfig, DEFAULT_HARDCODED_NETWORK};
@@ -13,8 +13,15 @@ use tokio::{
     },
 };
 use types::{
-    block_request::{BlockRequestModelWithId, PersistIteratorBlockRequestModel},
-    epoch::{EpochModelWithId, PersistIteratorEpochModel},
+    attestation::AttestationModel,
+    block::{BlockExtendedModel, BlockModel},
+    block_request::{BlockRequestModel, BlockRequestModelWithId, PersistIteratorBlockRequestModel},
+    committee::CommitteeModel,
+    epoch::{EpochExtendedModel, EpochModel, EpochModelWithId, PersistIteratorEpochModel},
+    good_peer::GoodPeerModel,
+    path::ToPath,
+    validator::ValidatorModel,
+    vote::VoteModel,
 };
 
 use crate::{
@@ -37,27 +44,10 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     let log = executor.log().clone();
 
     if reset {
-        fs::remove_dir_all(&base_dir).unwrap();
+        remove_dirs(&base_dir)?;
     }
 
-    fs::create_dir_all(base_dir.clone() + "/epochs/e/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/epochs/s/attestations_count/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/epochs/s/deposits_count/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/epochs/s/attester_slashings_count/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/epochs/s/proposer_slashings_count/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/epochs/s/eligible_ether/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/epochs/s/voted_ether/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/epochs/s/global_participation_rate/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/blocks").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/blocks/e/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/blocks/a/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/blocks/c/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/blocks/v/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/block_requests").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/block_requests/s/root/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/good_peers").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/good_peers/s/id/").unwrap();
-    fs::create_dir_all(base_dir.clone() + "/validators").unwrap();
+    create_dirs(&base_dir)?;
 
     environment.runtime().block_on(async move {
         let (shutdown_handle, mut shutdown_complete) = mpsc::channel(1);
@@ -171,6 +161,35 @@ fn build_environment<E: EthSpec>(
         .build()?;
 
     Ok((environment, eth2_network_config))
+}
+
+fn create_dirs(base_dir: &str) -> Result<(), String> {
+    EpochModel::create_dirs(base_dir)?;
+    EpochExtendedModel::create_dirs(base_dir)?;
+    BlockModel::create_dirs(base_dir)?;
+    BlockExtendedModel::create_dirs(base_dir)?;
+    AttestationModel::create_dirs(base_dir)?;
+    CommitteeModel::create_dirs(base_dir)?;
+    VoteModel::create_dirs(base_dir)?;
+    ValidatorModel::create_dirs(base_dir)?;
+    BlockRequestModel::create_dirs(base_dir)?;
+    GoodPeerModel::create_dirs(base_dir)?;
+
+    Ok(())
+}
+
+fn remove_dirs(base_dir: &str) -> Result<(), String> {
+    EpochModel::remove_dirs(base_dir)?;
+    EpochExtendedModel::remove_dirs(base_dir)?;
+    BlockModel::remove_dirs(base_dir)?;
+    BlockExtendedModel::remove_dirs(base_dir)?;
+    AttestationModel::remove_dirs(base_dir)?;
+    CommitteeModel::remove_dirs(base_dir)?;
+    VoteModel::remove_dirs(base_dir)?;
+    ValidatorModel::remove_dirs(base_dir)?;
+    BlockRequestModel::remove_dirs(base_dir)?;
+
+    Ok(())
 }
 
 async fn wait_shutdown_signal() {

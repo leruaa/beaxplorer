@@ -60,6 +60,10 @@ where
     fn to_path(base_dir: &str, id: &Id) -> String {
         T::to_path(base_dir, id)
     }
+
+    fn dirs(base_dir: &str) -> Vec<String> {
+        T::dirs(base_dir)
+    }
 }
 
 impl<Id, M> FromPath<Id, M> for ModelWithId<Id, M>
@@ -67,7 +71,7 @@ where
     M: ToPath<Id> + DeserializeOwned,
 {
     fn from_path(base_dir: &str, id: &Id) -> M {
-        let path = M::to_path(base_dir, &id);
+        let path = M::to_path(base_dir, id);
         let file = std::fs::File::open(path).unwrap();
         rmp_serde::from_read::<_, M>(file).unwrap()
     }
