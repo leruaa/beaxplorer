@@ -153,8 +153,8 @@ pub fn persistable(input: TokenStream) -> TokenStream {
 
             fn dirs(base_dir: &str) -> Vec<String> {
                 vec![
-                    Self::prefix(),
-                    #( Self::sortable_field_prefix(#field_names), )*
+                    format!("{}/{}", base_dir, Self::prefix()),
+                    #( format!("{}/{}", base_dir, Self::sortable_field_prefix(#field_names)), )*
                 ]
             }
         }

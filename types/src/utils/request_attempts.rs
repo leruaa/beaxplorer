@@ -61,7 +61,7 @@ impl RequestAttempts {
 impl From<BlockRequestModel> for RequestAttempts {
     fn from(value: BlockRequestModel) -> Self {
         Self {
-            possible_slots: HashSet::new(),
+            possible_slots: value.possible_slots.iter().map(|s| Slot::new(*s)).collect(),
             state: BlockByRootRequestState::AwaitingPeer,
             failed_count: value.failed_count,
             not_found_count: value.not_found_count,

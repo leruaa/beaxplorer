@@ -2,50 +2,68 @@ import { createColumnHelper } from "@tanstack/react-table";
 import Link from "next/link";
 import DataTable from "../components/data-table";
 import Root from "../components/root";
+import Peer from "../components/peer";
 import useDataTable from "../hooks/data-table";
-import { App, BlockRequestView, getBlockRequest, getBlockRequestMeta } from "../pkg/web";
+import { App, BlockRequestView, getBlockRequest, getBlockRequestMeta, getGoodPeer, getGoodPeerMeta, GoodPeerView } from "../pkg/web";
 
 
 export async function getStaticProps() {
   const host = process.env.HOST;
   const app = new App("http://localhost:3000");
-  const meta = await getBlockRequestMeta(app);
+  const blockRequestsMeta = await getBlockRequestMeta(app);
+  const goodPeersMeta = await getGoodPeerMeta(app);
   return {
     props: {
       host,
       blockRequests: [],//await getEpochs(app, 0, 10, "default", false, meta.count),
-      blockRequestsCount: meta.count
+      blockRequestsCount: blockRequestsMeta.count,
+      goodPeersCount: goodPeersMeta.count
     }
   }
 }
 
 export default (props) => {
   const app = new App(props.host);
-  const columnHelper = createColumnHelper<BlockRequestView>();
+  const blockRequestsColumnHelper = createColumnHelper<BlockRequestView>();
+  const goodPeersColumnHelper = createColumnHelper<GoodPeerView>();
 
-  const columns = [
-    columnHelper.accessor("root", {
+  const blockRequestsColumns = [
+    blockRequestsColumnHelper.accessor("root", {
       header: "Root",
       cell: props =>
         <Root className="font-mono" value={props.getValue()} />
     }),
-    columnHelper.accessor("state", { header: "State" }),
-    columnHelper.accessor("activeRequestCount", { header: "Active requests count" }),
-    columnHelper.accessor("failedCount", { header: "Failed count" }),
-    columnHelper.accessor("notFoundCount", { header: "Not found count" }),
-    columnHelper.accessor("foundBy", {
+    blockRequestsColumnHelper.accessor("possibleSlots", { header: "Possible slots" }),
+    blockRequestsColumnHelper.accessor("state", { header: "State" }),
+    blockRequestsColumnHelper.accessor("activeRequestCount", { header: "Active requests count" }),
+    blockRequestsColumnHelper.accessor("failedCount", { header: "Failed count" }),
+    blockRequestsColumnHelper.accessor("notFoundCount", { header: "Not found count" }),
+    blockRequestsColumnHelper.accessor("foundBy", {
       header: "Found by",
-      cell: props => <Root value={props.getValue()} />
+      cell: props => <Peer className="font-mono" value={props.getValue()} />
     }),
   ]
 
-  const table = useDataTable(app, "block_requests", getBlockRequest, columns, props.blockRequestsCount, "root");
+  const goodPeersColumns = [
+    goodPeersColumnHelper.accessor("id", {
+      header: "Id",
+      cell: props =>
+        <Peer className="font-mono" value={props.getValue()} />
+    }),
+    goodPeersColumnHelper.accessor("address", { header: "Address" }),
+  ]
+
+  const blockRequestsTable = useDataTable(app, "block_requests", getBlockRequest, blockRequestsColumns, props.blockRequestsCount, "root");
+  const goodPeersTable = useDataTable(app, "good_peers", getGoodPeer, goodPeersColumns, props.goodPeersCount, "id");
 
   return (
     <>
       <section className="container mx-auto">
         <div className="tabular-data">
-          <DataTable table={table} />
+          <h2>Block requests</h2>
+          <DataTable table={blockRequestsTable} />
+          <h2>Good peers</h2>
+          <DataTable table={goodPeersTable} />
         </div>
       </section>
     </>

@@ -8,6 +8,7 @@ pub mod block_requests;
 pub mod blocks;
 pub mod epochs;
 mod fetcher;
+pub mod good_peers;
 mod page;
 pub mod sort;
 pub mod validators;

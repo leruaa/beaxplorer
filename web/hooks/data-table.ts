@@ -95,6 +95,7 @@ async function getRange(
   else {
     switch (modelPlural) {
       case "block_requests":
+      case "good_peers":
         return getRangeAsStrings(app, modelPlural, pageIndex, pageSize, sortId, sortDesc, totalCount);
       default:
         return getRangeAsNumbers(app, modelPlural, pageIndex, pageSize, sortId, sortDesc, totalCount);

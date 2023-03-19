@@ -19,7 +19,7 @@ use types::{
     block_request::{BlockRequestModel, BlockRequestModelWithId, PersistIteratorBlockRequestModel},
     committee::CommitteeModel,
     epoch::{EpochExtendedModel, EpochModel, EpochModelWithId, PersistIteratorEpochModel},
-    good_peer::{GoodPeerModel, GoodPeerModelWithId},
+    good_peer::{GoodPeerModel, GoodPeerModelWithId, PersistIteratorGoodPeerModel},
     path::ToPath,
     validator::ValidatorModel,
     vote::VoteModel,
@@ -78,11 +78,9 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
 }
 
 pub fn update_indexes(base_dir: String) -> Result<(), String> {
-    let all_epochs = EpochModelWithId::iter(&base_dir)?;
-    let all_block_requests = BlockRequestModelWithId::iter(&base_dir)?;
-
-    all_epochs.persist_sortables(&base_dir)?;
-    all_block_requests.persist_sortables(&base_dir)?;
+    EpochModelWithId::iter(&base_dir)?.persist_sortables(&base_dir)?;
+    BlockRequestModelWithId::iter(&base_dir)?.persist_sortables(&base_dir)?;
+    GoodPeerModelWithId::iter(&base_dir)?.persist_sortables(&base_dir)?;
 
     Ok(())
 }
