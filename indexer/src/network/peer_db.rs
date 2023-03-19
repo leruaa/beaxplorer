@@ -47,8 +47,13 @@ impl<E: EthSpec> PeerDb<E> {
         self.good_peers.read().contains(peer_id)
     }
 
-    pub fn get_good_peers(&self) -> RwLockReadGuard<HashSet<PeerId>> {
-        self.good_peers.read()
+    pub fn get_good_peers(&self) -> PeerTupleVec<E> {
+        let peer_db = self.network_globals.peers.read();
+        self.good_peers
+            .read()
+            .iter()
+            .filter_map(|peer_id| peer_db.peer_info(peer_id).map(|p| (*peer_id, p.clone())))
+            .collect::<Vec<_>>()
     }
 
     pub fn add_good_peer(&self, peer_id: PeerId) {

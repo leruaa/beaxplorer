@@ -113,7 +113,7 @@ impl<E: EthSpec> BlockByRootRequestsWorker<E> {
     }
 
     pub fn dial_good_peers(&self) {
-        for peer_id in self.peer_db.get_good_peers().iter() {
+        for (peer_id, _) in self.peer_db.get_good_peers().iter() {
             self.network_command_send
                 .send(NetworkCommand::DialPeer(*peer_id))
                 .unwrap();
