@@ -84,10 +84,7 @@ impl From<(&Hash256, &RequestAttempts)> for BlockRequestModelWithId {
                 active_request_count: attempts.state.active_request_count(),
                 failed_count: attempts.failed_count,
                 not_found_count: attempts.not_found_count,
-                found_by: attempts
-                    .found_by
-                    .map(|r| format!("{r:#?}"))
-                    .unwrap_or_default(),
+                found_by: attempts.found_by.map(|p| p.to_string()).unwrap_or_default(),
             },
         }
     }

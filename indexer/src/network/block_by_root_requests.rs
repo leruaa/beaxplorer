@@ -132,28 +132,7 @@ impl BlockByRootRequests {
 
 impl From<&BlockByRootRequests> for Vec<BlockRequestModelWithId> {
     fn from(value: &BlockByRootRequests) -> Self {
-        value
-            .requests
-            .iter()
-            .map(|(root, attempts)| BlockRequestModelWithId {
-                id: format!("{root:#?}"),
-                model: BlockRequestModel {
-                    possible_slots: attempts
-                        .possible_slots
-                        .iter()
-                        .map(|s| s.as_u64())
-                        .collect::<Vec<_>>(),
-                    state: attempts.state.to_string(),
-                    active_request_count: attempts.state.active_request_count(),
-                    failed_count: attempts.failed_count,
-                    not_found_count: attempts.not_found_count,
-                    found_by: attempts
-                        .found_by
-                        .map(|r| format!("{r:#?}"))
-                        .unwrap_or_default(),
-                },
-            })
-            .collect::<Vec<_>>()
+        value.requests.iter().map(Into::into).collect::<Vec<_>>()
     }
 }
 
