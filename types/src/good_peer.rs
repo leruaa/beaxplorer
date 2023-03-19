@@ -18,7 +18,9 @@ use crate::{
 #[persistable(prefix = "/good_peers")]
 #[persistable(sortable_field(name = "id", ty = "String", with = "get_id"))]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
-pub struct GoodPeerModel;
+pub struct GoodPeerModel {
+    pub address: String,
+}
 
 fn get_id(value: &GoodPeerModelWithId) -> Orderable<String, String> {
     (value.id.clone(), value.id.clone()).into()

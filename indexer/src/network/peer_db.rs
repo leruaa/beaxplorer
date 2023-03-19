@@ -1,7 +1,8 @@
-use std::{collections::HashSet, sync::Arc};
+use std::{collections::HashSet, net::SocketAddr, sync::Arc};
 
 use lighthouse_network::{NetworkGlobals, PeerId, PeerInfo};
-use parking_lot::{RwLock, RwLockReadGuard};
+use multiaddr::multiaddr;
+use parking_lot::RwLock;
 use slog::{info, Logger};
 use store::EthSpec;
 use types::good_peer::{GoodPeerModel, GoodPeerModelWithId};
@@ -86,12 +87,23 @@ impl<E: EthSpec> PeerDb<E> {
 impl<E: EthSpec> From<&PeerDb<E>> for Vec<GoodPeerModelWithId> {
     fn from(value: &PeerDb<E>) -> Self {
         value
-            .good_peers
-            .read()
+            .get_good_peers()
             .iter()
-            .map(|p| GoodPeerModelWithId {
-                id: p.to_string(),
-                model: GoodPeerModel,
+            .map(|(id, info)| GoodPeerModelWithId {
+                id: id.to_string(),
+                model: GoodPeerModel {
+                    address: info
+                        .seen_addresses()
+                        .next()
+                        .map_or(String::default(), |a| match a {
+                            SocketAddr::V4(a) => {
+                                multiaddr!(Ip4(*a.ip()), Tcp(a.port())).to_string()
+                            }
+                            SocketAddr::V6(a) => {
+                                multiaddr!(Ip6(*a.ip()), Tcp(a.port())).to_string()
+                            }
+                        }),
+                },
             })
             .collect()
     }
