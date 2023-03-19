@@ -1,6 +1,6 @@
 use std::{
     collections::{hash_map::Entry, HashMap, HashSet},
-    fmt::{Debug, Display},
+    fmt::Debug,
     iter::FromIterator,
 };
 
@@ -9,7 +9,7 @@ use lighthouse_network::{rpc::BlocksByRootRequest, PeerId, Request};
 use lighthouse_types::{EthSpec, Hash256, Slot};
 use tokio::sync::mpsc::UnboundedSender;
 use types::{
-    block_request::{BlockRequestModel, BlockRequestModelWithId},
+    block_request::BlockRequestModelWithId,
     utils::{BlockByRootRequestState, RequestAttempts},
 };
 

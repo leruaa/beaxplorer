@@ -3,7 +3,7 @@ use std::{collections::hash_map::Entry, sync::Arc};
 use lighthouse_network::{NetworkEvent, Response};
 use lighthouse_types::EthSpec;
 use parking_lot::{RwLock, RwLockReadGuard};
-use slog::{info, Logger};
+use slog::{info, warn, Logger};
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::network::{
@@ -69,6 +69,10 @@ impl<E: EthSpec> BlockByRootRequestsWorker<E> {
                 self.block_by_root_requests
                     .write()
                     .failed_request(root, peer_id);
+
+                if self.peer_db.is_good_peer(peer_id) {
+                    warn!(self.log, "Connection to good peer failed"; "peer" => peer_id.to_string());
+                }
             }
 
             NetworkEvent::ResponseReceived {

@@ -5,6 +5,7 @@ use eth2_network_config::{Eth2NetworkConfig, DEFAULT_HARDCODED_NETWORK};
 use lighthouse_types::{EthSpec, MainnetEthSpec};
 use parking_lot::RwLock;
 
+use slog::warn;
 use tokio::{
     signal,
     sync::{
@@ -44,7 +45,9 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     let log = executor.log().clone();
 
     if reset {
-        remove_dirs(&base_dir)?;
+        if let Err(err) = remove_dirs(&base_dir) {
+            warn!(log, "{err}");
+        }
     }
 
     create_dirs(&base_dir)?;
