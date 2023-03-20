@@ -5,7 +5,8 @@ use wasm_bindgen::JsValue;
 
 use crate::to_js;
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Tsify, Debug, Clone)]
+#[tsify(into_wasm_abi)]
 pub struct BlockView {
     pub slot: u64,
     #[serde(flatten)]
@@ -18,6 +19,12 @@ impl From<BlockModelWithId> for BlockView {
             slot: value.id,
             model: value.model,
         }
+    }
+}
+
+impl From<(u64, BlockModel)> for BlockView {
+    fn from((slot, model): (u64, BlockModel)) -> Self {
+        BlockView { slot, model }
     }
 }
 
@@ -38,6 +45,12 @@ impl From<(u64, BlockModel, BlockExtendedModel)> for BlockExtendedView {
             model,
             extended_model,
         }
+    }
+}
+
+impl From<BlockView> for JsValue {
+    fn from(val: BlockView) -> Self {
+        to_js(&val).unwrap()
     }
 }
 

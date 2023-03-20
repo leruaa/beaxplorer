@@ -10,7 +10,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::app::App;
 use crate::views::attestations::AttestationView;
-use crate::views::blocks::BlockExtendedView;
+use crate::views::blocks::{BlockExtendedView, BlockView};
 use crate::views::committees::CommitteeView;
 use crate::views::votes::VoteView;
 use crate::{AttestationArray, CommitteeArray, VoteArray};
@@ -18,7 +18,15 @@ use crate::{AttestationArray, CommitteeArray, VoteArray};
 use crate::{fetcher::fetch, to_js};
 
 #[wasm_bindgen(js_name = "getBlock")]
-pub async fn get_block(app: &App, block: u64) -> Result<BlockExtendedView, JsValue> {
+pub async fn get_block(app: &App, block: u64) -> Result<BlockView, JsValue> {
+    let block_url = BlockModelWithId::to_path(&app.base_url(), &block);
+
+    let model = fetch::<BlockModel>(block_url).await?;
+    Ok(BlockView::from((block, model)))
+}
+
+#[wasm_bindgen(js_name = "getBlockExtended")]
+pub async fn get_block_extended(app: &App, block: u64) -> Result<BlockExtendedView, JsValue> {
     let block_url = BlockModelWithId::to_path(&app.base_url(), &block);
     let extended_block_url = BlockExtendedModelWithId::to_path(&app.base_url(), &block);
 

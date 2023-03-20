@@ -7,8 +7,9 @@ import Number from "../components/number";
 import Ethers from "../components/ethers";
 import Percentage from "../components/percentage";
 import Breadcrumb from "../components/breadcrumb";
-import { App, getBlockMeta } from "../pkg";
-
+import { App, BlockView, getBlock, getBlockMeta } from "../pkg";
+import { createColumnHelper } from "@tanstack/react-table";
+import useDataTable from "../hooks/data-table";
 
 export async function getServerSideProps(context) {
   const host = process.env.HOST;
@@ -16,109 +17,63 @@ export async function getServerSideProps(context) {
   const meta = await getBlockMeta(app);
   return {
     props: {
-      blocks: []: //await blocks.page(pageIndex || 0, 10, "default", false),
-      blocksCount: meta.count;
+      host,
+      blocks: [], //await blocks.page(pageIndex || 0, 10, "default", false),
+      blocksCount: meta.count
     }
   }
 }
 
 export default (props) => {
-
-  const router = useRouter()
-  const { page } = router.query
-  const blocksMemo = useMemo(async () => await Blocks.build("http://localhost:3000"), []);
+  const app = new App(props.host);
+  const columnHelper = createColumnHelper<BlockView>()
 
   const columns = [
-    {
-      accessor: "epoch",
-      Header: "Epoch",
-      Cell: ({ value }) => <a href={`/block/${value}`}><Number value={value} /></a>
-    },
-    {
-      accessor: "slot",
-      Header: "Block",
-      Cell: ({ value }) => <a href={`/block/${value}`}><Number value={value} /></a>
-    },
-    {
-      accessor: "status",
-      Header: "Status"
-    },
-    {
-      accessor: "proposer",
-      Header: "Proposer"
-    },
-    {
-      accessor: "attestations_count",
-      Header: "Attestations",
-      Cell: ({ value }) => <Number value={value} />
-    },
-    {
-      accessor: "deposits_count",
-      Header: "Deposits",
-      Cell: ({ value }) => <Number value={value} />
-    },
-    {
-      accessor: (row, rowIndex) => { return { p: row.proposer_slashings_count, a: row.attester_slashings_count } },
-      Header: "Slashings P / A",
-      Cell: ({ value }) =>
-        <>
-          <Number value={value.p} /> / <Number value={value.a} />
+    columnHelper.accessor("epoch", {
+      header: "Epoch",
+      cell: props => <a href={`/block/${props.getValue()}`}><Number value={props.getValue()} /></a>
+    }),
+    columnHelper.accessor("slot", {
+      header: "Block",
+      cell: props => <a href={`/block/${props.getValue()}`}><Number value={props.getValue()} /></a>
+    }),
+    columnHelper.accessor("status", {
+      header: "Status"
+    }),
+    columnHelper.accessor("proposer", {
+      header: "Proposer"
+    }),
+    columnHelper.accessor("attestations_count", {
+      header: "Attestations",
+      cell: props => <Number value={props.getValue()} />
+    }),
+    columnHelper.accessor("deposits_count", {
+      header: "Deposits",
+      cell: props => <Number value={props.getValue()} />
+    }),
+    columnHelper.accessor(
+      (row, rowIndex) => { return { p: row.proposer_slashings_count, a: row.attester_slashings_count } },
+      {
+        header: "Slashings P / A",
+        cell: props => <>
+          <Number value={props.getValue().p} /> / <Number value={props.getValue().a} />
         </>
-    },
-    {
-      accessor: "voluntary_exits_count",
-      Header: "Exits",
-      Cell: ({ value }) => <Number value={value} />
-    }
+      }
+    ),
+    columnHelper.accessor("voluntary_exits_count", {
+      header: "Exits",
+      cell: props => <Number value={props.getValue()} />
+    })
   ];
 
-  const getBlocksCount = useMemo(
-    async (): Promise<number> => {
-      const blocks = await blocksMemo;
-      const meta = await blocks.meta();
-      return meta.count;
-    },
-    [],
-  );
-
-  const [pageCount, setPageCount] = useState(100);
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async ({ pageSize, pageIndex, sortBy }) => {
-    if (pageIndex == props.pageIndex) {
-      setData(props.blocks);
-    }
-    else {
-      const blocks = await blocksMemo;
-      let sortId = sortBy.length > 0 ? sortBy[0].id : "slot";
-      let sortDesc = sortBy.length > 0 ? sortBy[0].desc : false;
-
-      if (["epoch", "slot", "timestamp"].indexOf(sortId) > -1) sortId = "default";
-
-      setData(await blocks.page(
-        pageIndex,
-        pageSize,
-        sortId,
-        sortDesc
-      ));
-      setPageCount(Math.ceil(await getBlocksCount / pageSize));
-    }
-  }, []);
+  const table = useDataTable(app, "blocks", getBlock, columns, props.blocksCount);
 
   return (
     <>
       <Breadcrumb breadcrumb={{ parts: [{ text: "Blocks", icon: "cube" }] }} />
       <section className="container mx-auto">
         <div className="tabular-data">
-          <DataTable
-            columns={useMemo(() => columns, [])}
-            data={data}
-            fetchData={fetchData}
-            loading={loading}
-            pageIndex={page ? parseInt(page as string, 10) - 1 : 0}
-            pageCount={pageCount}
-            sortBy={useMemo(() => [{ id: "slot", desc: false }], [])}
-          />
+          <DataTable table={table} />
         </div>
       </section>
     </>
