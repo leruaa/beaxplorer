@@ -45,7 +45,10 @@ impl BlockByRootRequests {
     }
 
     pub fn count(&self) -> usize {
-        self.requests.len()
+        self.requests
+            .iter()
+            .filter(|(_, attempt)| attempt.state != BlockByRootRequestState::Found)
+            .count()
     }
 
     pub fn exists(&self, root: &Hash256) -> bool {
@@ -57,11 +60,14 @@ impl BlockByRootRequests {
         peer_id: &PeerId,
         network_send: &UnboundedSender<NetworkCommand>,
     ) {
-        self.requests.iter_mut().for_each(|(root, req)| {
-            if req.insert_peer(peer_id) {
-                send_block_by_root_request(network_send, *peer_id, *root)
-            }
-        });
+        self.requests
+            .iter_mut()
+            .filter(|(_, req)| req.state != BlockByRootRequestState::Found)
+            .for_each(|(root, req)| {
+                if req.insert_peer(peer_id) {
+                    send_block_by_root_request(network_send, *peer_id, *root)
+                }
+            });
     }
 
     pub fn peer_disconnected(&mut self, peer_id: &PeerId) {
