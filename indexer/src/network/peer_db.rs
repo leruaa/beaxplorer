@@ -58,8 +58,9 @@ impl<E: EthSpec> PeerDb<E> {
     }
 
     pub fn add_good_peer(&self, peer_id: PeerId) {
-        info!(self.log, "New good peer: {peer_id}");
-        self.good_peers.write().insert(peer_id);
+        if self.good_peers.write().insert(peer_id) {
+            info!(self.log, "New good peer: {peer_id}");
+        }
     }
 
     pub fn get_connected_good_peers(&self) -> PeerTupleVec<E> {

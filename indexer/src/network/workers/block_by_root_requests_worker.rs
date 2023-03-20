@@ -46,7 +46,7 @@ impl<E: EthSpec> BlockByRootRequestsWorker<E> {
                     .peer_connected(peer_id, &self.network_command_send);
 
                 if self.peer_db.is_good_peer(peer_id) {
-                    info!(self.log, "Good peer connected"; "peer" => ?peer_id);
+                    info!(self.log, "Good peer connected"; "peer" => %peer_id);
                 }
             }
 
@@ -87,7 +87,7 @@ impl<E: EthSpec> BlockByRootRequestsWorker<E> {
                             .write()
                             .block_found(root, *peer_id)
                         {
-                            info!(self.log, "An orphaned block has been found"; "peer" => ?peer_id, "slot" => block.message().slot(), "root" => %block.canonical_root());
+                            info!(self.log, "An orphaned block has been found"; "peer" => %peer_id, "slot" => block.message().slot(), "root" => %block.canonical_root());
 
                             self.persist_send
                                 .send(PersistMessage::new_ophan_block(block.clone()))
@@ -116,7 +116,7 @@ impl<E: EthSpec> BlockByRootRequestsWorker<E> {
         }
     }
 
-    pub fn dial_good_peers(&self) {
+    fn dial_good_peers(&self) {
         for (peer_id, _) in self.peer_db.get_good_peers().iter() {
             self.network_command_send
                 .send(NetworkCommand::DialPeer(*peer_id))
