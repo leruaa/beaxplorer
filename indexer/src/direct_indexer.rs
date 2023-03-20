@@ -1,19 +1,15 @@
-use std::{
-    pin::Pin,
-    sync::Arc,
-    time::Duration,
-};
+use std::{pin::Pin, sync::Arc, time::Duration};
 
 use futures::Future;
 
 use parking_lot::RwLock;
-use slog::{info, Logger};
+use slog::{info, warn, Logger};
 use store::EthSpec;
 use task_executor::TaskExecutor;
 use tokio::{
     sync::{
-        mpsc::{unbounded_channel, Sender, UnboundedSender, UnboundedReceiver},
-        watch::{Receiver, self},
+        mpsc::{unbounded_channel, Sender, UnboundedSender},
+        watch::{self, Receiver},
     },
     time::{interval_at, Instant},
 };
@@ -24,7 +20,10 @@ use crate::{
     network::{
         augmented_network_service::AugmentedNetworkService,
         block_by_root_requests::BlockByRootRequests,
-        workers::block_by_root_requests_worker::BlockByRootRequestsWorker, peer_db::PeerDb, workers::{block_range_request_worker::BlockRangeRequestWorker}, persist_service::{PersistService, PersistMessage},
+        peer_db::PeerDb,
+        persist_service::{PersistMessage, PersistService},
+        workers::block_by_root_requests_worker::BlockByRootRequestsWorker,
+        workers::block_range_request_worker::BlockRangeRequestWorker,
     },
 };
 
@@ -43,9 +42,7 @@ pub struct Indexer {
 
 impl Indexer {
     pub fn new(log: Logger) -> Self {
-        Indexer {
-            log,
-        }
+        Indexer { log }
     }
 
     pub fn spawn_services<E: EthSpec>(
@@ -56,8 +53,7 @@ impl Indexer {
         _: Sender<()>,
         shutdown_trigger: Receiver<()>,
     ) {
-        let (persist_send, persist_recv) =
-                unbounded_channel::<PersistMessage<E>>();
+        let (persist_send, persist_recv) = unbounded_channel::<PersistMessage<E>>();
 
         let (shutdown_persister_request, shutdown_persister_trigger) = watch::channel(());
 
@@ -67,7 +63,8 @@ impl Indexer {
             beacon_context.clone(),
             persist_send,
             shutdown_persister_request,
-            shutdown_trigger);
+            shutdown_trigger,
+        );
 
         PersistService::spawn(
             executor,
@@ -75,7 +72,8 @@ impl Indexer {
             beacon_context,
             persist_recv,
             shutdown_persister_trigger,
-            self.log.clone());
+            self.log.clone(),
+        );
     }
 
     fn spawn_indexer<E: EthSpec>(
@@ -85,20 +83,36 @@ impl Indexer {
         beacon_context: Arc<BeaconContext<E>>,
         persist_send: UnboundedSender<PersistMessage<E>>,
         shutdown_persister_request: watch::Sender<()>,
-        mut shutdown_trigger: Receiver<()>
+        mut shutdown_trigger: Receiver<()>,
     ) {
         let log = self.log.clone();
 
         executor.clone().spawn(
             async move {
+                let good_peers = GoodPeerModelWithId::iter(&base_dir)
+                    .unwrap()
+                    .collect::<Vec<_>>();
+                let known_addresses = good_peers
+                    .iter()
+                    .filter_map(|m| m.model.address.parse().ok())
+                    .collect();
                 let (network_command_send, mut network_event_recv, network_globals) =
-                    AugmentedNetworkService::start(executor, beacon_context)
-                        .await.unwrap();
+                    AugmentedNetworkService::start(executor, beacon_context, known_addresses)
+                        .await
+                        .unwrap();
 
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
-                let block_by_root_requests = Arc::new(RwLock::new(BlockByRootRequests::from_block_requests(block_requests.collect())));
-                let good_peers = GoodPeerModelWithId::iter(&base_dir).unwrap();
-                let peer_db = Arc::new(PeerDb::new(network_globals.clone(), good_peers.filter_map(|m| m.id.parse().ok()).collect(), log.clone()));
+                let block_by_root_requests = Arc::new(RwLock::new(
+                    BlockByRootRequests::from_block_requests(block_requests.collect()),
+                ));
+                let peer_db = Arc::new(PeerDb::new(
+                    network_globals.clone(),
+                    good_peers
+                        .iter()
+                        .filter_map(|m| m.id.parse().ok())
+                        .collect(),
+                    log.clone(),
+                ));
 
                 let mut block_range_request_worker = BlockRangeRequestWorker::new(
                     peer_db.clone(),
@@ -113,24 +127,25 @@ impl Indexer {
                     network_command_send.clone(),
                     persist_send,
                     block_by_root_requests,
-                    log.clone()
+                    log.clone(),
                 );
 
                 let start_instant = Instant::now();
                 let interval_duration = Duration::from_secs(1);
                 let mut interval = interval_at(start_instant, interval_duration);
 
-                block_by_root_requests_worker.dial_good_peers();
-                
                 loop {
                     tokio::select! {
                         Some(event) = network_event_recv.recv() => {
                             block_range_request_worker.handle_event(&event);
                             block_by_root_requests_worker.handle_event(&event)
                         },
-                        
+
                         _ = interval.tick() => {
-                            info!(log, "Status"; "connected peers" => network_globals.connected_peers());
+                            if network_globals.connected_or_dialing_peers() == 0 {
+                                warn!(log, "No connected peers");
+                            }
+
                         },
                         _ = shutdown_trigger.changed() => {
                             info!(log, "Shutting down indexer...");

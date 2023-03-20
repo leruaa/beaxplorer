@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use lighthouse_network::{
-    rpc::StatusMessage, service::Network, Context, NetworkConfig, NetworkEvent, NetworkGlobals,
-    PeerId, Request, Response,
+    rpc::StatusMessage, service::Network, Context, Multiaddr, NetworkConfig, NetworkEvent,
+    NetworkGlobals, PeerId, Request, Response,
 };
-use slog::{Logger, Value};
+use slog::{info, Logger, Value};
 use store::{EnrForkId, Epoch, EthSpec, ForkContext, Hash256, Slot};
 use task_executor::TaskExecutor;
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
@@ -53,6 +53,7 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
     pub async fn start(
         executor: TaskExecutor,
         beacon_context: Arc<BeaconContext<E>>,
+        known_peers: Vec<Multiaddr>,
     ) -> Result<
         (
             UnboundedSender<NetworkCommand>,
@@ -76,7 +77,8 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
         if let Some(boot_nodes) = &beacon_context.eth2_network_config.boot_enr {
             network_config.boot_nodes_enr.extend_from_slice(boot_nodes)
         }
-
+        network_config.libp2p_nodes = known_peers;
+        /*
         network_config.libp2p_nodes = vec![
             "/ip4/51.79.202.73/tcp/13000".parse().unwrap(),
             "/ip4/76.141.229.155/tcp/13000".parse().unwrap(),
@@ -102,6 +104,7 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
             "/ip4/99.130.254.231/tcp/13000".parse().unwrap(),
             "/ip4/76.93.16.249/tcp/13000".parse().unwrap(),
         ];
+         */
 
         network_config.upnp_enabled = false;
 
@@ -190,6 +193,9 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
     }
 
     fn dial(&mut self, peer_id: &PeerId) {
-        self.service.peer_manager_mut().dial_peer(peer_id, None)
+        if !self.service.peer_manager().is_connected(peer_id) {
+            info!(self.log, "Dialing"; "peer" => %peer_id);
+            self.service.peer_manager_mut().dial_peer(peer_id, None)
+        }
     }
 }

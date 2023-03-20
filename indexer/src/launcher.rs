@@ -94,10 +94,22 @@ pub fn search_orphans(base_dir: String) -> Result<(), String> {
 
     executor.clone().spawn(
         async move {
+            let good_peers = GoodPeerModelWithId::iter(&base_dir)
+                .unwrap()
+                .collect::<Vec<_>>();
+            let known_addresses = good_peers
+                .iter()
+                .filter_map(|m| m.model.address.parse().ok())
+                .collect();
+
             let (network_command_send, mut network_event_recv, network_globals) =
-                AugmentedNetworkService::start(executor.clone(), beacon_context.clone())
-                    .await
-                    .unwrap();
+                AugmentedNetworkService::start(
+                    executor.clone(),
+                    beacon_context.clone(),
+                    known_addresses,
+                )
+                .await
+                .unwrap();
 
             let (persist_send, persist_recv) =
                 unbounded_channel::<PersistMessage<MainnetEthSpec>>();
@@ -105,10 +117,12 @@ pub fn search_orphans(base_dir: String) -> Result<(), String> {
             let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
             let block_by_root_requests =
                 BlockByRootRequests::from_block_requests(block_requests.collect());
-            let good_peers = GoodPeerModelWithId::iter(&base_dir).unwrap();
             let peer_db = Arc::new(PeerDb::new(
                 network_globals.clone(),
-                good_peers.filter_map(|m| m.id.parse().ok()).collect(),
+                good_peers
+                    .iter()
+                    .filter_map(|m| m.id.parse().ok())
+                    .collect(),
                 log.clone(),
             ));
 
@@ -128,8 +142,6 @@ pub fn search_orphans(base_dir: String) -> Result<(), String> {
                 shutdown_trigger,
                 log.clone(),
             );
-
-            block_by_root_requests_worker.dial_good_peers();
 
             while let Some(event) = network_event_recv.recv().await {
                 block_by_root_requests_worker.handle_event(&event)
