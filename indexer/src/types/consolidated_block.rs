@@ -12,36 +12,31 @@ use types::{
 
 use crate::network::persist_service::BlockMessage;
 
-#[derive(Debug, Clone)]
-pub enum BlockStatus<E: EthSpec> {
-    Proposed(Arc<SignedBeaconBlock<E>>),
-    Missed,
-    Orphaned(Arc<SignedBeaconBlock<E>>),
-}
+use super::block_state::BlockState;
 
-impl<E: EthSpec> Display for BlockStatus<E> {
+impl<E: EthSpec> Display for BlockState<E> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            BlockStatus::Proposed(_) => write!(f, "Proposed"),
-            BlockStatus::Missed => write!(f, "Missed"),
-            BlockStatus::Orphaned(_) => write!(f, "Orphaned"),
+            BlockState::Proposed(_) => write!(f, "Proposed"),
+            BlockState::Missed(_) => write!(f, "Missed"),
+            BlockState::Orphaned(_) => write!(f, "Orphaned"),
         }
     }
 }
 
-impl<E: EthSpec> From<&BlockMessage<E>> for BlockStatus<E> {
+impl<E: EthSpec> From<&BlockMessage<E>> for BlockState<E> {
     fn from(value: &BlockMessage<E>) -> Self {
         match value {
-            BlockMessage::Proposed(block) => BlockStatus::Proposed(block.clone()),
-            BlockMessage::Orphaned(block) => BlockStatus::Orphaned(block.clone()),
-            BlockMessage::Missed(_) => BlockStatus::Missed,
+            BlockMessage::Proposed(block) => BlockState::Proposed(block.clone()),
+            BlockMessage::Orphaned(block) => BlockState::Orphaned(block.clone()),
+            BlockMessage::Missed(slot) => BlockState::Missed(*slot),
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct ConsolidatedBlock<E: EthSpec> {
-    block: BlockStatus<E>,
+    block: BlockState<E>,
     epoch: Epoch,
     slot: Slot,
     proposer_index: u64,
@@ -50,13 +45,13 @@ pub struct ConsolidatedBlock<E: EthSpec> {
 impl<E: EthSpec> ConsolidatedBlock<E> {
     fn block(&self) -> Option<Arc<SignedBeaconBlock<E>>> {
         match &self.block {
-            BlockStatus::Proposed(block) => Some(block.clone()),
-            BlockStatus::Missed => None,
-            BlockStatus::Orphaned(block) => Some(block.clone()),
+            BlockState::Proposed(block) => Some(block.clone()),
+            BlockState::Missed(_) => None,
+            BlockState::Orphaned(block) => Some(block.clone()),
         }
     }
 
-    pub fn new(block: BlockStatus<E>, slot: Slot, epoch: Epoch, proposer_index: u64) -> Self {
+    pub fn new(block: BlockState<E>, slot: Slot, epoch: Epoch, proposer_index: u64) -> Self {
         ConsolidatedBlock {
             block,
             epoch,
@@ -67,41 +62,41 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
 
     pub fn get_attestations_count(&self) -> usize {
         match &self.block {
-            BlockStatus::Proposed(block) => block.message().body().attestations().len(),
-            BlockStatus::Missed => 0,
-            BlockStatus::Orphaned(_) => 0,
+            BlockState::Proposed(block) => block.message().body().attestations().len(),
+            BlockState::Missed(_) => 0,
+            BlockState::Orphaned(_) => 0,
         }
     }
 
     pub fn get_deposits_count(&self) -> usize {
         match &self.block {
-            BlockStatus::Proposed(block) => block.message().body().deposits().len(),
-            BlockStatus::Missed => 0,
-            BlockStatus::Orphaned(_) => 0,
+            BlockState::Proposed(block) => block.message().body().deposits().len(),
+            BlockState::Missed(_) => 0,
+            BlockState::Orphaned(_) => 0,
         }
     }
 
     pub fn get_voluntary_exits_count(&self) -> usize {
         match &self.block {
-            BlockStatus::Proposed(block) => block.message().body().voluntary_exits().len(),
-            BlockStatus::Missed => 0,
-            BlockStatus::Orphaned(_) => 0,
+            BlockState::Proposed(block) => block.message().body().voluntary_exits().len(),
+            BlockState::Missed(_) => 0,
+            BlockState::Orphaned(_) => 0,
         }
     }
 
     pub fn get_proposer_slashings_count(&self) -> usize {
         match &self.block {
-            BlockStatus::Proposed(block) => block.message().body().proposer_slashings().len(),
-            BlockStatus::Missed => 0,
-            BlockStatus::Orphaned(_) => 0,
+            BlockState::Proposed(block) => block.message().body().proposer_slashings().len(),
+            BlockState::Missed(_) => 0,
+            BlockState::Orphaned(_) => 0,
         }
     }
 
     pub fn get_attester_slashings_count(&self) -> usize {
         match &self.block {
-            BlockStatus::Proposed(block) => block.message().body().attester_slashings().len(),
-            BlockStatus::Missed => 0,
-            BlockStatus::Orphaned(_) => 0,
+            BlockState::Proposed(block) => block.message().body().attester_slashings().len(),
+            BlockState::Missed(_) => 0,
+            BlockState::Orphaned(_) => 0,
         }
     }
 }

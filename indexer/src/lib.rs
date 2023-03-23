@@ -2,6 +2,7 @@
 
 mod beacon_chain;
 pub mod beacon_node_client;
+mod db;
 pub mod direct_indexer;
 pub mod errors;
 pub mod launcher;

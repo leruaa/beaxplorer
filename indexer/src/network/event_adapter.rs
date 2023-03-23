@@ -5,6 +5,8 @@ use lighthouse_network::{NetworkEvent as LighthouseNetworkEvent, Response};
 use lighthouse_types::{EthSpec, SignedBeaconBlock, Slot};
 use tokio::sync::broadcast::{channel, Receiver, Sender};
 
+use crate::types::block_state::BlockState;
+
 use super::{augmented_network_service::RequestId, block_db::BlockDb, event::NetworkEvent};
 
 pub struct EventAdapter<E: EthSpec> {
@@ -92,12 +94,13 @@ impl<E: EthSpec> EventAdapter<E> {
             } => {
                 if self.block_db.block_by_root_request_exists(&root) {
                     if let Some(block) = block {
+                        let slot = block.slot();
                         self.network_event_send
-                            .send(NetworkEvent::OrphanedBlock(block))
+                            .send(NetworkEvent::NewBlock(BlockState::Orphaned(block)))
                             .unwrap();
 
                         self.network_event_send
-                            .send(NetworkEvent::BlockRootFound(root, peer_id))
+                            .send(NetworkEvent::BlockRootFound(root, slot, peer_id))
                             .unwrap();
                     } else {
                         self.network_event_send
@@ -124,7 +127,7 @@ impl<E: EthSpec> EventAdapter<E> {
 
         (previous_latest_slot.as_u64()..latest_slot.as_u64())
             .map(Slot::new)
-            .map(NetworkEvent::MissedBlock)
-            .chain(once(NetworkEvent::ProposedBlock(block, latest_slot)))
+            .map(|s| NetworkEvent::NewBlock(BlockState::Missed(s)))
+            .chain(once(NetworkEvent::NewBlock(BlockState::Proposed(block))))
     }
 }
