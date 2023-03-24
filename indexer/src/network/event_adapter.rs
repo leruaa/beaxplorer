@@ -39,12 +39,12 @@ impl<E: EthSpec> EventAdapter<E> {
             }
 
             LighthouseNetworkEvent::RPCFailed {
-                id: RequestId::Range(id),
+                id: RequestId::Range(_),
                 ..
             } => {
                 let _ = self
                     .network_event_send
-                    .send(NetworkEvent::RangeRequestFailed(id));
+                    .send(NetworkEvent::RangeRequestFailed);
             }
 
             LighthouseNetworkEvent::RPCFailed {
@@ -82,7 +82,7 @@ impl<E: EthSpec> EventAdapter<E> {
                 } else {
                     // A block range response has finished
                     self.network_event_send
-                        .send(NetworkEvent::RangeRequestSuccedeed(start_slot))
+                        .send(NetworkEvent::RangeRequestSuccedeed)
                         .unwrap();
                 }
             }

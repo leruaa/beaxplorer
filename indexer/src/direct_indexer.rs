@@ -1,8 +1,8 @@
 use std::{pin::Pin, sync::Arc, time::Duration};
 
-use futures::{Future, StreamExt};
+use futures::Future;
 
-use parking_lot::RwLock;
+use lighthouse_network::{rpc::BlocksByRangeRequest, Request};
 use slog::{debug, info, warn, Logger};
 use store::EthSpec;
 use task_executor::TaskExecutor;
@@ -19,18 +19,17 @@ use crate::{
     beacon_chain::beacon_context::BeaconContext,
     db::blocks_by_epoch::BlocksByEpoch,
     network::{
-        augmented_network_service::AugmentedNetworkService,
+        augmented_network_service::{AugmentedNetworkService, NetworkCommand, RequestId},
         block_by_root_requests::BlockByRootRequests,
         block_db::BlockDb,
-        block_range_request::BlockRangeRequest,
         event::NetworkEvent,
         event_adapter::EventAdapter,
         peer_db::PeerDb,
         persist_service::{PersistMessage, PersistService},
-        workers::block_by_root_requests_worker::BlockByRootRequestsWorker,
-        workers::block_range_request_worker::BlockRangeRequestWorker,
+        workers::Workers,
     },
-    work::Work, types::block_state::BlockState,
+    types::block_state::BlockState,
+    work::Work,
 };
 
 // use the executor for libp2p
@@ -103,7 +102,7 @@ impl Indexer {
                     .filter_map(|m| m.model.address.parse().ok())
                     .collect();
                 let (network_command_send, mut internal_network_event_recv, network_globals) =
-                    AugmentedNetworkService::start(executor, beacon_context, known_addresses)
+                    AugmentedNetworkService::start(executor.clone(), beacon_context.clone(), known_addresses)
                         .await
                         .unwrap();
 
@@ -122,6 +121,8 @@ impl Indexer {
                     log.clone(),
                 ));
                 let mut block_by_epoch = BlocksByEpoch::new();
+
+                let workers = Workers::new(base_dir.clone(), beacon_context);
 
                 let start_instant = Instant::now();
                 let interval_duration = Duration::from_secs(1);
@@ -142,7 +143,7 @@ impl Indexer {
                         },
 
                         Some(work) = work_recv.recv() => {
-                            handle_work(work);
+                            handle_work(&executor, work, &workers, &block_db, &network_command_send);
                         },
 
                         _ = interval.tick() => {
@@ -150,6 +151,7 @@ impl Indexer {
                                 warn!(log, "No connected peers");
                             }
                         },
+                        
                         _ = shutdown_trigger.changed() => {
                             info!(log, "Shutting down indexer...");
                             shutdown_persister_request.send(()).unwrap();
@@ -201,7 +203,7 @@ fn handle_network_event<E: EthSpec>(
                 req.remove_peer(&peer_id);
             });
         }
-        NetworkEvent::RangeRequestSuccedeed(_) | NetworkEvent::RangeRequestFailed(_) => {
+        NetworkEvent::RangeRequestSuccedeed | NetworkEvent::RangeRequestFailed => {
             if let Some(peer_id) = peer_db.get_best_connected_peer() {
                 work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
                 block_db.block_range_requesting(peer_id);
@@ -248,4 +250,35 @@ fn handle_network_event<E: EthSpec>(
     }
 }
 
-fn handle_work<E: EthSpec>(work: Work<E>) {}
+fn handle_work<E: EthSpec>(
+    executor: &TaskExecutor,
+    work: Work<E>,
+    workers: &Workers<E>,
+    block_db: &Arc<BlockDb>,
+    network_command_send: &UnboundedSender<NetworkCommand>,
+) {
+    match work {
+        Work::PersistEpoch(epoch_to_persist) => {
+            workers.persist_epoch.spawn(executor, epoch_to_persist)
+        }
+        Work::SendRangeRequest(peer_id) => {
+            let start_slot = block_db
+                .latest_slot()
+                .map(|s| s.as_u64() + 1)
+                .unwrap_or_default();
+
+            network_command_send
+                .send(NetworkCommand::SendRequest {
+                    peer_id,
+                    request_id: RequestId::Range(start_slot),
+                    request: Box::new(Request::BlocksByRange(BlocksByRangeRequest {
+                        start_slot,
+                        count: 32,
+                    })),
+                })
+                .unwrap();
+        }
+        Work::SendBlockByRootRequest(_, _) => todo!(),
+        Work::SendNetworkMessage(_) => todo!(),
+    }
+}

@@ -7,8 +7,8 @@ use crate::types::block_state::BlockState;
 pub enum NetworkEvent<E: EthSpec> {
     PeerConnected(PeerId),
     PeerDisconnected(PeerId),
-    RangeRequestSuccedeed(u64),
-    RangeRequestFailed(u64),
+    RangeRequestSuccedeed,
+    RangeRequestFailed,
     BlockRequestFailed(Hash256, PeerId),
     NewBlock(BlockState<E>),
     UnknownBlockRoot(Slot, Hash256),

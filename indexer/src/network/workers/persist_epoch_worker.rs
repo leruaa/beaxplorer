@@ -1,7 +1,7 @@
 use std::{rc::Rc, sync::Arc};
 
 use lighthouse_types::{BeaconState, BlindedPayload, ChainSpec, EthSpec, SignedBeaconBlock, Slot};
-use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
+use parking_lot::Mutex;
 use state_processing::{
     per_block_processing, per_epoch_processing::base::process_epoch, per_slot_processing,
     BlockReplayError, BlockSignatureStrategy, ConsensusContext, VerifyBlockRoot,
@@ -36,7 +36,7 @@ impl<E: EthSpec> PersistEpochWorker<E> {
         }
     }
 
-    pub fn spawn(&self, executor: TaskExecutor, epoch_to_persist: EpochToPersist<E>) {
+    pub fn spawn(&self, executor: &TaskExecutor, epoch_to_persist: EpochToPersist<E>) {
         let base_dir = self.base_dir.clone();
         let beacon_state = self.beacon_state.clone();
         let spec = self.spec.clone();
