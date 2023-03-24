@@ -1,14 +1,14 @@
 use std::{pin::Pin, sync::Arc, time::Duration};
 
-use futures::Future;
+use futures::{Future, StreamExt};
 
 use parking_lot::RwLock;
-use slog::{info, warn, Logger};
+use slog::{debug, info, warn, Logger};
 use store::EthSpec;
 use task_executor::TaskExecutor;
 use tokio::{
     sync::{
-        mpsc::{unbounded_channel, Sender, UnboundedSender},
+        mpsc::{self, unbounded_channel, Sender, UnboundedSender},
         watch::{self, Receiver},
     },
     time::{interval_at, Instant},
@@ -17,14 +17,20 @@ use types::{block_request::BlockRequestModelWithId, good_peer::GoodPeerModelWith
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
+    db::blocks_by_epoch::BlocksByEpoch,
     network::{
         augmented_network_service::AugmentedNetworkService,
         block_by_root_requests::BlockByRootRequests,
+        block_db::BlockDb,
+        block_range_request::BlockRangeRequest,
+        event::NetworkEvent,
+        event_adapter::EventAdapter,
         peer_db::PeerDb,
         persist_service::{PersistMessage, PersistService},
         workers::block_by_root_requests_worker::BlockByRootRequestsWorker,
         workers::block_range_request_worker::BlockRangeRequestWorker,
     },
+    work::Work, types::block_state::BlockState,
 };
 
 // use the executor for libp2p
@@ -96,15 +102,17 @@ impl Indexer {
                     .iter()
                     .filter_map(|m| m.model.address.parse().ok())
                     .collect();
-                let (network_command_send, mut network_event_recv, network_globals) =
+                let (network_command_send, mut internal_network_event_recv, network_globals) =
                     AugmentedNetworkService::start(executor, beacon_context, known_addresses)
                         .await
                         .unwrap();
 
+                let (work_send, mut work_recv) = mpsc::unbounded_channel();
+
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
-                let block_by_root_requests = Arc::new(RwLock::new(
-                    BlockByRootRequests::from_block_requests(block_requests.collect()),
-                ));
+                let block_by_root_requests =
+                    BlockByRootRequests::from_block_requests(block_requests.collect());
+                let block_db = BlockDb::new();
                 let peer_db = Arc::new(PeerDb::new(
                     network_globals.clone(),
                     good_peers
@@ -113,43 +121,37 @@ impl Indexer {
                         .collect(),
                     log.clone(),
                 ));
-
-                let mut block_range_request_worker = BlockRangeRequestWorker::new(
-                    peer_db.clone(),
-                    network_command_send.clone(),
-                    persist_send.clone(),
-                    block_by_root_requests.clone(),
-                    log.clone(),
-                );
-
-                let mut block_by_root_requests_worker = BlockByRootRequestsWorker::new(
-                    peer_db,
-                    network_command_send.clone(),
-                    persist_send,
-                    block_by_root_requests,
-                    log.clone(),
-                );
+                let mut block_by_epoch = BlocksByEpoch::new();
 
                 let start_instant = Instant::now();
                 let interval_duration = Duration::from_secs(1);
                 let mut interval = interval_at(start_instant, interval_duration);
+                let mut network_event_adapter = EventAdapter::new(block_db.clone());
+                let mut network_event_recv = network_event_adapter.receiver();
 
                 loop {
                     tokio::select! {
-                        Some(event) = network_event_recv.recv() => {
-                            block_range_request_worker.handle_event(&event);
-                            block_by_root_requests_worker.handle_event(&event)
+                        Some(event) = internal_network_event_recv.recv() => {
+                            network_event_adapter.handle(event);
+                            //block_range_request_worker.handle_event(&event);
+                            //block_by_root_requests_worker.handle_event(&event)
+                        },
+
+                        Ok(event) = network_event_recv.recv() => {
+                            handle_network_event(event, &work_send, &block_db, &mut block_by_epoch, &peer_db, &log);
+                        },
+
+                        Some(work) = work_recv.recv() => {
+                            handle_work(work);
                         },
 
                         _ = interval.tick() => {
                             if network_globals.connected_or_dialing_peers() == 0 {
                                 warn!(log, "No connected peers");
                             }
-
                         },
                         _ = shutdown_trigger.changed() => {
                             info!(log, "Shutting down indexer...");
-                            block_by_root_requests_worker.persist();
                             shutdown_persister_request.send(()).unwrap();
                             return;
                         }
@@ -160,3 +162,90 @@ impl Indexer {
         );
     }
 }
+
+fn handle_network_event<E: EthSpec>(
+    network_event: NetworkEvent<E>,
+    work_send: &UnboundedSender<Work<E>>,
+    block_db: &Arc<BlockDb>,
+    blocks_by_epoch: &mut BlocksByEpoch<E>,
+    peer_db: &Arc<PeerDb<E>>,
+    log: &Logger,
+) {
+    match network_event {
+        NetworkEvent::PeerConnected(peer_id) => {
+            if peer_db.is_good_peer(&peer_id) {
+                info!(log, "Good peer connected"; "peer" => %peer_id);
+            }
+
+            if !block_db.is_requesting_block_range() {
+                work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
+                block_db.block_range_requesting(peer_id);
+            }
+
+            block_db.for_each_pending_block_by_root_requests(|(root, req)| {
+                if req.insert_peer(&peer_id) {
+                    work_send
+                        .send(Work::SendBlockByRootRequest(peer_id, *root))
+                        .unwrap();
+                }
+            });
+        }
+        NetworkEvent::PeerDisconnected(peer_id) => {
+            if block_db.block_range_matches(&peer_id) {
+                debug!(log, "Range request cancelled");
+                work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
+                block_db.block_range_requesting(peer_id);
+            }
+
+            block_db.for_each_pending_block_by_root_requests(|(_, req)| {
+                req.remove_peer(&peer_id);
+            });
+        }
+        NetworkEvent::RangeRequestSuccedeed(_) | NetworkEvent::RangeRequestFailed(_) => {
+            if let Some(peer_id) = peer_db.get_best_connected_peer() {
+                work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
+                block_db.block_range_requesting(peer_id);
+            } else {
+                block_db.block_range_awaiting_peer();
+            }
+        }
+        NetworkEvent::BlockRequestFailed(root, peer_id) => {
+            if peer_db.is_good_peer(&peer_id) {
+                warn!(log, "Connection to good peer failed"; "peer" => peer_id.to_string());
+            }
+
+            block_db.for_each_pending_block_by_root_requests(|(_, req)| {
+                req.remove_peer(&peer_id);
+            });
+        }
+        NetworkEvent::NewBlock(block) => {
+            if let BlockState::Proposed(block) = &block {
+                block_db.update(block.slot(), block.canonical_root());
+            }
+
+            if let Some(e) = blocks_by_epoch.build_epoch(block) {
+                work_send.send(Work::PersistEpoch(e)).unwrap();
+            }
+        }
+        NetworkEvent::UnknownBlockRoot(_, root) => {
+            peer_db
+                .get_connected_good_peers()
+                .into_iter()
+                .for_each(|(peer_id, _)| {
+                    work_send
+                        .send(Work::SendBlockByRootRequest(peer_id, root))
+                        .unwrap();
+                });
+        }
+        NetworkEvent::BlockRootFound(root, slot, peer_id) => {
+            block_db.with_found_block_root(root, peer_id, |e| {
+                info!(log, "An orphaned block has been found"; "peer" => %peer_id, "slot" => slot, "root" => %root);
+
+                peer_db.add_good_peer(peer_id);
+            });
+        }
+        NetworkEvent::BlockRootNotFound(_) => todo!(),
+    }
+}
+
+fn handle_work<E: EthSpec>(work: Work<E>) {}

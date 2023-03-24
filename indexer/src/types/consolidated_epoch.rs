@@ -23,7 +23,7 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
     pub fn new(
         epoch: Epoch,
         blocks: Rc<Vec<ConsolidatedBlock<E>>>,
-        summary: EpochProcessingSummary<E>,
+        summary: &EpochProcessingSummary<E>,
         validator_balances: Vec<u64>,
     ) -> Self {
         ConsolidatedEpoch::<E> {
