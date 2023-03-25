@@ -2,7 +2,7 @@ use std::{pin::Pin, sync::Arc, time::Duration};
 
 use futures::Future;
 
-use lighthouse_network::{rpc::BlocksByRangeRequest, Request};
+use lighthouse_network::{rpc::{BlocksByRangeRequest, BlocksByRootRequest}, Request};
 use slog::{debug, info, warn, Logger};
 use store::EthSpec;
 use task_executor::TaskExecutor;
@@ -13,7 +13,7 @@ use tokio::{
     },
     time::{interval_at, Instant},
 };
-use types::{block_request::BlockRequestModelWithId, good_peer::GoodPeerModelWithId};
+use types::{block_request::BlockRequestModelWithId, good_peer::{GoodPeerModelWithId, GoodPeersMeta}, persistable::Persistable};
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
@@ -31,15 +31,6 @@ use crate::{
     types::block_state::BlockState,
     work::Work,
 };
-
-// use the executor for libp2p
-struct Executor(task_executor::TaskExecutor);
-
-impl libp2p::core::Executor for Executor {
-    fn exec(&self, f: Pin<Box<dyn Future<Output = ()> + Send>>) {
-        self.0.spawn(f, "libp2p");
-    }
-}
 
 pub struct Indexer {
     log: Logger,
@@ -143,7 +134,7 @@ impl Indexer {
                         },
 
                         Some(work) = work_recv.recv() => {
-                            handle_work(&executor, work, &workers, &block_db, &network_command_send);
+                            handle_work(&executor, base_dir.clone(), work, &workers, &peer_db, &block_db, &network_command_send);
                         },
 
                         _ = interval.tick() => {
@@ -218,7 +209,7 @@ fn handle_network_event<E: EthSpec>(
 
             block_db.for_each_pending_block_by_root_requests(|(req_root, req)| {
                 if root == *req_root {
-                req.remove_peer(&peer_id);
+                    req.remove_peer(&peer_id);
                 }
             });
         }
@@ -246,6 +237,10 @@ fn handle_network_event<E: EthSpec>(
                 info!(log, "An orphaned block has been found"; "peer" => %peer_id, "slot" => slot, "root" => %root);
 
                 peer_db.add_good_peer(peer_id);
+
+                // Persist good peers
+                work_send.send(Work::PersistGoodPeers).unwrap();
+
             });
         }
         NetworkEvent::BlockRootNotFound(_) => todo!(),
@@ -254,8 +249,10 @@ fn handle_network_event<E: EthSpec>(
 
 fn handle_work<E: EthSpec>(
     executor: &TaskExecutor,
+    base_dir: String,
     work: Work<E>,
     workers: &Workers<E>,
+    peer_db: &Arc<PeerDb<E>>,
     block_db: &Arc<BlockDb>,
     network_command_send: &UnboundedSender<NetworkCommand>,
 ) {
@@ -263,6 +260,22 @@ fn handle_work<E: EthSpec>(
         Work::PersistEpoch(epoch_to_persist) => {
             workers.persist_epoch.spawn(executor, epoch_to_persist)
         }
+
+        Work::PersistBlockRequest(root, attempts) => {
+            let block_request = BlockRequestModelWithId::from((&root, &attempts));
+
+            block_request.persist(&base_dir);
+        }
+
+        Work::PersistGoodPeers => {
+            let good_peers = Vec::<GoodPeerModelWithId>::from(&**peer_db);
+            let meta = GoodPeersMeta::new(good_peers.len());
+
+            good_peers.persist(&base_dir);
+            meta.persist(&base_dir);
+            //info!(self.log, "Good peers persisted");
+        },
+
         Work::SendRangeRequest(peer_id) => {
             let start_slot = block_db
                 .latest_slot()
