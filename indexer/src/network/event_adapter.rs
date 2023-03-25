@@ -12,11 +12,11 @@ use super::{augmented_network_service::RequestId, block_db::BlockDb, event::Netw
 pub struct EventAdapter<E: EthSpec> {
     network_event_send: Sender<NetworkEvent<E>>,
     block_db: Arc<BlockDb>,
-    stores: Arc<Stores>,
+    stores: Arc<Stores<E>>,
 }
 
 impl<E: EthSpec> EventAdapter<E> {
-    pub fn new(block_db: Arc<BlockDb>, stores: Arc<Stores>) -> Self {
+    pub fn new(block_db: Arc<BlockDb>, stores: Arc<Stores<E>>) -> Self {
         let (network_event_send, _) = channel(16);
 
         Self {

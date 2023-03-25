@@ -1,19 +1,13 @@
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    sync::Arc,
-};
+use std::collections::{hash_map::Entry, HashMap};
 
-use lighthouse_types::{Epoch, EthSpec, SignedBeaconBlock, Slot};
+use lighthouse_types::{Epoch, EthSpec, Slot};
 
 use crate::types::block_state::BlockState;
 
+#[derive(Debug, Default)]
 pub struct BlocksByEpoch<E: EthSpec>(HashMap<Epoch, HashMap<Slot, BlockState<E>>>);
 
 impl<E: EthSpec> BlocksByEpoch<E> {
-    pub fn new() -> Self {
-        Self(HashMap::new())
-    }
-
     pub fn build_epoch(&mut self, block: BlockState<E>) -> Option<EpochToPersist<E>> {
         let slot = match &block {
             BlockState::Proposed(block) => block.message().slot(),

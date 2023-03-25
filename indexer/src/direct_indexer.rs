@@ -1,6 +1,4 @@
-use std::{pin::Pin, sync::Arc, time::Duration};
-
-use futures::Future;
+use std::{sync::Arc, time::Duration};
 
 use lighthouse_network::{rpc::{BlocksByRangeRequest, BlocksByRootRequest}, Request};
 use slog::{debug, info, warn, Logger};
@@ -17,7 +15,7 @@ use types::{block_request::BlockRequestModelWithId, good_peer::{GoodPeerModelWit
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
-    db::{blocks_by_epoch::BlocksByEpoch, Stores},
+    db::Stores,
     network::{
         augmented_network_service::{AugmentedNetworkService, NetworkCommand, RequestId},
         block_by_root_requests::BlockByRootRequests,
@@ -112,7 +110,6 @@ impl Indexer {
                         .collect(),
                     log.clone(),
                 ));
-                let mut block_by_epoch = BlocksByEpoch::new();
 
                 let workers = Workers::new(base_dir.clone(), beacon_context);
 
@@ -131,11 +128,11 @@ impl Indexer {
                         },
 
                         Ok(event) = network_event_recv.recv() => {
-                            handle_network_event(event, &work_send, &block_db, &mut block_by_epoch, &peer_db, &stores, &log);
+                            handle_network_event(event, &work_send, &block_db, &peer_db, &stores, &log);
                         },
 
                         Some(work) = work_recv.recv() => {
-                            handle_work(&executor, base_dir.clone(), work, &workers, &peer_db, &block_db, &stores, &network_command_send);
+                            handle_work(&executor, base_dir.clone(), work, &workers, &peer_db, &stores, &network_command_send);
                         },
 
                         _ = interval.tick() => {
@@ -161,9 +158,8 @@ fn handle_network_event<E: EthSpec>(
     network_event: NetworkEvent<E>,
     work_send: &UnboundedSender<Work<E>>,
     block_db: &Arc<BlockDb>,
-    blocks_by_epoch: &mut BlocksByEpoch<E>,
     peer_db: &Arc<PeerDb<E>>,
-    stores: &Arc<Stores>,
+    stores: &Arc<Stores<E>>,
     log: &Logger,
 ) {
     match network_event {
@@ -220,7 +216,7 @@ fn handle_network_event<E: EthSpec>(
                 block_db.update(block.slot(), block.canonical_root());
             }
 
-            if let Some(e) = blocks_by_epoch.build_epoch(block) {
+            if let Some(e) = stores.block_by_epoch_mut().build_epoch(block) {
                 work_send.send(Work::PersistEpoch(e)).unwrap();
             }
         }
@@ -254,8 +250,7 @@ fn handle_work<E: EthSpec>(
     work: Work<E>,
     workers: &Workers<E>,
     peer_db: &Arc<PeerDb<E>>,
-    block_db: &Arc<BlockDb>,
-    stores: &Arc<Stores>,
+    stores: &Arc<Stores<E>>,
     network_command_send: &UnboundedSender<NetworkCommand>,
 ) {
     match work {

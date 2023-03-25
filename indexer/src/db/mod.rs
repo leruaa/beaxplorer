@@ -1,21 +1,33 @@
-use lighthouse_types::{Hash256, Slot};
+use lighthouse_types::{EthSpec, Hash256, Slot};
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use self::{block_by_root_requests::BlockByRootRequests, latest_slot::LatestSlot};
+use self::{
+    block_by_root_requests::BlockByRootRequests, blocks_by_epoch::BlocksByEpoch,
+    latest_slot::LatestSlot,
+};
 
 mod block_by_root_requests;
 pub mod blocks_by_epoch;
 mod latest_slot;
 
 #[derive(Default)]
-pub struct Stores {
+pub struct Stores<E: EthSpec> {
     latest_slot: RwLock<LatestSlot>,
+    block_by_epoch: RwLock<BlocksByEpoch<E>>,
     block_by_root_requests: RwLock<BlockByRootRequests>,
 }
 
-impl Stores {
+impl<E: EthSpec> Stores<E> {
     pub fn latest_slot(&self) -> RwLockReadGuard<LatestSlot> {
         self.latest_slot.read()
+    }
+
+    pub fn block_by_epoch(&self) -> RwLockReadGuard<BlocksByEpoch<E>> {
+        self.block_by_epoch.read()
+    }
+
+    pub fn block_by_epoch_mut(&self) -> RwLockWriteGuard<BlocksByEpoch<E>> {
+        self.block_by_epoch.write()
     }
 
     pub fn block_by_root_requests(&self) -> RwLockReadGuard<BlockByRootRequests> {
