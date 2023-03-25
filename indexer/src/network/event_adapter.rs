@@ -71,7 +71,7 @@ impl<E: EthSpec> EventAdapter<E> {
                         .iter()
                         .map(|a| (a.data.slot, a.data.beacon_block_root))
                         .dedup()
-                        .filter(|(_, r)| !self.block_db.contain_block_root(r))
+                        .filter(|(_, r)| !self.stores.proposed_block_roots().contains(r))
                         .for_each(|(slot, root)| {
                             self.network_event_send
                                 .send(NetworkEvent::UnknownBlockRoot(slot, root))

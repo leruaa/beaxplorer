@@ -14,7 +14,7 @@ use types::{
 };
 
 use crate::{
-    db::blocks_by_epoch::EpochToPersist,
+    db::EpochToPersist,
     types::{
         block_state::BlockState, consolidated_block::ConsolidatedBlock,
         consolidated_epoch::ConsolidatedEpoch,

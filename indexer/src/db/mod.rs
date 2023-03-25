@@ -1,19 +1,25 @@
+use std::collections::HashSet;
+
 use lighthouse_types::{EthSpec, Hash256, Slot};
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use self::{
     block_by_root_requests::BlockByRootRequests, blocks_by_epoch::BlocksByEpoch,
-    latest_slot::LatestSlot,
+    latest_slot::LatestSlot, proposed_block_roots::ProposedBlockRoots,
 };
 
 mod block_by_root_requests;
-pub mod blocks_by_epoch;
+mod blocks_by_epoch;
 mod latest_slot;
+mod proposed_block_roots;
+
+pub use blocks_by_epoch::EpochToPersist;
 
 #[derive(Default)]
 pub struct Stores<E: EthSpec> {
     latest_slot: RwLock<LatestSlot>,
     block_by_epoch: RwLock<BlocksByEpoch<E>>,
+    proposed_block_roots: RwLock<ProposedBlockRoots>,
     block_by_root_requests: RwLock<BlockByRootRequests>,
 }
 
@@ -30,6 +36,10 @@ impl<E: EthSpec> Stores<E> {
         self.block_by_epoch.write()
     }
 
+    pub fn proposed_block_roots(&self) -> RwLockReadGuard<ProposedBlockRoots> {
+        self.proposed_block_roots.read()
+    }
+
     pub fn block_by_root_requests(&self) -> RwLockReadGuard<BlockByRootRequests> {
         self.block_by_root_requests.read()
     }
@@ -40,6 +50,6 @@ impl<E: EthSpec> Stores<E> {
 
     pub fn update(&self, slot: Slot, root: Hash256) {
         self.latest_slot.write().replace(slot);
-        //self.proposed_block_roots.write().insert(root);
+        self.proposed_block_roots.write().insert(root);
     }
 }
