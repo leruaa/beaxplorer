@@ -94,7 +94,7 @@ impl<E: EthSpec> EventAdapter<E> {
                 id: RequestId::Block(root),
                 response: Response::BlocksByRoot(block),
             } => {
-                if self.block_db.block_by_root_request_exists(&root) {
+                if self.stores.block_by_root_requests().exists(&root) {
                     if let Some(block) = block {
                         let slot = block.slot();
                         self.network_event_send

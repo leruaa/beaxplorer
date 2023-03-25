@@ -131,7 +131,7 @@ impl Indexer {
                         },
 
                         Ok(event) = network_event_recv.recv() => {
-                            handle_network_event(event, &work_send, &block_db, &mut block_by_epoch, &peer_db, &log);
+                            handle_network_event(event, &work_send, &block_db, &mut block_by_epoch, &peer_db, &stores, &log);
                         },
 
                         Some(work) = work_recv.recv() => {
@@ -163,6 +163,7 @@ fn handle_network_event<E: EthSpec>(
     block_db: &Arc<BlockDb>,
     blocks_by_epoch: &mut BlocksByEpoch<E>,
     peer_db: &Arc<PeerDb<E>>,
+    stores: &Arc<Stores>,
     log: &Logger,
 ) {
     match network_event {
@@ -176,7 +177,7 @@ fn handle_network_event<E: EthSpec>(
                 block_db.block_range_requesting(peer_id);
             }
 
-            block_db.for_each_pending_block_by_root_requests(|(root, req)| {
+            stores.block_by_root_requests_mut().pending_iter_mut().for_each(|(root, req)| {
                 if req.insert_peer(&peer_id) {
                     work_send
                         .send(Work::SendBlockByRootRequest(peer_id, *root))
@@ -191,7 +192,7 @@ fn handle_network_event<E: EthSpec>(
                 block_db.block_range_requesting(peer_id);
             }
 
-            block_db.for_each_pending_block_by_root_requests(|(_, req)| {
+            stores.block_by_root_requests_mut().pending_iter_mut().for_each(|(_, req)| {
                 req.remove_peer(&peer_id);
             });
         }
@@ -208,7 +209,7 @@ fn handle_network_event<E: EthSpec>(
                 warn!(log, "Connection to good peer failed"; "peer" => peer_id.to_string());
             }
 
-            block_db.for_each_pending_block_by_root_requests(|(req_root, req)| {
+            stores.block_by_root_requests_mut().pending_iter_mut().for_each(|(req_root, req)| {
                 if root == *req_root {
                     req.remove_peer(&peer_id);
                 }
@@ -233,16 +234,15 @@ fn handle_network_event<E: EthSpec>(
                         .unwrap();
                 });
         }
-        NetworkEvent::BlockRootFound(root, slot, peer_id) => {
-            block_db.with_found_block_root(root, peer_id, |e| {
-                info!(log, "An orphaned block has been found"; "peer" => %peer_id, "slot" => slot, "root" => %root);
+        NetworkEvent::BlockRootFound(root, slot, found_by) => {
+            if stores.block_by_root_requests_mut().set_request_as_found(root, found_by) {
+                info!(log, "An orphaned block has been found"; "peer" => %found_by, "slot" => slot, "root" => %root);
 
-                peer_db.add_good_peer(peer_id);
+                peer_db.add_good_peer(found_by);
 
                 // Persist good peers
                 work_send.send(Work::PersistGoodPeers).unwrap();
-
-            });
+            }
         }
         NetworkEvent::BlockRootNotFound(_) => todo!(),
     }
