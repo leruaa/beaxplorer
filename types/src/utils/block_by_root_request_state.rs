@@ -6,7 +6,7 @@ use std::{
 
 use lighthouse_network::PeerId;
 
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Debug, Clone, Default, Eq, PartialEq)]
 pub enum BlockByRootRequestState {
     #[default]
     AwaitingPeer,

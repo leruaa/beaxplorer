@@ -6,6 +6,7 @@ use lighthouse_types::{Hash256, Slot};
 use super::BlockByRootRequestState;
 use crate::block_request::{BlockRequestModel, BlockRequestModelWithId};
 
+#[derive(Debug, Clone)]
 pub struct RequestAttempts {
     pub possible_slots: HashSet<Slot>,
     pub state: BlockByRootRequestState,
