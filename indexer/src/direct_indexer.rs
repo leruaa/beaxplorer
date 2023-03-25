@@ -17,7 +17,7 @@ use types::{block_request::BlockRequestModelWithId, good_peer::{GoodPeerModelWit
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
-    db::blocks_by_epoch::BlocksByEpoch,
+    db::{blocks_by_epoch::BlocksByEpoch, Stores},
     network::{
         augmented_network_service::{AugmentedNetworkService, NetworkCommand, RequestId},
         block_by_root_requests::BlockByRootRequests,
@@ -103,6 +103,7 @@ impl Indexer {
                 let block_by_root_requests =
                     BlockByRootRequests::from_block_requests(block_requests.collect());
                 let block_db = BlockDb::new();
+                let stores = Arc::new(Stores::default());
                 let peer_db = Arc::new(PeerDb::new(
                     network_globals.clone(),
                     good_peers
@@ -118,7 +119,7 @@ impl Indexer {
                 let start_instant = Instant::now();
                 let interval_duration = Duration::from_secs(1);
                 let mut interval = interval_at(start_instant, interval_duration);
-                let mut network_event_adapter = EventAdapter::new(block_db.clone());
+                let mut network_event_adapter = EventAdapter::new(block_db.clone(), stores.clone());
                 let mut network_event_recv = network_event_adapter.receiver();
 
                 loop {
@@ -134,7 +135,7 @@ impl Indexer {
                         },
 
                         Some(work) = work_recv.recv() => {
-                            handle_work(&executor, base_dir.clone(), work, &workers, &peer_db, &block_db, &network_command_send);
+                            handle_work(&executor, base_dir.clone(), work, &workers, &peer_db, &block_db, &stores, &network_command_send);
                         },
 
                         _ = interval.tick() => {
@@ -254,6 +255,7 @@ fn handle_work<E: EthSpec>(
     workers: &Workers<E>,
     peer_db: &Arc<PeerDb<E>>,
     block_db: &Arc<BlockDb>,
+    stores: &Arc<Stores>,
     network_command_send: &UnboundedSender<NetworkCommand>,
 ) {
     match work {
@@ -277,7 +279,7 @@ fn handle_work<E: EthSpec>(
         },
 
         Work::SendRangeRequest(peer_id) => {
-            let start_slot = block_db
+            let start_slot = stores
                 .latest_slot()
                 .map(|s| s.as_u64() + 1)
                 .unwrap_or_default();
