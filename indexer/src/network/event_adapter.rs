@@ -7,21 +7,19 @@ use tokio::sync::broadcast::{channel, Receiver, Sender};
 
 use crate::{db::Stores, types::block_state::BlockState};
 
-use super::{augmented_network_service::RequestId, block_db::BlockDb, event::NetworkEvent};
+use super::{augmented_network_service::RequestId, event::NetworkEvent};
 
 pub struct EventAdapter<E: EthSpec> {
     network_event_send: Sender<NetworkEvent<E>>,
-    block_db: Arc<BlockDb>,
     stores: Arc<Stores<E>>,
 }
 
 impl<E: EthSpec> EventAdapter<E> {
-    pub fn new(block_db: Arc<BlockDb>, stores: Arc<Stores<E>>) -> Self {
+    pub fn new(stores: Arc<Stores<E>>) -> Self {
         let (network_event_send, _) = channel(16);
 
         Self {
             network_event_send,
-            block_db,
             stores,
         }
     }

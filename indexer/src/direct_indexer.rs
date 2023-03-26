@@ -19,7 +19,6 @@ use crate::{
     network::{
         augmented_network_service::{AugmentedNetworkService, NetworkCommand, RequestId},
         block_by_root_requests::BlockByRootRequests,
-        block_db::BlockDb,
         event::NetworkEvent,
         event_adapter::EventAdapter,
         peer_db::PeerDb,
@@ -100,7 +99,6 @@ impl Indexer {
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
                 let block_by_root_requests =
                     BlockByRootRequests::from_block_requests(block_requests.collect());
-                let block_db = BlockDb::new();
                 let stores = Arc::new(Stores::default());
                 let peer_db = Arc::new(PeerDb::new(
                     network_globals.clone(),
@@ -116,7 +114,7 @@ impl Indexer {
                 let start_instant = Instant::now();
                 let interval_duration = Duration::from_secs(1);
                 let mut interval = interval_at(start_instant, interval_duration);
-                let mut network_event_adapter = EventAdapter::new(block_db.clone(), stores.clone());
+                let mut network_event_adapter = EventAdapter::new(stores.clone());
                 let mut network_event_recv = network_event_adapter.receiver();
 
                 loop {
@@ -128,7 +126,7 @@ impl Indexer {
                         },
 
                         Ok(event) = network_event_recv.recv() => {
-                            handle_network_event(event, &work_send, &block_db, &peer_db, &stores, &log);
+                            handle_network_event(event, &work_send, &peer_db, &stores, &log);
                         },
 
                         Some(work) = work_recv.recv() => {
@@ -157,7 +155,6 @@ impl Indexer {
 fn handle_network_event<E: EthSpec>(
     network_event: NetworkEvent<E>,
     work_send: &UnboundedSender<Work<E>>,
-    block_db: &Arc<BlockDb>,
     peer_db: &Arc<PeerDb<E>>,
     stores: &Arc<Stores<E>>,
     log: &Logger,
@@ -168,9 +165,9 @@ fn handle_network_event<E: EthSpec>(
                 info!(log, "Good peer connected"; "peer" => %peer_id);
             }
 
-            if !block_db.is_requesting_block_range() {
+            if !stores.block_range_request_state().is_requesting() {
                 work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
-                block_db.block_range_requesting(peer_id);
+                stores.block_range_request_state_mut().set_to_requesting(peer_id);
             }
 
             stores.block_by_root_requests_mut().pending_iter_mut().for_each(|(root, req)| {
@@ -182,10 +179,10 @@ fn handle_network_event<E: EthSpec>(
             });
         }
         NetworkEvent::PeerDisconnected(peer_id) => {
-            if block_db.block_range_matches(&peer_id) {
+            if stores.block_range_request_state().matches(&peer_id) {
                 debug!(log, "Range request cancelled");
                 work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
-                block_db.block_range_requesting(peer_id);
+                stores.block_range_request_state_mut().set_to_requesting(peer_id);
             }
 
             stores.block_by_root_requests_mut().pending_iter_mut().for_each(|(_, req)| {
@@ -195,9 +192,9 @@ fn handle_network_event<E: EthSpec>(
         NetworkEvent::RangeRequestSuccedeed | NetworkEvent::RangeRequestFailed => {
             if let Some(peer_id) = peer_db.get_best_connected_peer() {
                 work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
-                block_db.block_range_requesting(peer_id);
+                stores.block_range_request_state_mut().set_to_requesting(peer_id);
             } else {
-                block_db.block_range_awaiting_peer();
+                stores.block_range_request_state_mut().set_to_awaiting_peer();
             }
         }
         NetworkEvent::BlockRequestFailed(root, peer_id) => {
