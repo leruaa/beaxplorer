@@ -1,7 +1,7 @@
 use std::{rc::Rc, sync::Arc};
 
 use lighthouse_types::{BeaconState, BlindedPayload, ChainSpec, EthSpec, SignedBeaconBlock, Slot};
-use parking_lot::Mutex;
+use parking_lot::RwLock;
 use state_processing::{
     per_block_processing, per_epoch_processing::base::process_epoch, per_slot_processing,
     BlockReplayError, BlockSignatureStrategy, ConsensusContext, VerifyBlockRoot,
@@ -23,7 +23,7 @@ use crate::{
 
 pub struct PersistEpochWorker<E: EthSpec> {
     base_dir: String,
-    beacon_state: Arc<Mutex<BeaconState<E>>>,
+    beacon_state: Arc<RwLock<BeaconState<E>>>,
     spec: Arc<ChainSpec>,
 }
 
@@ -31,7 +31,7 @@ impl<E: EthSpec> PersistEpochWorker<E> {
     pub fn new(base_dir: String, beacon_state: BeaconState<E>, spec: ChainSpec) -> Self {
         Self {
             base_dir,
-            beacon_state: Arc::new(Mutex::new(beacon_state)),
+            beacon_state: Arc::new(RwLock::new(beacon_state)),
             spec: Arc::new(spec),
         }
     }
@@ -45,8 +45,6 @@ impl<E: EthSpec> PersistEpochWorker<E> {
             async move {
                 let epoch = epoch_to_persist.epoch;
                 let mut blocks = epoch_to_persist.blocks.into_iter().collect::<Vec<_>>();
-                let mut beacon_state_lock = beacon_state.lock();
-                let beacon_state = &mut *beacon_state_lock;
 
                 blocks.sort_by(|(a, _), (b, _)| a.cmp(b));
 
@@ -61,9 +59,9 @@ impl<E: EthSpec> PersistEpochWorker<E> {
 
                 let last_slot = epoch.end_slot(E::slots_per_epoch());
 
-                apply_blocks(b, last_slot, beacon_state, &spec).unwrap();
+                apply_blocks(b, last_slot, &mut *beacon_state.write(), &spec).unwrap();
 
-                let summary = process_epoch(beacon_state, &spec).unwrap();
+                let summary = process_epoch(&mut *beacon_state.write(), &spec).unwrap();
 
                 let blocks = blocks
                     .into_iter()
@@ -72,7 +70,10 @@ impl<E: EthSpec> PersistEpochWorker<E> {
                             block_status,
                             slot,
                             epoch,
-                            beacon_state.get_beacon_proposer_index(slot, &spec).unwrap() as u64,
+                            beacon_state
+                                .read()
+                                .get_beacon_proposer_index(slot, &spec)
+                                .unwrap() as u64,
                         )
                     })
                     .collect::<Vec<_>>();
@@ -93,7 +94,7 @@ impl<E: EthSpec> PersistEpochWorker<E> {
                     epoch,
                     blocks,
                     &summary,
-                    beacon_state.balances().clone().into(),
+                    beacon_state.read().balances().clone().into(),
                 );
 
                 let epoch_model = EpochModelWithId::from(&consolidated_epoch);
