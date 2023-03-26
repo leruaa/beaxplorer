@@ -1,23 +1,24 @@
+use std::sync::Arc;
+
 use lighthouse_types::{EthSpec, Hash256, Slot};
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use self::{
     block_by_root_requests::BlockByRootRequests, block_range_request_state::BlockRangeRequestState,
-    blocks_by_epoch::BlocksByEpoch, latest_slot::LatestSlot,
+    blocks_by_epoch::BlocksByEpoch, latest_epoch::LatestEpoch, latest_slot::LatestSlot,
     proposed_block_roots::ProposedBlockRoots,
 };
 
 mod block_by_root_requests;
 mod block_range_request_state;
 mod blocks_by_epoch;
+mod latest_epoch;
 mod latest_slot;
 mod proposed_block_roots;
 
-pub use blocks_by_epoch::EpochToPersist;
-
-#[derive(Default)]
 pub struct Stores<E: EthSpec> {
     latest_slot: RwLock<LatestSlot>,
+    latest_epoch: Arc<RwLock<LatestEpoch>>,
     block_by_epoch: RwLock<BlocksByEpoch<E>>,
     proposed_block_roots: RwLock<ProposedBlockRoots>,
     block_range_request_state: RwLock<BlockRangeRequestState>,
@@ -27,6 +28,10 @@ pub struct Stores<E: EthSpec> {
 impl<E: EthSpec> Stores<E> {
     pub fn latest_slot(&self) -> RwLockReadGuard<LatestSlot> {
         self.latest_slot.read()
+    }
+
+    pub fn latest_epoch(&self) -> RwLockReadGuard<LatestEpoch> {
+        self.latest_epoch.read()
     }
 
     pub fn block_by_epoch(&self) -> RwLockReadGuard<BlocksByEpoch<E>> {
@@ -60,5 +65,17 @@ impl<E: EthSpec> Stores<E> {
     pub fn update(&self, slot: Slot, root: Hash256) {
         self.latest_slot.write().replace(slot);
         self.proposed_block_roots.write().insert(root);
+    }
+}
+
+impl<E: EthSpec> Default for Stores<E> {
+    fn default() -> Self {
+        let latest_epoch = Arc::new(RwLock::new(LatestEpoch::default()));
+
+        Self {
+            latest_epoch: latest_epoch.clone(),
+            block_by_epoch: RwLock::new(BlocksByEpoch::new(latest_epoch)),
+            ..Default::default()
+        }
     }
 }

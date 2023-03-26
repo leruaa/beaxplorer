@@ -1,6 +1,8 @@
-use std::{rc::Rc, sync::Arc};
+use std::{collections::HashMap, rc::Rc, sync::Arc};
 
-use lighthouse_types::{BeaconState, BlindedPayload, ChainSpec, EthSpec, SignedBeaconBlock, Slot};
+use lighthouse_types::{
+    BeaconState, BlindedPayload, ChainSpec, Epoch, EthSpec, SignedBeaconBlock, Slot,
+};
 use parking_lot::RwLock;
 use state_processing::{
     per_block_processing, per_epoch_processing::base::process_epoch, per_slot_processing,
@@ -13,12 +15,9 @@ use types::{
     persistable::Persistable,
 };
 
-use crate::{
-    db::EpochToPersist,
-    types::{
-        block_state::BlockState, consolidated_block::ConsolidatedBlock,
-        consolidated_epoch::ConsolidatedEpoch,
-    },
+use crate::types::{
+    block_state::BlockState, consolidated_block::ConsolidatedBlock,
+    consolidated_epoch::ConsolidatedEpoch,
 };
 
 pub struct PersistEpochWorker<E: EthSpec> {
@@ -36,15 +35,19 @@ impl<E: EthSpec> PersistEpochWorker<E> {
         }
     }
 
-    pub fn spawn(&self, executor: &TaskExecutor, epoch_to_persist: EpochToPersist<E>) {
+    pub fn spawn(
+        &self,
+        executor: &TaskExecutor,
+        epoch: Epoch,
+        blocks: HashMap<Slot, BlockState<E>>,
+    ) {
         let base_dir = self.base_dir.clone();
         let beacon_state = self.beacon_state.clone();
         let spec = self.spec.clone();
 
         executor.spawn(
             async move {
-                let epoch = epoch_to_persist.epoch;
-                let mut blocks = epoch_to_persist.blocks.into_iter().collect::<Vec<_>>();
+                let mut blocks = blocks.into_iter().collect::<Vec<_>>();
 
                 blocks.sort_by(|(a, _), (b, _)| a.cmp(b));
 
