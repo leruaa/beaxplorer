@@ -1,13 +1,29 @@
 use std::collections::{hash_map::Entry, HashMap};
 
 use lighthouse_network::PeerId;
-use lighthouse_types::Hash256;
-use types::utils::{BlockByRootRequestState, RequestAttempts};
+use lighthouse_types::{Hash256, Slot};
+use types::{
+    block_request::BlockRequestModelWithId,
+    utils::{BlockByRootRequestState, RequestAttempts},
+};
 
 #[derive(Debug, Default)]
 pub struct BlockByRootRequests(HashMap<Hash256, RequestAttempts>);
 
 impl BlockByRootRequests {
+    pub fn from_block_requests(block_requests: Vec<BlockRequestModelWithId>) -> Self {
+        let mut block_by_root_requests = BlockByRootRequests::default();
+
+        for block_request in block_requests {
+            block_by_root_requests.0.insert(
+                block_request.id.parse().unwrap(),
+                block_request.model.into(),
+            );
+        }
+
+        block_by_root_requests
+    }
+
     pub fn exists(&self, root: &Hash256) -> bool {
         self.0.contains_key(root)
     }
@@ -42,5 +58,11 @@ impl BlockByRootRequests {
             Entry::Occupied(_) => true,
             Entry::Vacant(_) => false,
         }
+    }
+}
+
+impl From<&BlockByRootRequests> for Vec<BlockRequestModelWithId> {
+    fn from(value: &BlockByRootRequests) -> Self {
+        value.0.iter().map(Into::into).collect::<Vec<_>>()
     }
 }

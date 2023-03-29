@@ -96,9 +96,7 @@ impl Indexer {
                 let (work_send, mut work_recv) = mpsc::unbounded_channel();
 
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
-                let block_by_root_requests =
-                    BlockByRootRequests::from_block_requests(block_requests.collect());
-                let stores = Arc::new(Stores::default());
+                let stores = Arc::new(Stores::new(block_requests.collect()));
                 let peer_db = Arc::new(PeerDb::new(
                     network_globals.clone(),
                     good_peers
