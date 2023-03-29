@@ -1,7 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use lighthouse_network::PeerId;
-use lighthouse_types::{Epoch, EthSpec, Hash256, SignedBeaconBlock, Slot};
+use lighthouse_types::{Epoch, EthSpec, Hash256, Slot};
 use types::utils::RequestAttempts;
 
 use crate::types::block_state::BlockState;
@@ -12,7 +12,7 @@ pub enum Work<E: EthSpec> {
         epoch: Epoch,
         blocks: HashMap<Slot, BlockState<E>>,
     },
-    PersistBlock(Arc<SignedBeaconBlock<E>>),
+    PersistBlock(BlockState<E>),
     PersistBlockRequest(Hash256, RequestAttempts),
     PersistGoodPeers,
     SendRangeRequest(PeerId),

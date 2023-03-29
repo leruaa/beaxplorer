@@ -58,6 +58,8 @@ impl<E: EthSpec> BlocksByEpoch<E> {
             match self.blocks_by_epoch.entry(epoch) {
                 Entry::Occupied(e) => {
                     if epoch == current_epoch && e.get().len() as u64 == E::slots_per_epoch() {
+                        self.latest_epoch.write().replace(epoch);
+
                         Some(Work::PersistEpoch {
                             epoch,
                             blocks: e.remove(),
@@ -68,7 +70,7 @@ impl<E: EthSpec> BlocksByEpoch<E> {
                 }
                 Entry::Vacant(_) => None,
             }
-        } else if let BlockState::Orphaned(block) = block {
+        } else if matches!(block, BlockState::Orphaned(_)) {
             Some(Work::PersistBlock(block))
         } else {
             None

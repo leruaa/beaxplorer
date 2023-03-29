@@ -213,8 +213,8 @@ fn handle_network_event<E: EthSpec>(
                 stores.update(block.slot(), block.canonical_root());
             }
 
-            if let Some(e) = stores.block_by_epoch_mut().build_epoch(block) {
-                work_send.send(Work::PersistEpoch(e)).unwrap();
+            if let Some(work) = stores.block_by_epoch_mut().build_epoch(block) {
+                work_send.send(work).unwrap();
             }
         }
         NetworkEvent::UnknownBlockRoot(_, root) => {
@@ -251,9 +251,13 @@ fn handle_work<E: EthSpec>(
     network_command_send: &UnboundedSender<NetworkCommand>,
 ) {
     match work {
-        Work::PersistEpoch(epoch_to_persist) => {
-            workers.persist_epoch.spawn(executor, epoch_to_persist)
+        Work::PersistEpoch { epoch, blocks } => {
+            workers.epoch_persister.spawn(executor, epoch, blocks)
         }
+
+        Work::PersistBlock(block) => {
+            workers.existing_block_persister.spawn(executor, block)
+        },
 
         Work::PersistBlockRequest(root, attempts) => {
             let block_request = BlockRequestModelWithId::from((&root, &attempts));
@@ -299,6 +303,5 @@ fn handle_work<E: EthSpec>(
                 })
                 .unwrap();
         }
-
     }
 }
