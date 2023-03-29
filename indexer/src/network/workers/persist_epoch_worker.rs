@@ -15,9 +15,11 @@ use types::{
     persistable::Persistable,
 };
 
-use crate::types::{
-    block_state::BlockState, consolidated_block::ConsolidatedBlock,
-    consolidated_epoch::ConsolidatedEpoch,
+use crate::{
+    types::{
+        block_state::BlockState, consolidated_block::ConsolidatedBlock,
+        consolidated_epoch::ConsolidatedEpoch,
+    },
 };
 
 pub struct PersistEpochWorker<E: EthSpec> {

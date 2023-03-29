@@ -11,14 +11,13 @@ use tokio::{
     },
     time::{interval_at, Instant},
 };
-use types::{block_request::BlockRequestModelWithId, good_peer::{GoodPeerModelWithId, GoodPeersMeta}, persistable::Persistable};
+use types::{block_request::{BlockRequestModelWithId, BlockRequestsMeta}, good_peer::{GoodPeerModelWithId, GoodPeersMeta}, persistable::Persistable};
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
-    db::Stores,
+    db::{Stores, BlockByRootRequests},
     network::{
         augmented_network_service::{AugmentedNetworkService, NetworkCommand, RequestId},
-        block_by_root_requests::BlockByRootRequests,
         event::NetworkEvent,
         event_adapter::EventAdapter,
         peer_db::PeerDb,
@@ -141,6 +140,7 @@ impl Indexer {
                         
                         _ = shutdown_trigger.changed() => {
                             info!(log, "Shutting down indexer...");
+                            persist_block_requests(&base_dir, &*stores.block_by_root_requests());
                             persist_good_peers(&base_dir, &peer_db);
                             shutdown_persister_request.send(()).unwrap();
                             return;
@@ -240,7 +240,7 @@ fn handle_network_event<E: EthSpec>(
                 peer_db.add_good_peer(found_by);
 
                 // Persist good peers
-                work_send.send(Work::PersistGoodPeers).unwrap();
+                work_send.send(Work::PersistAllGoodPeers).unwrap();
             }
         }
         NetworkEvent::BlockRootNotFound(_) => todo!(),
@@ -271,7 +271,11 @@ fn handle_work<E: EthSpec>(
             block_request.persist(&base_dir);
         }
 
-        Work::PersistGoodPeers => {
+        Work::PersistAllBlockRequests => {
+            persist_block_requests(&base_dir, &*stores.block_by_root_requests())
+        }
+
+        Work::PersistAllGoodPeers => {
             persist_good_peers(&base_dir, peer_db)
         },
 
@@ -305,6 +309,14 @@ fn handle_work<E: EthSpec>(
                 .unwrap();
         }
     }
+}
+
+fn persist_block_requests(base_dir: &str, block_by_root_requests: &BlockByRootRequests) {
+    let block_requests = Vec::<BlockRequestModelWithId>::from(block_by_root_requests);
+    let meta = BlockRequestsMeta::new(block_requests.len());
+
+    block_requests.persist(base_dir);
+    meta.persist(base_dir);
 }
 
 fn persist_good_peers<E: EthSpec>(base_dir: &str, peer_db: &Arc<PeerDb<E>>) {

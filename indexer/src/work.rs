@@ -14,7 +14,8 @@ pub enum Work<E: EthSpec> {
     },
     PersistBlock(BlockState<E>),
     PersistBlockRequest(Hash256, RequestAttempts),
-    PersistGoodPeers,
+    PersistAllBlockRequests,
+    PersistAllGoodPeers,
     SendRangeRequest(PeerId),
     SendBlockByRootRequest(PeerId, Hash256),
 }
