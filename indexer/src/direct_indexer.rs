@@ -232,6 +232,11 @@ fn handle_network_event<E: EthSpec>(
             if stores.block_by_root_requests_mut().set_request_as_found(root, found_by) {
                 info!(log, "An orphaned block has been found"; "peer" => %found_by, "slot" => slot, "root" => %root);
 
+                if let Some(attempt) = stores.block_by_root_requests().get(&root) {
+                    // Persist the found block request
+                    work_send.send(Work::PersistBlockRequest(root, attempt.clone())).unwrap();
+                }
+
                 peer_db.add_good_peer(found_by);
 
                 // Persist good peers

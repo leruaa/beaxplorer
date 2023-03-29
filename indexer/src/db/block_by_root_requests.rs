@@ -12,6 +12,10 @@ impl BlockByRootRequests {
         self.0.contains_key(root)
     }
 
+    pub fn get(&self, root: &Hash256) -> Option<&RequestAttempts> {
+        self.0.get(root)
+    }
+
     pub fn pending_iter_mut(&mut self) -> impl Iterator<Item = (&Hash256, &mut RequestAttempts)> {
         self.0
             .iter_mut()
