@@ -218,7 +218,9 @@ fn handle_network_event<E: EthSpec>(
                 work_send.send(work).unwrap();
             }
         }
-        NetworkEvent::UnknownBlockRoot(_, root) => {
+        NetworkEvent::UnknownBlockRoot(slot, root) => {
+            stores.block_by_root_requests_mut().add(slot, root);
+            
             peer_db
                 .get_connected_good_peers()
                 .into_iter()
