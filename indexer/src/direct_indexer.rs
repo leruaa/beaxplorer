@@ -141,6 +141,7 @@ impl Indexer {
                         
                         _ = shutdown_trigger.changed() => {
                             info!(log, "Shutting down indexer...");
+                            persist_good_peers(&base_dir, &peer_db);
                             shutdown_persister_request.send(()).unwrap();
                             return;
                         }
@@ -266,12 +267,7 @@ fn handle_work<E: EthSpec>(
         }
 
         Work::PersistGoodPeers => {
-            let good_peers = Vec::<GoodPeerModelWithId>::from(&**peer_db);
-            let meta = GoodPeersMeta::new(good_peers.len());
-
-            good_peers.persist(&base_dir);
-            meta.persist(&base_dir);
-            //info!(self.log, "Good peers persisted");
+            persist_good_peers(&base_dir, peer_db)
         },
 
         Work::SendRangeRequest(peer_id) => {
@@ -304,4 +300,13 @@ fn handle_work<E: EthSpec>(
                 .unwrap();
         }
     }
+}
+
+fn persist_good_peers<E: EthSpec>(base_dir: &str, peer_db: &Arc<PeerDb<E>>) {
+    let good_peers = Vec::<GoodPeerModelWithId>::from(&**peer_db);
+    let meta = GoodPeersMeta::new(good_peers.len());
+
+    good_peers.persist(base_dir);
+    meta.persist(base_dir);
+    //info!(self.log, "Good peers persisted");
 }
