@@ -189,7 +189,7 @@ fn handle_network_event<E: EthSpec>(
         }
         NetworkEvent::NewBlock(block) => {
             if let BlockState::Proposed(block) = &block {
-                stores.update(block.slot(), block.canonical_root());
+                stores.proposed_block_roots_mut().insert(block.canonical_root());
             }
 
             if let Some(work) = stores.block_by_epoch_mut().build_epoch(block) {

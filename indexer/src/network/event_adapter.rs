@@ -77,8 +77,10 @@ impl<E: EthSpec> EventAdapter<E> {
                         });
 
                     self.new_blocks(block).for_each(|event| {
-                        let _ = self.network_event_send.send(event);
-                    })
+                        self.network_event_send.send(event).unwrap();
+                    });
+
+                    self.stores.latest_slot_mut().replace(slot);
                 } else {
                     // A block range response has finished
                     self.network_event_send

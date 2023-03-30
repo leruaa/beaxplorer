@@ -46,6 +46,10 @@ impl<E: EthSpec> Stores<E> {
         self.latest_slot.read()
     }
 
+    pub fn latest_slot_mut(&self) -> RwLockWriteGuard<LatestSlot> {
+        self.latest_slot.write()
+    }
+
     pub fn latest_epoch(&self) -> RwLockReadGuard<LatestEpoch> {
         self.latest_epoch.read()
     }
@@ -62,6 +66,10 @@ impl<E: EthSpec> Stores<E> {
         self.proposed_block_roots.read()
     }
 
+    pub fn proposed_block_roots_mut(&self) -> RwLockWriteGuard<ProposedBlockRoots> {
+        self.proposed_block_roots.write()
+    }
+
     pub fn block_range_request_state(&self) -> RwLockReadGuard<BlockRangeRequestState> {
         self.block_range_request_state.read()
     }
@@ -76,10 +84,5 @@ impl<E: EthSpec> Stores<E> {
 
     pub fn block_by_root_requests_mut(&self) -> RwLockWriteGuard<BlockByRootRequests> {
         self.block_by_root_requests.write()
-    }
-
-    pub fn update(&self, slot: Slot, root: Hash256) {
-        self.latest_slot.write().replace(slot);
-        self.proposed_block_roots.write().insert(root);
     }
 }
