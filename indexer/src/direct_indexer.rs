@@ -45,26 +45,11 @@ impl Indexer {
         _: Sender<()>,
         shutdown_trigger: Receiver<()>,
     ) {
-        let (persist_send, persist_recv) = unbounded_channel::<PersistMessage<E>>();
-
-        let (shutdown_persister_request, shutdown_persister_trigger) = watch::channel(());
-
         self.spawn_indexer(
             executor.clone(),
             base_dir.clone(),
             beacon_context.clone(),
-            persist_send,
-            shutdown_persister_request,
             shutdown_trigger,
-        );
-
-        PersistService::spawn(
-            executor,
-            base_dir,
-            beacon_context,
-            persist_recv,
-            shutdown_persister_trigger,
-            self.log.clone(),
         );
     }
 
@@ -73,8 +58,6 @@ impl Indexer {
         executor: TaskExecutor,
         base_dir: String,
         beacon_context: Arc<BeaconContext<E>>,
-        persist_send: UnboundedSender<PersistMessage<E>>,
-        shutdown_persister_request: watch::Sender<()>,
         mut shutdown_trigger: Receiver<()>,
     ) {
         let log = self.log.clone();
@@ -140,7 +123,6 @@ impl Indexer {
                             info!(log, "Shutting down indexer...");
                             persist_block_requests(&base_dir, &*stores.block_by_root_requests());
                             persist_good_peers(&base_dir, &peer_db);
-                            shutdown_persister_request.send(()).unwrap();
                             return;
                         }
                     }
