@@ -47,6 +47,10 @@ impl RequestAttempts {
         }
     }
 
+    pub fn increment_not_found(&mut self) {
+        self.not_found_count += 1
+    }
+
     pub fn remove_peer(&mut self, peer_id: &PeerId) {
         if let BlockByRootRequestState::Requesting(peers) = &mut self.state {
             if peers.remove(peer_id) {

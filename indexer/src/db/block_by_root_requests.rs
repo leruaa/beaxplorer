@@ -41,6 +41,15 @@ impl BlockByRootRequests {
         attempt.possible_slots.insert(slot);
     }
 
+    pub fn update_attempt<F>(&mut self, root: &Hash256, f: F)
+    where
+        F: Fn(&mut RequestAttempts),
+    {
+        if let Some(attempt) = self.0.get_mut(root) {
+            f(attempt)
+        }
+    }
+
     pub fn pending_iter_mut(&mut self) -> impl Iterator<Item = (&Hash256, &mut RequestAttempts)> {
         self.0
             .iter_mut()

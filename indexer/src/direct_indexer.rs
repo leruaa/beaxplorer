@@ -201,10 +201,8 @@ fn handle_network_event<E: EthSpec>(
                 warn!(log, "Connection to good peer failed"; "peer" => peer_id.to_string());
             }
 
-            stores.block_by_root_requests_mut().pending_iter_mut().for_each(|(req_root, req)| {
-                if root == *req_root {
-                    req.remove_peer(&peer_id);
-                }
+            stores.block_by_root_requests_mut().update_attempt(&root, |attempt| {
+                attempt.remove_peer(&peer_id);
             });
         }
         NetworkEvent::NewBlock(block) => {
@@ -243,7 +241,11 @@ fn handle_network_event<E: EthSpec>(
                 work_send.send(Work::PersistAllGoodPeers).unwrap();
             }
         }
-        NetworkEvent::BlockRootNotFound(_) => todo!(),
+        NetworkEvent::BlockRootNotFound(root) => {
+            stores.block_by_root_requests_mut().update_attempt(&root, |attempt| {
+                attempt.increment_not_found();
+            });
+        },
     }
 }
 
