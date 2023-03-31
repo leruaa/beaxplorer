@@ -3,21 +3,22 @@ use std::{iter::once, sync::Arc};
 use itertools::Itertools;
 use lighthouse_network::{NetworkEvent as LighthouseNetworkEvent, Response};
 use lighthouse_types::{EthSpec, SignedBeaconBlock, Slot};
-use tokio::sync::broadcast::{channel, Receiver, Sender};
+use tokio::sync::mpsc::UnboundedSender;
 
 use crate::{db::Stores, types::block_state::BlockState};
 
 use super::{augmented_network_service::RequestId, event::NetworkEvent};
 
 pub struct EventAdapter<E: EthSpec> {
-    network_event_send: Sender<NetworkEvent<E>>,
+    network_event_send: UnboundedSender<NetworkEvent<E>>,
     stores: Arc<Stores<E>>,
 }
 
 impl<E: EthSpec> EventAdapter<E> {
-    pub fn new(stores: Arc<Stores<E>>) -> Self {
-        let (network_event_send, _) = channel(16);
-
+    pub fn new(
+        network_event_send: UnboundedSender<NetworkEvent<E>>,
+        stores: Arc<Stores<E>>,
+    ) -> Self {
         Self {
             network_event_send,
             stores,
@@ -114,10 +115,6 @@ impl<E: EthSpec> EventAdapter<E> {
 
             _ => {}
         };
-    }
-
-    pub fn receiver(&self) -> Receiver<NetworkEvent<E>> {
-        self.network_event_send.subscribe()
     }
 
     fn new_blocks(

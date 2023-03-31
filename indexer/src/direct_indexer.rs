@@ -77,6 +77,7 @@ impl Indexer {
                         .unwrap();
 
                 let (work_send, mut work_recv) = mpsc::unbounded_channel();
+                let (network_event_send, mut network_event_recv) = mpsc::unbounded_channel();
 
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
                 let stores = Arc::new(Stores::new(block_requests.collect()));
@@ -94,8 +95,7 @@ impl Indexer {
                 let start_instant = Instant::now();
                 let interval_duration = Duration::from_secs(1);
                 let mut interval = interval_at(start_instant, interval_duration);
-                let mut network_event_adapter = EventAdapter::new(stores.clone());
-                let mut network_event_recv = network_event_adapter.receiver();
+                let mut network_event_adapter = EventAdapter::new(network_event_send, stores.clone());
 
                 loop {
                     tokio::select! {
@@ -105,7 +105,7 @@ impl Indexer {
                             //block_by_root_requests_worker.handle_event(&event)
                         },
 
-                        Ok(event) = network_event_recv.recv() => {
+                        Some(event) = network_event_recv.recv() => {
                             handle_network_event(event, &work_send, &peer_db, &stores, &log);
                         },
 
