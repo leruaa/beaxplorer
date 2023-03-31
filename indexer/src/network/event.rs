@@ -8,7 +8,7 @@ pub enum NetworkEvent<E: EthSpec> {
     PeerConnected(PeerId),
     PeerDisconnected(PeerId),
     RangeRequestSuccedeed,
-    RangeRequestFailed,
+    RangeRequestFailed(PeerId),
     BlockRequestFailed(Hash256, PeerId),
     NewBlock(BlockState<E>),
     UnknownBlockRoot(Slot, Hash256),

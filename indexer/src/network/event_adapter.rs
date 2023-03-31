@@ -41,10 +41,10 @@ impl<E: EthSpec> EventAdapter<E> {
 
             LighthouseNetworkEvent::RPCFailed {
                 id: RequestId::Range(_),
-                ..
+                peer_id,
             } => {
                 self.network_event_send
-                    .send(NetworkEvent::RangeRequestFailed)
+                    .send(NetworkEvent::RangeRequestFailed(peer_id))
                     .unwrap();
             }
 
