@@ -27,33 +27,33 @@ impl<E: EthSpec> EventAdapter<E> {
     pub fn handle(&mut self, network_event: LighthouseNetworkEvent<RequestId, E>) {
         match network_event {
             LighthouseNetworkEvent::PeerConnectedOutgoing(peer_id) => {
-                let _ = self
-                    .network_event_send
-                    .send(NetworkEvent::PeerConnected(peer_id));
+                self.network_event_send
+                    .send(NetworkEvent::PeerConnected(peer_id))
+                    .unwrap();
             }
 
             LighthouseNetworkEvent::PeerDisconnected(peer_id) => {
-                let _ = self
-                    .network_event_send
-                    .send(NetworkEvent::PeerDisconnected(peer_id));
+                self.network_event_send
+                    .send(NetworkEvent::PeerDisconnected(peer_id))
+                    .unwrap();
             }
 
             LighthouseNetworkEvent::RPCFailed {
                 id: RequestId::Range(_),
                 ..
             } => {
-                let _ = self
-                    .network_event_send
-                    .send(NetworkEvent::RangeRequestFailed);
+                self.network_event_send
+                    .send(NetworkEvent::RangeRequestFailed)
+                    .unwrap();
             }
 
             LighthouseNetworkEvent::RPCFailed {
                 id: RequestId::Block(root),
                 peer_id,
             } => {
-                let _ = self
-                    .network_event_send
-                    .send(NetworkEvent::BlockRequestFailed(root, peer_id));
+                self.network_event_send
+                    .send(NetworkEvent::BlockRequestFailed(root, peer_id))
+                    .unwrap();
             }
 
             LighthouseNetworkEvent::ResponseReceived {
@@ -124,10 +124,14 @@ impl<E: EthSpec> EventAdapter<E> {
         &mut self,
         block: Arc<SignedBeaconBlock<E>>,
     ) -> impl Iterator<Item = NetworkEvent<E>> {
-        let previous_latest_slot = self.stores.latest_slot().unwrap_or_else(|| Slot::new(0));
+        let previous_latest_slot = self
+            .stores
+            .latest_slot()
+            .map(|s| s.as_u64() + 1)
+            .unwrap_or_default();
         let latest_slot = block.message().slot();
 
-        (previous_latest_slot.as_u64()..latest_slot.as_u64())
+        (previous_latest_slot..latest_slot.as_u64())
             .map(Slot::new)
             .map(|s| NetworkEvent::NewBlock(BlockState::Missed(s)))
             .chain(once(NetworkEvent::NewBlock(BlockState::Proposed(block))))
