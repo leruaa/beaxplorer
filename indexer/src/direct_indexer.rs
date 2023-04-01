@@ -162,21 +162,19 @@ fn handle_network_event<E: EthSpec>(
         NetworkEvent::PeerDisconnected(peer_id) => {
             if stores.block_range_request_state().matches(&peer_id) {
                 debug!(log, "Range request cancelled");
-                work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
-                stores.block_range_request_state_mut().set_to_requesting(peer_id);
+                request_new_range(work_send, peer_db, stores, log);
             }
 
             stores.block_by_root_requests_mut().pending_iter_mut().for_each(|(_, req)| {
                 req.remove_peer(&peer_id);
             });
         }
-        NetworkEvent::RangeRequestSuccedeed | NetworkEvent::RangeRequestFailed => {
-            if let Some(peer_id) = peer_db.get_best_connected_peer() {
-                work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
-                stores.block_range_request_state_mut().set_to_requesting(peer_id);
-            } else {
-                stores.block_range_request_state_mut().set_to_awaiting_peer();
+        NetworkEvent::RangeRequestSuccedeed  => {
+            request_new_range(work_send, peer_db, stores, log);
             }
+        NetworkEvent::RangeRequestFailed(peer_id) => {
+            warn!(log, "Range request failed"; "peer" => ?peer_id);
+            request_new_range(work_send, peer_db, stores, log);
         }
         NetworkEvent::BlockRequestFailed(root, peer_id) => {
             if peer_db.is_good_peer(&peer_id) {
@@ -228,6 +226,16 @@ fn handle_network_event<E: EthSpec>(
                 attempt.increment_not_found();
             });
         },
+    }
+}
+
+fn request_new_range<E: EthSpec>(work_send: &UnboundedSender<Work<E>>, peer_db: &Arc<PeerDb<E>>, stores: &Arc<Stores<E>>, log: &Logger) {
+    if let Some(peer_id) = peer_db.get_best_connected_peer() {
+        work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
+        stores.block_range_request_state_mut().set_to_requesting(peer_id);
+    } else {
+        warn!(log, "No peer available to a new range request");
+        stores.block_range_request_state_mut().set_to_awaiting_peer();
     }
 }
 
