@@ -63,6 +63,12 @@ impl<E: EthSpec> EventAdapter<E> {
                 ..
             } => {
                 if let Some(block) = block {
+                    let slot = block.slot();
+
+                    self.stores
+                        .proposed_block_roots_mut()
+                        .insert(block.canonical_root());
+
                     block
                         .message()
                         .body()
