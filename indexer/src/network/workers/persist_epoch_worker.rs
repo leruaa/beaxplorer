@@ -3,7 +3,8 @@ use std::{collections::HashMap, rc::Rc, sync::Arc};
 use lighthouse_types::{
     BeaconState, BlindedPayload, ChainSpec, Epoch, EthSpec, SignedBeaconBlock, Slot,
 };
-use parking_lot::RwLock;
+use parking_lot::Mutex;
+use slog::{error, info, Logger};
 use state_processing::{
     per_block_processing, per_epoch_processing::base::process_epoch, per_slot_processing,
     BlockReplayError, BlockSignatureStrategy, ConsensusContext, VerifyBlockRoot,
@@ -15,25 +16,30 @@ use types::{
     persistable::Persistable,
 };
 
-use crate::{
-    types::{
-        block_state::BlockState, consolidated_block::ConsolidatedBlock,
-        consolidated_epoch::ConsolidatedEpoch,
-    },
+use crate::types::{
+    block_state::BlockState, consolidated_block::ConsolidatedBlock,
+    consolidated_epoch::ConsolidatedEpoch,
 };
 
 pub struct PersistEpochWorker<E: EthSpec> {
     base_dir: String,
-    beacon_state: Arc<RwLock<BeaconState<E>>>,
+    beacon_state: Arc<Mutex<BeaconState<E>>>,
     spec: Arc<ChainSpec>,
+    log: Logger,
 }
 
 impl<E: EthSpec> PersistEpochWorker<E> {
-    pub fn new(base_dir: String, beacon_state: BeaconState<E>, spec: ChainSpec) -> Self {
+    pub fn new(
+        base_dir: String,
+        beacon_state: BeaconState<E>,
+        spec: ChainSpec,
+        log: Logger,
+    ) -> Self {
         Self {
             base_dir,
-            beacon_state: Arc::new(RwLock::new(beacon_state)),
+            beacon_state: Arc::new(Mutex::new(beacon_state)),
             spec: Arc::new(spec),
+            log,
         }
     }
 
@@ -46,10 +52,13 @@ impl<E: EthSpec> PersistEpochWorker<E> {
         let base_dir = self.base_dir.clone();
         let beacon_state = self.beacon_state.clone();
         let spec = self.spec.clone();
+        let log = self.log.clone();
 
         executor.spawn(
             async move {
                 let mut blocks = blocks.into_iter().collect::<Vec<_>>();
+                let mut beacon_state = beacon_state.lock();
+                info!(log, "Persisting epoch {}", epoch);
 
                 blocks.sort_by(|(a, _), (b, _)| a.cmp(b));
 
@@ -64,55 +73,64 @@ impl<E: EthSpec> PersistEpochWorker<E> {
 
                 let last_slot = epoch.end_slot(E::slots_per_epoch());
 
-                apply_blocks(b, last_slot, &mut *beacon_state.write(), &spec).unwrap();
+                match apply_blocks(b, last_slot, &mut *beacon_state, &spec) {
+                    Ok(_) => match process_epoch(&mut beacon_state.clone(), &spec) {
+                        Ok(summary) => {
+                            let blocks = blocks
+                                .into_iter()
+                                .map(|(slot, block_status)| {
+                                    ConsolidatedBlock::new(
+                                        block_status,
+                                        slot,
+                                        epoch,
+                                        beacon_state.get_beacon_proposer_index(slot, &spec).unwrap()
+                                            as u64,
+                                    )
+                                })
+                                .collect::<Vec<_>>();
 
-                let summary = process_epoch(&mut *beacon_state.write(), &spec).unwrap();
+                            let blocks = Rc::new(blocks);
 
-                let blocks = blocks
-                    .into_iter()
-                    .map(|(slot, block_status)| {
-                        ConsolidatedBlock::new(
-                            block_status,
-                            slot,
-                            epoch,
-                            beacon_state
-                                .read()
-                                .get_beacon_proposer_index(slot, &spec)
-                                .unwrap() as u64,
-                        )
-                    })
-                    .collect::<Vec<_>>();
+                            let block_models = blocks
+                                .iter()
+                                .map(BlockModelWithId::from)
+                                .collect::<Vec<_>>();
 
-                let blocks = Rc::new(blocks);
+                            let extended_block_models = blocks
+                                .iter()
+                                .map(BlockExtendedModelWithId::from)
+                                .collect::<Vec<_>>();
 
-                let block_models = blocks
-                    .iter()
-                    .map(BlockModelWithId::from)
-                    .collect::<Vec<_>>();
+                            let consolidated_epoch = ConsolidatedEpoch::new(
+                                epoch,
+                                blocks,
+                                &summary,
+                                beacon_state.balances().clone().into(),
+                            );
 
-                let extended_block_models = blocks
-                    .iter()
-                    .map(BlockExtendedModelWithId::from)
-                    .collect::<Vec<_>>();
+                            let epoch_model = EpochModelWithId::from(&consolidated_epoch);
 
-                let consolidated_epoch = ConsolidatedEpoch::new(
-                    epoch,
-                    blocks,
-                    &summary,
-                    beacon_state.read().balances().clone().into(),
-                );
+                            let extended_epoch_model =
+                                EpochExtendedModelWithId::from(&consolidated_epoch);
 
-                let epoch_model = EpochModelWithId::from(&consolidated_epoch);
+                            EpochsMeta::new(epoch.as_usize() + 1).persist(&base_dir);
+                            BlocksMeta::new(last_slot.as_usize() + 1).persist(&base_dir);
 
-                let extended_epoch_model = EpochExtendedModelWithId::from(&consolidated_epoch);
+                            epoch_model.persist(&base_dir);
+                            extended_epoch_model.persist(&base_dir);
+                            block_models.persist(&base_dir);
+                            extended_block_models.persist(&base_dir);
 
-                EpochsMeta::new(epoch.as_usize() + 1).persist(&base_dir);
-                BlocksMeta::new(last_slot.as_usize() + 1).persist(&base_dir);
-
-                epoch_model.persist(&base_dir);
-                extended_epoch_model.persist(&base_dir);
-                block_models.persist(&base_dir);
-                extended_block_models.persist(&base_dir);
+                            info!(log, "End persist epoch {}", epoch);
+                        }
+                        Err(err) => {
+                            error!(log, "{err:?}");
+                        }
+                    },
+                    Err(err) => {
+                        error!(log, "{err:?}");
+                    }
+                }
             },
             "persist epoch worker",
         )
@@ -132,7 +150,7 @@ fn apply_blocks<E: EthSpec>(
             continue;
         }
 
-        while slot < block.slot() {
+        while beacon_state.slot() < block.slot() {
             per_slot_processing(beacon_state, None, spec).map_err(BlockReplayError::from)?;
         }
 

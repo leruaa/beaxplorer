@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use lighthouse_types::EthSpec;
+use slog::Logger;
 
 use crate::beacon_chain::beacon_context::BeaconContext;
 
@@ -20,12 +21,13 @@ pub struct Workers<E: EthSpec> {
 }
 
 impl<E: EthSpec> Workers<E> {
-    pub fn new(base_dir: String, beacon_context: Arc<BeaconContext<E>>) -> Self {
+    pub fn new(base_dir: String, beacon_context: Arc<BeaconContext<E>>, log: Logger) -> Self {
         Self {
             epoch_persister: PersistEpochWorker::new(
                 base_dir.clone(),
                 beacon_context.genesis_state.clone(),
                 beacon_context.spec.clone(),
+                log,
             ),
             existing_block_persister: PersistExistingBlockWorker::new(base_dir),
         }

@@ -90,7 +90,7 @@ impl Indexer {
                     log.clone(),
                 ));
 
-                let workers = Workers::new(base_dir.clone(), beacon_context);
+                let workers = Workers::new(base_dir.clone(), beacon_context, log.clone());
 
                 let start_instant = Instant::now();
                 let interval_duration = Duration::from_secs(1);
