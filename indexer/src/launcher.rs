@@ -28,13 +28,7 @@ use types::{
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
     direct_indexer::Indexer,
-    network::{
-        augmented_network_service::AugmentedNetworkService,
-        block_by_root_requests::BlockByRootRequests,
-        peer_db::PeerDb,
-        persist_service::{PersistMessage, PersistService},
-        workers::block_by_root_requests_worker::BlockByRootRequestsWorker,
-    },
+    network::{augmented_network_service::AugmentedNetworkService, peer_db::PeerDb},
 };
 
 pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
@@ -81,76 +75,6 @@ pub fn update_indexes(base_dir: String) -> Result<(), String> {
     EpochModelWithId::iter(&base_dir)?.persist_sortables(&base_dir)?;
     BlockRequestModelWithId::iter(&base_dir)?.persist_sortables(&base_dir)?;
     GoodPeerModelWithId::iter(&base_dir)?.persist_sortables(&base_dir)?;
-
-    Ok(())
-}
-
-pub fn search_orphans(base_dir: String) -> Result<(), String> {
-    let (mut environment, _) = build_environment(EnvironmentBuilder::mainnet())?;
-    let context = environment.core_context();
-    let beacon_context = Arc::new(BeaconContext::build(&context)?);
-    let executor = context.executor;
-    let log = executor.log().clone();
-
-    executor.clone().spawn(
-        async move {
-            let good_peers = GoodPeerModelWithId::iter(&base_dir)
-                .unwrap()
-                .collect::<Vec<_>>();
-            let known_addresses = good_peers
-                .iter()
-                .filter_map(|m| m.model.address.parse().ok())
-                .collect();
-
-            let (network_command_send, mut network_event_recv, network_globals) =
-                AugmentedNetworkService::start(
-                    executor.clone(),
-                    beacon_context.clone(),
-                    known_addresses,
-                )
-                .await
-                .unwrap();
-
-            let (persist_send, persist_recv) =
-                unbounded_channel::<PersistMessage<MainnetEthSpec>>();
-            let (shutdown_request, shutdown_trigger) = watch::channel(());
-            let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
-            let block_by_root_requests =
-                BlockByRootRequests::from_block_requests(block_requests.collect());
-            let peer_db = Arc::new(PeerDb::new(
-                network_globals.clone(),
-                good_peers
-                    .iter()
-                    .filter_map(|m| m.id.parse().ok())
-                    .collect(),
-                log.clone(),
-            ));
-
-            let mut block_by_root_requests_worker = BlockByRootRequestsWorker::new(
-                peer_db,
-                network_command_send.clone(),
-                persist_send,
-                Arc::new(RwLock::new(block_by_root_requests)),
-                log.clone(),
-            );
-
-            PersistService::spawn(
-                executor,
-                base_dir,
-                beacon_context,
-                persist_recv,
-                shutdown_trigger,
-                log.clone(),
-            );
-
-            while let Some(event) = network_event_recv.recv().await {
-                block_by_root_requests_worker.handle_event(&event)
-            }
-        },
-        "discovery",
-    );
-
-    environment.block_until_shutdown_requested().unwrap();
 
     Ok(())
 }

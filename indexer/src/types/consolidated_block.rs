@@ -10,8 +10,6 @@ use types::{
     block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId},
 };
 
-use crate::network::persist_service::BlockMessage;
-
 use super::block_state::BlockState;
 
 impl<E: EthSpec> Display for BlockState<E> {
@@ -20,16 +18,6 @@ impl<E: EthSpec> Display for BlockState<E> {
             BlockState::Proposed(_) => write!(f, "Proposed"),
             BlockState::Missed(_) => write!(f, "Missed"),
             BlockState::Orphaned(_) => write!(f, "Orphaned"),
-        }
-    }
-}
-
-impl<E: EthSpec> From<&BlockMessage<E>> for BlockState<E> {
-    fn from(value: &BlockMessage<E>) -> Self {
-        match value {
-            BlockMessage::Proposed(block) => BlockState::Proposed(block.clone()),
-            BlockMessage::Orphaned(block) => BlockState::Orphaned(block.clone()),
-            BlockMessage::Missed(slot) => BlockState::Missed(*slot),
         }
     }
 }

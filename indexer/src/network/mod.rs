@@ -1,8 +1,5 @@
 pub mod augmented_network_service;
-pub mod block_by_root_requests;
-pub mod block_range_request;
 pub mod event;
 pub mod event_adapter;
 pub mod peer_db;
-pub mod persist_service;
 pub mod workers;
