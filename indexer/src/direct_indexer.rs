@@ -147,7 +147,7 @@ fn handle_network_event<E: EthSpec>(
             stores.block_by_root_requests_mut().pending_iter_mut().for_each(|(root, req)| {
                 if req.insert_peer(&peer_id) {
                     work_send
-                        .send(Work::SendBlockByRootRequest(peer_id, *root))
+                        .send(Work::SendBlockByRootRequest(*root, peer_id))
                         .unwrap();
                 }
             });
@@ -197,7 +197,7 @@ fn handle_network_event<E: EthSpec>(
                 .into_iter()
                 .for_each(|(peer_id, _)| {
                     work_send
-                        .send(Work::SendBlockByRootRequest(peer_id, root))
+                        .send(Work::SendBlockByRootRequest(root, peer_id))
                         .unwrap();
                 });
         }
@@ -288,10 +288,11 @@ fn handle_work<E: EthSpec>(
                 .unwrap();
         }
 
-        Work::SendBlockByRootRequest(peer_id, root) => {
+        Work::SendBlockByRootRequest(root, to) => {
+            info!(%root, %to, "Send block by root request");
             network_command_send
                 .send(NetworkCommand::SendRequest {
-                    peer_id,
+                    peer_id: to,
                     request_id: RequestId::Block(root),
                     request: Box::new(Request::BlocksByRoot(BlocksByRootRequest {
                         block_roots: vec![root].into(),

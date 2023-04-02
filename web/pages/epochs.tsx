@@ -7,7 +7,7 @@ import Ethers from "../components/ethers";
 import Percentage from "../components/percentage";
 import Breadcrumb from "../components/breadcrumb";
 import useDataTable from "../hooks/data-table";
-import { App, EpochExtendedView, getEpochMeta, getEpoch } from "../pkg";
+import { App, getEpochMeta, getEpoch, EpochView } from "../pkg";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from 'next/link';
 
@@ -27,7 +27,7 @@ export async function getStaticProps() {
 
 export default (props) => {
   const app = new App(props.host);
-  const columnHelper = createColumnHelper<EpochExtendedView>()
+  const columnHelper = createColumnHelper<EpochView>()
 
   const columns = [
     columnHelper.accessor("epoch", {
