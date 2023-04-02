@@ -4,10 +4,12 @@ use lighthouse_network::{
     rpc::StatusMessage, service::Network, Context, Multiaddr, NetworkConfig, NetworkEvent,
     NetworkGlobals, PeerId, Request, Response,
 };
-use slog::{info, Logger, Value};
+use slog::{o, Logger};
 use store::{EnrForkId, Epoch, EthSpec, ForkContext, Hash256, Slot};
 use task_executor::TaskExecutor;
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
+use tracing::info;
+use tracing_slog::TracingSlogDrain;
 
 use crate::beacon_chain::beacon_context::BeaconContext;
 
@@ -16,27 +18,12 @@ pub struct AugmentedNetworkService<E: EthSpec> {
     event_send: UnboundedSender<NetworkEvent<RequestId, E>>,
     enr_fork_id: EnrForkId,
     service: Network<RequestId, E>,
-    log: Logger,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RequestId {
     Range(u64),
     Block(Hash256),
-}
-
-impl Value for RequestId {
-    fn serialize(
-        &self,
-        _record: &slog::Record,
-        _key: slog::Key,
-        serializer: &mut dyn slog::Serializer,
-    ) -> slog::Result {
-        match self {
-            RequestId::Range(start_slot) => serializer.emit_u64("start slot", *start_slot),
-            RequestId::Block(root) => serializer.emit_str("block", &root.to_string()),
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -62,7 +49,8 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
         ),
         String,
     > {
-        let network_log = executor.log().clone();
+        let network_log = Logger::root(TracingSlogDrain, o!());
+
         let mut network_config = NetworkConfig::default();
 
         let genesis_validators_root = beacon_context.genesis_state.genesis_validators_root();
@@ -131,7 +119,6 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
             event_send,
             enr_fork_id: beacon_context.current_fork_id(),
             service: libp2p,
-            log: network_log,
         };
 
         network_service.spawn(executor);
@@ -194,7 +181,7 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
 
     fn dial(&mut self, peer_id: &PeerId) {
         if !self.service.peer_manager().is_connected(peer_id) {
-            info!(self.log, "Dialing"; "peer" => %peer_id);
+            info!("Dialing {peer_id:?}");
             self.service.peer_manager_mut().dial_peer(peer_id, None)
         }
     }

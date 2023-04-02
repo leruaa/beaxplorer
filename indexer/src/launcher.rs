@@ -5,7 +5,6 @@ use eth2_network_config::{Eth2NetworkConfig, DEFAULT_HARDCODED_NETWORK};
 use lighthouse_types::{EthSpec, MainnetEthSpec};
 use parking_lot::RwLock;
 
-use slog::warn;
 use tokio::{
     signal,
     sync::{
@@ -13,6 +12,7 @@ use tokio::{
         watch,
     },
 };
+use tracing::warn;
 use types::{
     attestation::AttestationModel,
     block::{BlockExtendedModel, BlockModel},
@@ -36,11 +36,10 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     let context = environment.core_context();
     let beacon_context = BeaconContext::build(&context)?;
     let executor = context.executor;
-    let log = executor.log().clone();
 
     if reset {
         if let Err(err) = remove_dirs(&base_dir) {
-            warn!(log, "{err}");
+            warn!("{err}");
         }
     }
 
@@ -49,7 +48,7 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     environment.runtime().block_on(async move {
         let (shutdown_handle, mut shutdown_complete) = mpsc::channel(1);
         let (shutdown_request, shutdown_trigger) = watch::channel(());
-        let indexer = Indexer::new(log);
+        let indexer = Indexer::default();
 
         indexer.spawn_services(
             base_dir,
@@ -82,23 +81,11 @@ pub fn update_indexes(base_dir: String) -> Result<(), String> {
 fn build_environment<E: EthSpec>(
     environment_builder: EnvironmentBuilder<E>,
 ) -> Result<(Environment<E>, Eth2NetworkConfig), String> {
-    let logger_config = LoggerConfig {
-        path: None,
-        debug_level: String::from("info"),
-        logfile_debug_level: String::from("info"),
-        log_format: None,
-        log_color: true,
-        disable_log_timestamp: true,
-        max_log_size: 0,
-        max_log_number: 0,
-        compression: false,
-        is_restricted: false,
-    };
     let eth2_network_config = Eth2NetworkConfig::constant(DEFAULT_HARDCODED_NETWORK)?
         .ok_or("Failed to build Eth2 network config")?;
     let environment = environment_builder
         .eth2_network_config(eth2_network_config.clone())?
-        .initialize_logger(logger_config)?
+        .null_logger()?
         .multi_threaded_tokio_runtime()?
         .build()?;
 

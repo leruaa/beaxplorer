@@ -1,13 +1,13 @@
 use std::{sync::Arc, time::Duration};
 
 use lighthouse_network::{rpc::{BlocksByRangeRequest, BlocksByRootRequest}, Request};
-use slog::{debug, info, warn, Logger};
+use tracing::{warn, instrument, info, debug};
 use store::EthSpec;
 use task_executor::TaskExecutor;
 use tokio::{
     sync::{
-        mpsc::{self, unbounded_channel, Sender, UnboundedSender},
-        watch::{self, Receiver},
+        mpsc::{self, Sender, UnboundedSender},
+        watch::{Receiver},
     },
     time::{interval_at, Instant},
 };
@@ -21,21 +21,16 @@ use crate::{
         event::NetworkEvent,
         event_adapter::EventAdapter,
         peer_db::PeerDb,
-        persist_service::{PersistMessage, PersistService},
         workers::Workers,
     },
     types::block_state::BlockState,
     work::Work,
 };
 
-pub struct Indexer {
-    log: Logger,
-}
+#[derive(Default)]
+pub struct Indexer;
 
 impl Indexer {
-    pub fn new(log: Logger) -> Self {
-        Indexer { log }
-    }
 
     pub fn spawn_services<E: EthSpec>(
         self,
@@ -46,9 +41,9 @@ impl Indexer {
         shutdown_trigger: Receiver<()>,
     ) {
         self.spawn_indexer(
-            executor.clone(),
-            base_dir.clone(),
-            beacon_context.clone(),
+            executor,
+            base_dir,
+            beacon_context,
             shutdown_trigger,
         );
     }
@@ -60,8 +55,7 @@ impl Indexer {
         beacon_context: Arc<BeaconContext<E>>,
         mut shutdown_trigger: Receiver<()>,
     ) {
-        let log = self.log.clone();
-
+        info!("Starting indexer");
         executor.clone().spawn(
             async move {
                 let good_peers = GoodPeerModelWithId::iter(&base_dir)
@@ -87,10 +81,9 @@ impl Indexer {
                         .iter()
                         .filter_map(|m| m.id.parse().ok())
                         .collect(),
-                    log.clone(),
                 ));
 
-                let workers = Workers::new(base_dir.clone(), beacon_context, log.clone());
+                let workers = Workers::new(base_dir.clone(), beacon_context);
 
                 let start_instant = Instant::now();
                 let interval_duration = Duration::from_secs(1);
@@ -106,7 +99,7 @@ impl Indexer {
                         },
 
                         Some(event) = network_event_recv.recv() => {
-                            handle_network_event(event, &work_send, &peer_db, &stores, &log);
+                            handle_network_event(event, &work_send, &peer_db, &stores);
                         },
 
                         Some(work) = work_recv.recv() => {
@@ -115,13 +108,13 @@ impl Indexer {
 
                         _ = interval.tick() => {
                             if network_globals.connected_or_dialing_peers() == 0 {
-                                warn!(log, "No connected peers");
+                                warn!("No connected peers");
                             }
                         },
                         
                         _ = shutdown_trigger.changed() => {
-                            info!(log, "Shutting down indexer...");
-                            persist_block_requests(&base_dir, &*stores.block_by_root_requests());
+                            info!("Shutting down indexer...");
+                            persist_block_requests(&base_dir, &stores.block_by_root_requests());
                             persist_good_peers(&base_dir, &peer_db);
                             return;
                         }
@@ -133,17 +126,17 @@ impl Indexer {
     }
 }
 
+#[instrument(name = "Network", skip_all)]
 fn handle_network_event<E: EthSpec>(
     network_event: NetworkEvent<E>,
     work_send: &UnboundedSender<Work<E>>,
     peer_db: &Arc<PeerDb<E>>,
-    stores: &Arc<Stores<E>>,
-    log: &Logger,
+    stores: &Arc<Stores<E>>
 ) {
     match network_event {
         NetworkEvent::PeerConnected(peer_id) => {
             if peer_db.is_good_peer(&peer_id) {
-                info!(log, "Good peer connected"; "peer" => %peer_id);
+                info!(peer = %peer_id, "Good peer connected");
             }
 
             if !stores.block_range_request_state().is_requesting() {
@@ -161,8 +154,8 @@ fn handle_network_event<E: EthSpec>(
         }
         NetworkEvent::PeerDisconnected(peer_id) => {
             if stores.block_range_request_state().matches(&peer_id) {
-                debug!(log, "Range request cancelled");
-                request_new_range(work_send, peer_db, stores, log);
+                debug!("Range request cancelled");
+                request_new_range(work_send, peer_db, stores);
             }
 
             stores.block_by_root_requests_mut().pending_iter_mut().for_each(|(_, req)| {
@@ -170,15 +163,15 @@ fn handle_network_event<E: EthSpec>(
             });
         }
         NetworkEvent::RangeRequestSuccedeed  => {
-            request_new_range(work_send, peer_db, stores, log);
-            }
+            request_new_range(work_send, peer_db, stores);
+        }
         NetworkEvent::RangeRequestFailed(peer_id) => {
-            warn!(log, "Range request failed"; "peer" => ?peer_id);
-            request_new_range(work_send, peer_db, stores, log);
+            warn!(peer = %peer_id, "Range request failed");
+            request_new_range(work_send, peer_db, stores);
         }
         NetworkEvent::BlockRequestFailed(root, peer_id) => {
             if peer_db.is_good_peer(&peer_id) {
-                warn!(log, "Connection to good peer failed"; "peer" => peer_id.to_string());
+                warn!(peer = %peer_id, "Connection to good peer failed");
             }
 
             stores.block_by_root_requests_mut().update_attempt(&root, |attempt| {
@@ -186,9 +179,11 @@ fn handle_network_event<E: EthSpec>(
             });
         }
         NetworkEvent::NewBlock(block) => {
-            if let BlockState::Proposed(block) = &block {
-                stores.proposed_block_roots_mut().insert(block.canonical_root());
-            }
+            match &block {
+                BlockState::Proposed(block) => debug!(slot = %block.slot(), "New proposed block"),
+                BlockState::Missed(slot) => debug!(%slot, "New missed block"),
+                BlockState::Orphaned(block) => debug!(slot = %block.slot(), "New orphaned block"),
+            };
 
             if let Some(work) = stores.block_by_epoch_mut().build_epoch(block) {
                 work_send.send(work).unwrap();
@@ -208,7 +203,7 @@ fn handle_network_event<E: EthSpec>(
         }
         NetworkEvent::BlockRootFound(root, slot, found_by) => {
             if stores.block_by_root_requests_mut().set_request_as_found(root, found_by) {
-                info!(log, "An orphaned block has been found"; "peer" => %found_by, "slot" => slot, "root" => %root);
+                info!(%found_by, %slot, %root, "An orphaned block has been found");
 
                 if let Some(attempt) = stores.block_by_root_requests().get(&root) {
                     // Persist the found block request
@@ -229,16 +224,18 @@ fn handle_network_event<E: EthSpec>(
     }
 }
 
-fn request_new_range<E: EthSpec>(work_send: &UnboundedSender<Work<E>>, peer_db: &Arc<PeerDb<E>>, stores: &Arc<Stores<E>>, log: &Logger) {
+#[instrument(name = "Request new range", skip_all)]
+fn request_new_range<E: EthSpec>(work_send: &UnboundedSender<Work<E>>, peer_db: &Arc<PeerDb<E>>, stores: &Arc<Stores<E>>) {
     if let Some(peer_id) = peer_db.get_best_connected_peer() {
         work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
         stores.block_range_request_state_mut().set_to_requesting(peer_id);
     } else {
-        warn!(log, "No peer available to a new range request");
+        warn!("No peer available to a new range request");
         stores.block_range_request_state_mut().set_to_awaiting_peer();
     }
 }
 
+#[instrument(name = "Work", skip_all)]
 fn handle_work<E: EthSpec>(
     executor: &TaskExecutor,
     base_dir: String,
@@ -264,22 +261,24 @@ fn handle_work<E: EthSpec>(
         }
 
         Work::PersistAllBlockRequests => {
-            persist_block_requests(&base_dir, &*stores.block_by_root_requests())
+            persist_block_requests(&base_dir, &stores.block_by_root_requests())
         }
 
         Work::PersistAllGoodPeers => {
             persist_good_peers(&base_dir, peer_db)
         },
 
-        Work::SendRangeRequest(peer_id) => {
+        Work::SendRangeRequest(to) => {
             let start_slot = stores
                 .latest_slot()
                 .map(|s| s.as_u64() + 1)
                 .unwrap_or_default();
 
+            info!(start_slot,  %to, "Send range request",);
+
             network_command_send
                 .send(NetworkCommand::SendRequest {
-                    peer_id,
+                    peer_id: to,
                     request_id: RequestId::Range(start_slot),
                     request: Box::new(Request::BlocksByRange(BlocksByRangeRequest {
                         start_slot,
@@ -317,5 +316,5 @@ fn persist_good_peers<E: EthSpec>(base_dir: &str, peer_db: &Arc<PeerDb<E>>) {
 
     good_peers.persist(base_dir);
     meta.persist(base_dir);
-    //info!(self.log, "Good peers persisted");
+    //info_span!(self.log, "Good peers persisted");
 }

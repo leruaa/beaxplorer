@@ -18,6 +18,4 @@ pub enum Commands {
     },
 
     UpdateIndexes,
-
-    SearchOrphans,
 }

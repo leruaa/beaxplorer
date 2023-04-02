@@ -3,28 +3,22 @@ use std::{collections::HashSet, net::SocketAddr, sync::Arc};
 use lighthouse_network::{NetworkGlobals, PeerId, PeerInfo};
 use multiaddr::multiaddr;
 use parking_lot::RwLock;
-use slog::{info, Logger};
 use store::EthSpec;
+use tracing::info;
 use types::good_peer::{GoodPeerModel, GoodPeerModelWithId};
 
 pub struct PeerDb<E: EthSpec> {
     network_globals: Arc<NetworkGlobals<E>>,
     good_peers: RwLock<HashSet<PeerId>>,
-    log: Logger,
 }
 
 type PeerTupleVec<E> = Vec<(PeerId, PeerInfo<E>)>;
 
 impl<E: EthSpec> PeerDb<E> {
-    pub fn new(
-        network_globals: Arc<NetworkGlobals<E>>,
-        good_peers: HashSet<PeerId>,
-        log: Logger,
-    ) -> Self {
+    pub fn new(network_globals: Arc<NetworkGlobals<E>>, good_peers: HashSet<PeerId>) -> Self {
         PeerDb {
             network_globals,
             good_peers: RwLock::new(good_peers),
-            log,
         }
     }
 
@@ -59,7 +53,7 @@ impl<E: EthSpec> PeerDb<E> {
 
     pub fn add_good_peer(&self, peer_id: PeerId) {
         if self.good_peers.write().insert(peer_id) {
-            info!(self.log, "New good peer: {peer_id}");
+            info!("New good peer: {peer_id}");
         }
     }
 
