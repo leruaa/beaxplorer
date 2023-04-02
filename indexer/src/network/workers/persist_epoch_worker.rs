@@ -1,14 +1,18 @@
-use std::{collections::HashMap, rc::Rc, sync::Arc};
+use std::{collections::HashMap, rc::Rc};
 
 use lighthouse_types::{
     BeaconState, BlindedPayload, ChainSpec, Epoch, EthSpec, SignedBeaconBlock, Slot,
 };
-use parking_lot::Mutex;
+
 use state_processing::{
     per_block_processing, per_epoch_processing::base::process_epoch, per_slot_processing,
     BlockReplayError, BlockSignatureStrategy, ConsensusContext, VerifyBlockRoot,
 };
 use task_executor::TaskExecutor;
+use tokio::sync::{
+    mpsc::{self, UnboundedSender},
+    watch::Receiver,
+};
 use tracing::{error, info};
 use types::{
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
@@ -22,108 +26,121 @@ use crate::types::{
 };
 
 pub struct PersistEpochWorker<E: EthSpec> {
-    base_dir: String,
-    beacon_state: Arc<Mutex<BeaconState<E>>>,
-    spec: Arc<ChainSpec>,
+    work_send: UnboundedSender<(Epoch, HashMap<Slot, BlockState<E>>)>,
 }
 
 impl<E: EthSpec> PersistEpochWorker<E> {
-    pub fn new(base_dir: String, beacon_state: BeaconState<E>, spec: ChainSpec) -> Self {
-        Self {
-            base_dir,
-            beacon_state: Arc::new(Mutex::new(beacon_state)),
-            spec: Arc::new(spec),
-        }
-    }
-
-    pub fn spawn(
-        &self,
+    pub fn new(
         executor: &TaskExecutor,
-        epoch: Epoch,
-        blocks: HashMap<Slot, BlockState<E>>,
-    ) {
-        let base_dir = self.base_dir.clone();
-        let beacon_state = self.beacon_state.clone();
-        let spec = self.spec.clone();
+        base_dir: String,
+        mut beacon_state: BeaconState<E>,
+        spec: ChainSpec,
+        mut shutdown_trigger: Receiver<()>,
+    ) -> Self {
+        let (work_send, mut work_recv) = mpsc::unbounded_channel();
 
         executor.spawn(
             async move {
-                let mut blocks = blocks.into_iter().collect::<Vec<_>>();
-                let mut beacon_state = beacon_state.lock();
-                info!("Persisting epoch {epoch}");
-
-                blocks.sort_by(|(a, _), (b, _)| a.cmp(b));
-
-                let b = blocks
-                    .iter()
-                    .filter_map(|(_, b)| match b {
-                        BlockState::Proposed(b) => Some(b),
-                        _ => None,
-                    })
-                    .map(|b| b.clone_as_blinded())
-                    .collect::<Vec<_>>();
-
-                let last_slot = epoch.end_slot(E::slots_per_epoch());
-
-                match apply_blocks(b, last_slot, &mut *beacon_state, &spec) {
-                    Ok(_) => match process_epoch(&mut beacon_state.clone(), &spec) {
-                        Ok(summary) => {
-                            let blocks = blocks
-                                .into_iter()
-                                .map(|(slot, block_status)| {
-                                    ConsolidatedBlock::new(
-                                        block_status,
-                                        slot,
-                                        epoch,
-                                        beacon_state.get_beacon_proposer_index(slot, &spec).unwrap()
-                                            as u64,
-                                    )
-                                })
-                                .collect::<Vec<_>>();
-
-                            let blocks = Rc::new(blocks);
-
-                            let block_models = blocks
-                                .iter()
-                                .map(BlockModelWithId::from)
-                                .collect::<Vec<_>>();
-
-                            let extended_block_models = blocks
-                                .iter()
-                                .map(BlockExtendedModelWithId::from)
-                                .collect::<Vec<_>>();
-
-                            let consolidated_epoch = ConsolidatedEpoch::new(
-                                epoch,
-                                blocks,
-                                &summary,
-                                beacon_state.balances().clone().into(),
-                            );
-
-                            let epoch_model = EpochModelWithId::from(&consolidated_epoch);
-
-                            let extended_epoch_model =
-                                EpochExtendedModelWithId::from(&consolidated_epoch);
-
-                            EpochsMeta::new(epoch.as_usize() + 1).persist(&base_dir);
-                            BlocksMeta::new(last_slot.as_usize() + 1).persist(&base_dir);
-
-                            epoch_model.persist(&base_dir);
-                            extended_epoch_model.persist(&base_dir);
-                            block_models.persist(&base_dir);
-                            extended_block_models.persist(&base_dir);
+                loop {
+                    tokio::select! {
+                        Some((epoch, blocks)) = work_recv.recv() => {
+                            handle_work(epoch, blocks, &base_dir, &mut beacon_state, &spec);
                         }
-                        Err(err) => {
-                            error!("{err:?}");
+
+                        _ = shutdown_trigger.changed() => {
+                            info!("Shutting down epoch worker...");
+                            return;
                         }
-                    },
-                    Err(err) => {
-                        error!("{err:?}");
                     }
                 }
             },
             "persist epoch worker",
-        )
+        );
+
+        Self { work_send }
+    }
+
+    pub fn work(&self, epoch: Epoch, blocks: HashMap<Slot, BlockState<E>>) {
+        self.work_send.send((epoch, blocks)).unwrap();
+    }
+}
+
+fn handle_work<E: EthSpec>(
+    epoch: Epoch,
+    blocks: HashMap<Slot, BlockState<E>>,
+    base_dir: &str,
+    beacon_state: &mut BeaconState<E>,
+    spec: &ChainSpec,
+) {
+    let mut blocks = blocks.into_iter().collect::<Vec<_>>();
+    info!("Persisting epoch {epoch}");
+
+    blocks.sort_by(|(a, _), (b, _)| a.cmp(b));
+
+    let b = blocks
+        .iter()
+        .filter_map(|(_, b)| match b {
+            BlockState::Proposed(b) => Some(b),
+            _ => None,
+        })
+        .map(|b| b.clone_as_blinded())
+        .collect::<Vec<_>>();
+
+    let last_slot = epoch.end_slot(E::slots_per_epoch());
+
+    match apply_blocks(b, last_slot, beacon_state, spec) {
+        Ok(_) => match process_epoch(&mut beacon_state.clone(), spec) {
+            Ok(summary) => {
+                let blocks = blocks
+                    .into_iter()
+                    .map(|(slot, block_status)| {
+                        ConsolidatedBlock::new(
+                            block_status,
+                            slot,
+                            epoch,
+                            beacon_state.get_beacon_proposer_index(slot, spec).unwrap() as u64,
+                        )
+                    })
+                    .collect::<Vec<_>>();
+
+                let blocks = Rc::new(blocks);
+
+                let block_models = blocks
+                    .iter()
+                    .map(BlockModelWithId::from)
+                    .collect::<Vec<_>>();
+
+                let extended_block_models = blocks
+                    .iter()
+                    .map(BlockExtendedModelWithId::from)
+                    .collect::<Vec<_>>();
+
+                let consolidated_epoch = ConsolidatedEpoch::new(
+                    epoch,
+                    blocks,
+                    &summary,
+                    beacon_state.balances().clone().into(),
+                );
+
+                let epoch_model = EpochModelWithId::from(&consolidated_epoch);
+
+                let extended_epoch_model = EpochExtendedModelWithId::from(&consolidated_epoch);
+
+                EpochsMeta::new(epoch.as_usize() + 1).persist(base_dir);
+                BlocksMeta::new(last_slot.as_usize() + 1).persist(base_dir);
+
+                epoch_model.persist(base_dir);
+                extended_epoch_model.persist(base_dir);
+                block_models.persist(base_dir);
+                extended_block_models.persist(base_dir);
+            }
+            Err(err) => {
+                error!("{err:?}");
+            }
+        },
+        Err(err) => {
+            error!("{err:?}");
+        }
     }
 }
 

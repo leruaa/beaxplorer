@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use lighthouse_types::EthSpec;
+use task_executor::TaskExecutor;
+use tokio::sync::watch::Receiver;
 
 use crate::beacon_chain::beacon_context::BeaconContext;
 
@@ -18,12 +20,19 @@ pub struct Workers<E: EthSpec> {
 }
 
 impl<E: EthSpec> Workers<E> {
-    pub fn new(base_dir: String, beacon_context: Arc<BeaconContext<E>>) -> Self {
+    pub fn new(
+        executor: &TaskExecutor,
+        base_dir: String,
+        beacon_context: Arc<BeaconContext<E>>,
+        shutdown_trigger: Receiver<()>,
+    ) -> Self {
         Self {
             epoch_persister: PersistEpochWorker::new(
+                executor,
                 base_dir.clone(),
                 beacon_context.genesis_state.clone(),
                 beacon_context.spec.clone(),
+                shutdown_trigger,
             ),
             existing_block_persister: PersistExistingBlockWorker::new(base_dir),
         }

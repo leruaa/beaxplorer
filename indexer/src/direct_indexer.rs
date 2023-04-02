@@ -83,7 +83,7 @@ impl Indexer {
                         .collect(),
                 ));
 
-                let workers = Workers::new(base_dir.clone(), beacon_context);
+                let workers = Workers::new(&executor, base_dir.clone(), beacon_context, shutdown_trigger.clone());
 
                 let start_instant = Instant::now();
                 let interval_duration = Duration::from_secs(1);
@@ -243,7 +243,7 @@ fn handle_work<E: EthSpec>(
 ) {
     match work {
         Work::PersistEpoch { epoch, blocks } => {
-            workers.epoch_persister.spawn(executor, epoch, blocks)
+            workers.epoch_persister.work(epoch, blocks)
         }
 
         Work::PersistBlock(block) => {
