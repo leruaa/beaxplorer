@@ -178,14 +178,10 @@ fn handle_network_event<E: EthSpec>(
                 attempt.remove_peer(&peer_id);
             });
         }
-        NetworkEvent::NewBlock(block) => {
-            match &block {
-                BlockState::Proposed(block) => debug!(slot = %block.slot(), "New proposed block"),
-                BlockState::Missed(slot) => debug!(%slot, "New missed block"),
-                BlockState::Orphaned(block) => debug!(slot = %block.slot(), "New orphaned block"),
-            };
+        NetworkEvent::NewBlock(state) => {
+            debug!(%state, slot = %state.slot(), "New block");
 
-            if let Some(work) = stores.block_by_epoch_mut().build_epoch(block) {
+            if let Some(work) = stores.block_by_epoch_mut().build_epoch(state) {
                 work_send.send(work).unwrap();
             }
         }

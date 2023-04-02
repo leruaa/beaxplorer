@@ -1,7 +1,4 @@
-use std::{
-    fmt::{Display, Formatter},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use lighthouse_types::{Epoch, EthSpec, Slot};
 use store::SignedBeaconBlock;
@@ -11,16 +8,6 @@ use types::{
 };
 
 use super::block_state::BlockState;
-
-impl<E: EthSpec> Display for BlockState<E> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            BlockState::Proposed(_) => write!(f, "Proposed"),
-            BlockState::Missed(_) => write!(f, "Missed"),
-            BlockState::Orphaned(_) => write!(f, "Orphaned"),
-        }
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct ConsolidatedBlock<E: EthSpec> {
