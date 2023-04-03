@@ -1,6 +1,7 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
-use lighthouse_types::{EthSpec, Hash256, Slot};
+use lighthouse_network::{NetworkGlobals, PeerId};
+use lighthouse_types::EthSpec;
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use types::block_request::BlockRequestModelWithId;
 
@@ -14,11 +15,13 @@ mod block_range_request_state;
 mod blocks_by_epoch;
 mod latest_epoch;
 mod latest_slot;
+mod peer_db;
 mod proposed_block_roots;
 
 pub use block_by_root_requests::BlockByRootRequests;
+pub use peer_db::PeerDb;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Stores<E: EthSpec> {
     latest_slot: RwLock<LatestSlot>,
     latest_epoch: Arc<RwLock<LatestEpoch>>,
@@ -26,19 +29,27 @@ pub struct Stores<E: EthSpec> {
     proposed_block_roots: RwLock<ProposedBlockRoots>,
     block_range_request_state: RwLock<BlockRangeRequestState>,
     block_by_root_requests: RwLock<BlockByRootRequests>,
+    peer_db: RwLock<PeerDb<E>>,
 }
 
 impl<E: EthSpec> Stores<E> {
-    pub fn new(block_requests: Vec<BlockRequestModelWithId>) -> Self {
+    pub fn new(
+        network_globals: Arc<NetworkGlobals<E>>,
+        block_requests: Vec<BlockRequestModelWithId>,
+        good_peers: HashSet<PeerId>,
+    ) -> Self {
         let latest_epoch = Arc::new(RwLock::new(LatestEpoch::default()));
 
         Self {
+            latest_slot: RwLock::default(),
             latest_epoch: latest_epoch.clone(),
             block_by_epoch: RwLock::new(BlocksByEpoch::new(latest_epoch)),
+            proposed_block_roots: RwLock::default(),
+            block_range_request_state: RwLock::default(),
             block_by_root_requests: RwLock::new(BlockByRootRequests::from_block_requests(
                 block_requests,
             )),
-            ..Default::default()
+            peer_db: RwLock::new(PeerDb::new(network_globals, good_peers)),
         }
     }
 
@@ -84,5 +95,13 @@ impl<E: EthSpec> Stores<E> {
 
     pub fn block_by_root_requests_mut(&self) -> RwLockWriteGuard<BlockByRootRequests> {
         self.block_by_root_requests.write()
+    }
+
+    pub fn peer_db(&self) -> RwLockReadGuard<PeerDb<E>> {
+        self.peer_db.read()
+    }
+
+    pub fn peer_db_mut(&self) -> RwLockWriteGuard<PeerDb<E>> {
+        self.peer_db.write()
     }
 }
