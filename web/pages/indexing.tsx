@@ -33,9 +33,19 @@ export default (props) => {
       cell: props =>
         <Root className="font-mono" value={props.getValue()} />
     }),
-    blockRequestsColumnHelper.accessor("possibleSlots", { header: "Possible slots" }),
+    blockRequestsColumnHelper.accessor("possibleSlots", {
+      header: "Possible slots",
+      cell: props => props.getValue()
+        .map(s =>
+          <Link href={`/block/${s}`}>
+            {s}
+          </Link>)
+        .reduce((accu: [JSX.Element], elem) => {
+          return accu === null ? [elem] : [...accu, ', ', elem]
+        }, null)
+    }),
     blockRequestsColumnHelper.accessor("state", { header: "State" }),
-    blockRequestsColumnHelper.accessor("activeRequestCount", { header: "Active requests count" }),
+    //blockRequestsColumnHelper.accessor("activeRequestCount", { header: "Active requests count" }),
     blockRequestsColumnHelper.accessor("failedCount", { header: "Failed count" }),
     blockRequestsColumnHelper.accessor("notFoundCount", { header: "Not found count" }),
     blockRequestsColumnHelper.accessor("foundBy", {

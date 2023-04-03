@@ -77,14 +77,18 @@ impl From<BlockRequestModel> for RequestAttempts {
 
 impl From<(&Hash256, &RequestAttempts)> for BlockRequestModelWithId {
     fn from((root, attempts): (&Hash256, &RequestAttempts)) -> Self {
+        let mut possible_slots = attempts
+            .possible_slots
+            .iter()
+            .map(|s| s.as_u64())
+            .collect::<Vec<_>>();
+
+        possible_slots.sort();
+
         BlockRequestModelWithId {
             id: format!("{root:#?}"),
             model: BlockRequestModel {
-                possible_slots: attempts
-                    .possible_slots
-                    .iter()
-                    .map(|s| s.as_u64())
-                    .collect::<Vec<_>>(),
+                possible_slots,
                 state: attempts.state.to_string(),
                 active_request_count: attempts.state.active_request_count(),
                 failed_count: attempts.failed_count,
