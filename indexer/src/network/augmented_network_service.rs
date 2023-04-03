@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use lighthouse_network::{
     rpc::StatusMessage, service::Network, Context, Multiaddr, NetworkConfig, NetworkEvent,
-    NetworkGlobals, PeerId, Request, Response,
+    NetworkGlobals, PeerAction, PeerId, ReportSource, Request, Response,
 };
 use slog::{o, Logger};
 use store::{EnrForkId, Epoch, EthSpec, ForkContext, Hash256, Slot};
 use task_executor::TaskExecutor;
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
-use tracing::info;
+use tracing::{debug, info, warn};
 use tracing_slog::TracingSlogDrain;
 
 use crate::beacon_chain::beacon_context::BeaconContext;
@@ -33,7 +33,7 @@ pub enum NetworkCommand {
         request_id: RequestId,
         request: Box<Request>,
     },
-    DialPeer(PeerId),
+    ReportPeer(PeerId, &'static str),
 }
 
 impl<E: EthSpec> AugmentedNetworkService<E> {
@@ -171,18 +171,20 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
                 request_id,
                 request,
             } => self.send_request(peer_id, request_id, *request),
-            NetworkCommand::DialPeer(peer_id) => self.dial(&peer_id),
+            NetworkCommand::ReportPeer(peer_id, reason) => {
+                warn!(peer = %peer_id, "{}", reason);
+                self.service
+                    .report_peer(&peer_id, PeerAction::Fatal, ReportSource::RPC, reason);
+            }
         }
     }
 
     fn send_request(&mut self, peer_id: PeerId, request_id: RequestId, request: Request) {
-        self.service.send_request(peer_id, request_id, request)
-    }
-
-    fn dial(&mut self, peer_id: &PeerId) {
-        if !self.service.peer_manager().is_connected(peer_id) {
-            info!("Dialing {peer_id:?}");
-            self.service.peer_manager_mut().dial_peer(peer_id, None)
+        match request_id {
+            RequestId::Range(start_slot) => debug!(to = %peer_id, start_slot, "Send range request"),
+            RequestId::Block(root) => debug!(to = %peer_id, %root, "Send block by root request"),
         }
+
+        self.service.send_request(peer_id, request_id, request)
     }
 }

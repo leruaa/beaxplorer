@@ -99,7 +99,7 @@ impl Indexer {
                         },
 
                         Some(event) = network_event_recv.recv() => {
-                            handle_network_event(event, &work_send, &peer_db, &stores);
+                            handle_network_event(event, &network_command_send, &work_send, &peer_db, &stores);
                         },
 
                         Some(work) = work_recv.recv() => {
@@ -129,6 +129,7 @@ impl Indexer {
 #[instrument(name = "Network", skip_all)]
 fn handle_network_event<E: EthSpec>(
     network_event: NetworkEvent<E>,
+    network_command_send: &UnboundedSender<NetworkCommand>,
     work_send: &UnboundedSender<Work<E>>,
     peer_db: &Arc<PeerDb<E>>,
     stores: &Arc<Stores<E>>
@@ -140,7 +141,7 @@ fn handle_network_event<E: EthSpec>(
             }
 
             if !stores.block_range_request_state().is_requesting() {
-                work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
+                work_send.send(Work::SendRangeRequest(Some(peer_id))).unwrap();
                 stores.block_range_request_state_mut().set_to_requesting(peer_id);
             }
 
@@ -155,7 +156,7 @@ fn handle_network_event<E: EthSpec>(
         NetworkEvent::PeerDisconnected(peer_id) => {
             if stores.block_range_request_state().matches(&peer_id) {
                 debug!("Range request cancelled");
-                request_new_range(work_send, peer_db, stores);
+                work_send.send(Work::SendRangeRequest(None)).unwrap();
             }
 
             stores.block_by_root_requests_mut().pending_iter_mut().for_each(|(_, req)| {
@@ -163,11 +164,11 @@ fn handle_network_event<E: EthSpec>(
             });
         }
         NetworkEvent::RangeRequestSuccedeed  => {
-            request_new_range(work_send, peer_db, stores);
+            work_send.send(Work::SendRangeRequest(None)).unwrap();
         }
         NetworkEvent::RangeRequestFailed(peer_id) => {
-            warn!(peer = %peer_id, "Range request failed");
-            request_new_range(work_send, peer_db, stores);
+            network_command_send.send(NetworkCommand::ReportPeer(peer_id, "Range request failed")).unwrap();
+            work_send.send(Work::SendRangeRequest(None)).unwrap();
         }
         NetworkEvent::BlockRequestFailed(root, peer_id) => {
             if peer_db.is_good_peer(&peer_id) {
@@ -220,18 +221,6 @@ fn handle_network_event<E: EthSpec>(
     }
 }
 
-#[instrument(name = "Request new range", skip_all)]
-fn request_new_range<E: EthSpec>(work_send: &UnboundedSender<Work<E>>, peer_db: &Arc<PeerDb<E>>, stores: &Arc<Stores<E>>) {
-    if let Some(peer_id) = peer_db.get_best_connected_peer() {
-        work_send.send(Work::SendRangeRequest(peer_id)).unwrap();
-        stores.block_range_request_state_mut().set_to_requesting(peer_id);
-    } else {
-        warn!("No peer available to a new range request");
-        stores.block_range_request_state_mut().set_to_awaiting_peer();
-    }
-}
-
-#[instrument(name = "Work", skip_all)]
 fn handle_work<E: EthSpec>(
     executor: &TaskExecutor,
     base_dir: String,
@@ -265,23 +254,30 @@ fn handle_work<E: EthSpec>(
         },
 
         Work::SendRangeRequest(to) => {
-            let start_slot = stores
-                .latest_slot()
-                .map(|s| s.as_u64() + 1)
-                .unwrap_or_default();
-
-            debug!(start_slot,  %to, "Send range request",);
-
-            network_command_send
-                .send(NetworkCommand::SendRequest {
-                    peer_id: to,
-                    request_id: RequestId::Range(start_slot),
-                    request: Box::new(Request::BlocksByRange(BlocksByRangeRequest {
-                        start_slot,
-                        count: 32,
-                    })),
-                })
-                .unwrap();
+            match to.or_else(|| peer_db.get_best_connected_peer()) {
+                Some(to) => {
+                    let start_slot = stores
+                        .latest_slot()
+                        .map(|s| s.as_u64() + 1)
+                        .unwrap_or_default();
+        
+                    network_command_send
+                        .send(NetworkCommand::SendRequest {
+                            peer_id: to,
+                            request_id: RequestId::Range(start_slot),
+                            request: Box::new(Request::BlocksByRange(BlocksByRangeRequest {
+                                start_slot,
+                                count: 32,
+                            })),
+                        })
+                        .unwrap();
+                    stores.block_range_request_state_mut().set_to_requesting(to);
+                },
+                None => {
+                    warn!("No peer available to a new range request");
+                    stores.block_range_request_state_mut().set_to_awaiting_peer();
+                }
+            }
         }
 
         Work::SendBlockByRootRequest(root, to) => {
