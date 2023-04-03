@@ -13,7 +13,7 @@ use tokio::sync::{
     mpsc::{self, UnboundedSender},
     watch::Receiver,
 };
-use tracing::{error, info};
+use tracing::{error, info, instrument};
 use types::{
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
@@ -65,6 +65,7 @@ impl<E: EthSpec> PersistEpochWorker<E> {
     }
 }
 
+#[instrument(name = "EpochPersist", skip_all)]
 fn handle_work<E: EthSpec>(
     epoch: Epoch,
     blocks: HashMap<Slot, BlockState<E>>,
@@ -72,8 +73,9 @@ fn handle_work<E: EthSpec>(
     beacon_state: &mut BeaconState<E>,
     spec: &ChainSpec,
 ) {
+    info!(%epoch);
+
     let mut blocks = blocks.into_iter().collect::<Vec<_>>();
-    info!("Persisting epoch {epoch}");
 
     blocks.sort_by(|(a, _), (b, _)| a.cmp(b));
 
@@ -134,13 +136,9 @@ fn handle_work<E: EthSpec>(
                 block_models.persist(base_dir);
                 extended_block_models.persist(base_dir);
             }
-            Err(err) => {
-                error!("{err:?}");
-            }
+            Err(err) => error!(?err),
         },
-        Err(err) => {
-            error!("{err:?}");
-        }
+        Err(err) => error!(?err),
     }
 }
 

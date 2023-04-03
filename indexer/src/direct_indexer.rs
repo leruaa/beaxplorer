@@ -270,7 +270,7 @@ fn handle_work<E: EthSpec>(
                 .map(|s| s.as_u64() + 1)
                 .unwrap_or_default();
 
-            info!(start_slot,  %to, "Send range request",);
+            debug!(start_slot,  %to, "Send range request",);
 
             network_command_send
                 .send(NetworkCommand::SendRequest {
