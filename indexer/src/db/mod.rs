@@ -1,6 +1,6 @@
-use std::{collections::HashSet, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
-use lighthouse_network::{NetworkGlobals, PeerId};
+use lighthouse_network::{Multiaddr, NetworkGlobals, PeerId};
 use lighthouse_types::EthSpec;
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use types::block_request::BlockRequestModelWithId;
@@ -36,7 +36,7 @@ impl<E: EthSpec> Stores<E> {
     pub fn new(
         network_globals: Arc<NetworkGlobals<E>>,
         block_requests: Vec<BlockRequestModelWithId>,
-        good_peers: HashSet<PeerId>,
+        good_peers: HashMap<PeerId, Multiaddr>,
     ) -> Self {
         let latest_epoch = Arc::new(RwLock::new(LatestEpoch::default()));
 

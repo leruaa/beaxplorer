@@ -1,14 +1,13 @@
 use std::sync::Arc;
 
-use environment::{Environment, EnvironmentBuilder, LoggerConfig};
+use environment::{Environment, EnvironmentBuilder};
 use eth2_network_config::{Eth2NetworkConfig, DEFAULT_HARDCODED_NETWORK};
-use lighthouse_types::{EthSpec, MainnetEthSpec};
-use parking_lot::RwLock;
+use lighthouse_types::EthSpec;
 
 use tokio::{
     signal,
     sync::{
-        mpsc::{self, unbounded_channel},
+        mpsc::{self},
         watch,
     },
 };
@@ -25,11 +24,7 @@ use types::{
     vote::VoteModel,
 };
 
-use crate::{
-    beacon_chain::beacon_context::BeaconContext,
-    direct_indexer::Indexer,
-    network::{augmented_network_service::AugmentedNetworkService, peer_db::PeerDb},
-};
+use crate::{beacon_chain::beacon_context::BeaconContext, direct_indexer::Indexer};
 
 pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     let (environment, _) = build_environment(EnvironmentBuilder::mainnet())?;

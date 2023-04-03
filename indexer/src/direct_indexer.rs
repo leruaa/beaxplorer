@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use lighthouse_network::{rpc::{BlocksByRangeRequest, BlocksByRootRequest}, Request};
+use lighthouse_network::{rpc::{BlocksByRangeRequest, BlocksByRootRequest}, Request, Multiaddr, PeerId};
 use tracing::{warn, instrument, info, debug};
 use store::EthSpec;
 use task_executor::TaskExecutor;
@@ -57,14 +57,14 @@ impl Indexer {
         executor.clone().spawn(
             async move {
                 let good_peers = GoodPeerModelWithId::iter(&base_dir)
-                    .unwrap()
-                    .collect::<Vec<_>>();
-                let known_addresses = good_peers
-                    .iter()
-                    .filter_map(|m| m.model.address.parse().ok())
-                    .collect();
+                    .unwrap();
+
+                let good_peers = good_peers
+                    .filter_map(|m| m.id.parse().ok().and_then(|id| m.model.address.parse().ok().map(|a|(id, a))))
+                    .collect::<Vec<(PeerId, Multiaddr)>>();
+
                 let (network_command_send, mut internal_network_event_recv, network_globals) =
-                    AugmentedNetworkService::start(executor.clone(), beacon_context.clone(), known_addresses)
+                    AugmentedNetworkService::start(executor.clone(), beacon_context.clone(), good_peers.iter().map(|(_, a)| a.clone()).collect::<Vec<_>>())
                         .await
                         .unwrap();
 
@@ -72,10 +72,7 @@ impl Indexer {
                 let (network_event_send, mut network_event_recv) = mpsc::unbounded_channel();
 
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
-                let stores = Arc::new(Stores::new(network_globals.clone(), block_requests.collect(), good_peers
-                .iter()
-                .filter_map(|m| m.id.parse().ok())
-                .collect()));
+                let stores = Arc::new(Stores::new(network_globals.clone(), block_requests.collect(), good_peers.into_iter().collect()));
 
 
                 let workers = Workers::new(&executor, base_dir.clone(), beacon_context, shutdown_trigger.clone());
@@ -136,7 +133,6 @@ fn handle_network_event<E: EthSpec>(
 
             if !stores.block_range_request_state().is_requesting() {
                 work_send.send(Work::SendRangeRequest(Some(peer_id))).unwrap();
-                stores.block_range_request_state_mut().set_to_requesting(peer_id);
             }
 
             stores.block_by_root_requests_mut().pending_iter_mut().for_each(|(root, req)| {
@@ -275,7 +271,6 @@ fn handle_work<E: EthSpec>(
         }
 
         Work::SendBlockByRootRequest(root, to) => {
-            info!(%root, %to, "Send block by root request");
             network_command_send
                 .send(NetworkCommand::SendRequest {
                     peer_id: to,

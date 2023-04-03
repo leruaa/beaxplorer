@@ -1,20 +1,21 @@
-use std::{collections::HashSet, fmt::Debug, net::SocketAddr, sync::Arc};
+use std::{collections::HashMap, fmt::Debug, net::SocketAddr, sync::Arc};
 
-use lighthouse_network::{NetworkGlobals, PeerDB, PeerId};
+use lighthouse_network::{multiaddr::multiaddr, Multiaddr, NetworkGlobals, PeerDB, PeerId};
 use lighthouse_types::EthSpec;
-use multiaddr::multiaddr;
 use parking_lot::RwLockReadGuard;
-use std::collections::hash_set::Iter;
-use tracing::info;
+use tracing::{error, info};
 use types::good_peer::{GoodPeerModel, GoodPeerModelWithId};
 
 pub struct PeerDb<E: EthSpec> {
     network_globals: Arc<NetworkGlobals<E>>,
-    good_peers: HashSet<PeerId>,
+    good_peers: HashMap<PeerId, Multiaddr>,
 }
 
 impl<E: EthSpec> PeerDb<E> {
-    pub fn new(network_globals: Arc<NetworkGlobals<E>>, good_peers: HashSet<PeerId>) -> Self {
+    pub fn new(
+        network_globals: Arc<NetworkGlobals<E>>,
+        good_peers: HashMap<PeerId, Multiaddr>,
+    ) -> Self {
         PeerDb {
             network_globals,
             good_peers,
@@ -22,12 +23,27 @@ impl<E: EthSpec> PeerDb<E> {
     }
 
     pub fn is_good_peer(&self, peer_id: &PeerId) -> bool {
-        self.good_peers.contains(peer_id)
+        self.good_peers.contains_key(peer_id)
     }
 
-    pub fn add_good_peer(&mut self, peer_id: PeerId) {
-        if self.good_peers.insert(peer_id) {
-            info!("New good peer: {peer_id}");
+    pub fn add_good_peer(&mut self, id: PeerId) {
+        let peer_db = self.network_globals.peers.read();
+
+        if let Some(info) = peer_db.peer_info(&id) {
+            let addr = info.seen_addresses().next().map(|a| match a {
+                SocketAddr::V4(a) => multiaddr!(Ip4(*a.ip()), Tcp(a.port())),
+                SocketAddr::V6(a) => multiaddr!(Ip6(*a.ip()), Tcp(a.port())),
+            });
+
+            if let Some(addr) = addr {
+                if self.good_peers.insert(id, addr).is_none() {
+                    info!(peer = %id, "New good peer");
+                }
+            } else {
+                error!(peer = %id, "The peer address can't be found");
+            }
+        } else {
+            error!(peer = %id, "The peer's info isn't known");
         }
     }
 
@@ -39,8 +55,13 @@ impl<E: EthSpec> PeerDb<E> {
             .cloned()
     }
 
-    pub fn good_peers_iter<'a>(&'a self) -> GoodPeerIterator<'a, E, Iter<'a, PeerId>> {
-        GoodPeerIterator::new(self.good_peers.iter(), self.network_globals.peers.read())
+    pub fn good_peers_iter<'a>(
+        &'a self,
+    ) -> GoodPeerIterator<'a, E, impl Iterator<Item = &'a PeerId>> {
+        GoodPeerIterator::new(
+            self.good_peers.iter().map(|(id, _)| id),
+            self.network_globals.peers.read(),
+        )
     }
 }
 
@@ -93,21 +114,10 @@ impl<E: EthSpec> From<&PeerDb<E>> for Vec<GoodPeerModelWithId> {
         value
             .good_peers
             .iter()
-            .filter_map(|id| peer_db.peer_info(id).and_then(|info| Some((id, info))))
-            .map(|(id, info)| GoodPeerModelWithId {
+            .map(|(id, addr)| GoodPeerModelWithId {
                 id: id.to_string(),
                 model: GoodPeerModel {
-                    address: info
-                        .seen_addresses()
-                        .next()
-                        .map_or(String::default(), |a| match a {
-                            SocketAddr::V4(a) => {
-                                multiaddr!(Ip4(*a.ip()), Tcp(a.port())).to_string()
-                            }
-                            SocketAddr::V6(a) => {
-                                multiaddr!(Ip6(*a.ip()), Tcp(a.port())).to_string()
-                            }
-                        }),
+                    address: addr.to_string(),
                 },
             })
             .collect()
