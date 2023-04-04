@@ -8,7 +8,7 @@ use slog::{o, Logger};
 use store::{EnrForkId, Epoch, EthSpec, ForkContext, Hash256, Slot};
 use task_executor::TaskExecutor;
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 use tracing_slog::TracingSlogDrain;
 
 use crate::beacon_chain::beacon_context::BeaconContext;

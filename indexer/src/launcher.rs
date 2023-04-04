@@ -24,7 +24,7 @@ use types::{
     vote::VoteModel,
 };
 
-use crate::{beacon_chain::beacon_context::BeaconContext, direct_indexer::Indexer};
+use crate::{beacon_chain::beacon_context::BeaconContext, indexer::Indexer};
 
 pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     let (environment, _) = build_environment(EnvironmentBuilder::mainnet())?;
