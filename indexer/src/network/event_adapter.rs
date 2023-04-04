@@ -83,7 +83,7 @@ impl<E: EthSpec> EventAdapter<E> {
                                 .unwrap();
                         });
 
-                    self.new_blocks(block).for_each(|event| {
+                            self.new_blocks(block, peer_id).for_each(|event| {
                         self.network_event_send.send(event).unwrap();
                     });
 
@@ -105,7 +105,7 @@ impl<E: EthSpec> EventAdapter<E> {
                     if let Some(block) = block {
                         let slot = block.slot();
                         self.network_event_send
-                            .send(NetworkEvent::NewBlock(BlockState::Orphaned(block)))
+                            .send(NetworkEvent::NewBlock(BlockState::Orphaned(block), peer_id))
                             .unwrap();
 
                         self.network_event_send
@@ -126,6 +126,7 @@ impl<E: EthSpec> EventAdapter<E> {
     fn new_blocks(
         &mut self,
         block: Arc<SignedBeaconBlock<E>>,
+        from: PeerId,
     ) -> impl Iterator<Item = NetworkEvent<E>> {
         let previous_latest_slot = self
             .stores
@@ -136,7 +137,10 @@ impl<E: EthSpec> EventAdapter<E> {
 
         (previous_latest_slot..latest_slot.as_u64())
             .map(Slot::new)
-            .map(|s| NetworkEvent::NewBlock(BlockState::Missed(s)))
-            .chain(once(NetworkEvent::NewBlock(BlockState::Proposed(block))))
+            .map(move |s| NetworkEvent::NewBlock(BlockState::Missed(s), from))
+            .chain(once(NetworkEvent::NewBlock(
+                BlockState::Proposed(block),
+                from,
+            )))
     }
 }

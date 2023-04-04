@@ -145,7 +145,7 @@ fn handle_network_event<E: EthSpec>(
         }
         NetworkEvent::PeerDisconnected(peer_id) => {
             if stores.block_range_request_state().matches(&peer_id) {
-                debug!("Range request cancelled");
+                debug!(to = %peer_id, "Range request cancelled");
                 work_send.send(Work::SendRangeRequest(None)).unwrap();
             }
 
@@ -154,6 +154,7 @@ fn handle_network_event<E: EthSpec>(
             });
         }
         NetworkEvent::RangeRequestSuccedeed  => {
+            debug!("Range request succedeed");
             work_send.send(Work::SendRangeRequest(None)).unwrap();
         }
         NetworkEvent::RangeRequestFailed(peer_id) => {
@@ -169,8 +170,8 @@ fn handle_network_event<E: EthSpec>(
                 attempt.remove_peer(&peer_id);
             });
         }
-        NetworkEvent::NewBlock(state) => {
-            debug!(%state, slot = %state.slot(), "New block");
+        NetworkEvent::NewBlock(state, from) => {
+            debug!(%state, slot = %state.slot(), %from, "New block");
 
             if let Some(work) = stores.block_by_epoch_mut().build_epoch(state) {
                 work_send.send(work).unwrap();
