@@ -48,37 +48,42 @@ pub fn handle<E: EthSpec>(
         }
 
         LighthouseNetworkEvent::ResponseReceived {
-            id: RequestId::Range(_),
+            id: RequestId::Range(nonce),
             response: Response::BlocksByRange(block),
             peer_id,
         } => {
             if let Some(block) = block {
-                let slot = block.slot();
+                if stores
+                    .block_range_request_mut()
+                    .request_peer_if_possible(nonce, peer_id)
+                {
+                    let slot = block.slot();
 
-                stores
-                    .proposed_block_roots_mut()
-                    .insert(block.canonical_root());
+                    stores
+                        .proposed_block_roots_mut()
+                        .insert(block.canonical_root());
 
-                block
-                    .message()
-                    .body()
-                    .attestations()
-                    .iter()
-                    .map(|a| (a.data.slot, a.data.beacon_block_root))
-                    .dedup()
-                    .filter(|(_, r)| !stores.proposed_block_roots().contains(r))
-                    .for_each(|(slot, root)| {
-                        network_event_send
-                            .send(NetworkEvent::UnknownBlockRoot(slot, root))
-                            .unwrap();
+                    block
+                        .message()
+                        .body()
+                        .attestations()
+                        .iter()
+                        .map(|a| (a.data.slot, a.data.beacon_block_root))
+                        .dedup()
+                        .filter(|(_, r)| !stores.proposed_block_roots().contains(r))
+                        .for_each(|(slot, root)| {
+                            network_event_send
+                                .send(NetworkEvent::UnknownBlockRoot(slot, root))
+                                .unwrap();
+                        });
+
+                    new_blocks(block, peer_id, stores).for_each(|event| {
+                        network_event_send.send(event).unwrap();
                     });
 
-                new_blocks(block, peer_id, stores).for_each(|event| {
-                    network_event_send.send(event).unwrap();
-                });
-
-                stores.latest_slot_mut().replace(slot);
-            } else {
+                    stores.latest_slot_mut().replace(slot);
+                }
+            } else if stores.block_range_request().matches_nonce(nonce) {
                 // A block range response has finished
                 network_event_send
                     .send(NetworkEvent::RangeRequestSuccedeed)
@@ -136,36 +141,59 @@ fn new_blocks<E: EthSpec>(
 #[cfg(test)]
 mod tests {
     use lighthouse_network::{NetworkEvent as LighthouseNetworkEvent, PeerId, Response};
-    use lighthouse_types::{MainnetEthSpec, Slot};
+    use lighthouse_types::{EthSpec, MainnetEthSpec, SignedBeaconBlock};
     use std::sync::Arc;
-    use tokio::sync::mpsc::unbounded_channel;
+    use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
 
     use crate::{
+        db::Stores,
         indexer::test_utils::{build_stores, BeaconChainHarness},
-        network::augmented_network_service::RequestId,
+        network::{augmented_network_service::RequestId, event::NetworkEvent},
     };
 
     use super::handle;
 
+    fn handle_new_block<E: EthSpec>(
+        peer: PeerId,
+        nonce: u64,
+        block: SignedBeaconBlock<E>,
+        network_event_send: &UnboundedSender<NetworkEvent<E>>,
+        stores: &Arc<Stores<E>>,
+    ) {
+        handle(
+            LighthouseNetworkEvent::ResponseReceived {
+                peer_id: peer,
+                id: RequestId::Range(nonce),
+                response: Response::BlocksByRange(Some(Arc::new(block))),
+            },
+            network_event_send,
+            stores,
+        );
+    }
+
     #[tokio::test]
-    async fn test_latest_slot_updated() {
+    async fn test_range_request_nonce() {
         let stores = build_stores::<MainnetEthSpec>();
         let (network_event_send, mut network_event_recv) = unbounded_channel();
 
         let mut harness = BeaconChainHarness::new();
 
+        let peer1 = PeerId::random();
+        let peer2 = PeerId::random();
         let block = harness.make_block(0).await;
 
-        handle(
-            LighthouseNetworkEvent::ResponseReceived {
-                peer_id: PeerId::random(),
-                id: RequestId::Range(0),
-                response: Response::BlocksByRange(Some(Arc::new(block))),
-            },
-            &network_event_send,
-            &stores,
-        );
+        handle_new_block(peer1, 1, block.clone(), &network_event_send, &stores);
+        handle_new_block(peer2, 2, block.clone(), &network_event_send, &stores);
+
+        network_event_recv.close();
+
+        let ev1 = network_event_recv.recv().await;
+        let ev2 = network_event_recv.recv().await;
 
         assert!(*stores.latest_slot() == 0_u64);
+        assert!(stores.block_range_request().matches_nonce(1));
+        assert!(stores.block_range_request().matches_peer(peer1));
+        assert!(matches!(ev1.unwrap(), NetworkEvent::NewBlock(_, p) if p == peer1));
+        assert!(ev2.is_none());
     }
 }

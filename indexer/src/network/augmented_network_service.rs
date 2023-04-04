@@ -181,7 +181,7 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
 
     fn send_request(&mut self, peer_id: PeerId, request_id: RequestId, request: Request) {
         match request_id {
-            RequestId::Range(start_slot) => debug!(to = %peer_id, start_slot, "Send range request"),
+            RequestId::Range(nonce) => debug!(to = %peer_id, nonce, "Send range request"),
             RequestId::Block(root) => debug!(to = %peer_id, %root, "Send block by root request"),
         }
 

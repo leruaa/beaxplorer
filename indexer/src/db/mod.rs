@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use lighthouse_network::{Multiaddr, NetworkGlobals, PeerId};
 use lighthouse_types::EthSpec;
@@ -6,7 +6,7 @@ use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use types::block_request::BlockRequestModelWithId;
 
 use self::{
-    block_range_request_state::BlockRangeRequestState, blocks_by_epoch::BlocksByEpoch,
+    block_range_request_state::BlockRangeRequest, blocks_by_epoch::BlocksByEpoch,
     latest_epoch::LatestEpoch, latest_slot::LatestSlot, proposed_block_roots::ProposedBlockRoots,
 };
 
@@ -27,7 +27,7 @@ pub struct Stores<E: EthSpec> {
     latest_epoch: Arc<RwLock<LatestEpoch>>,
     block_by_epoch: RwLock<BlocksByEpoch<E>>,
     proposed_block_roots: RwLock<ProposedBlockRoots>,
-    block_range_request_state: RwLock<BlockRangeRequestState>,
+    block_range_request: RwLock<BlockRangeRequest>,
     block_by_root_requests: RwLock<BlockByRootRequests>,
     peer_db: RwLock<PeerDb<E>>,
 }
@@ -45,7 +45,7 @@ impl<E: EthSpec> Stores<E> {
             latest_epoch: latest_epoch.clone(),
             block_by_epoch: RwLock::new(BlocksByEpoch::new(latest_epoch)),
             proposed_block_roots: RwLock::default(),
-            block_range_request_state: RwLock::default(),
+            block_range_request: RwLock::default(),
             block_by_root_requests: RwLock::new(BlockByRootRequests::from_block_requests(
                 block_requests,
             )),
@@ -84,12 +84,12 @@ impl<E: EthSpec> Stores<E> {
         self.proposed_block_roots.write()
     }
 
-    pub fn block_range_request_state(&self) -> RwLockReadGuard<BlockRangeRequestState> {
-        self.block_range_request_state.read()
+    pub fn block_range_request(&self) -> RwLockReadGuard<BlockRangeRequest> {
+        self.block_range_request.read()
     }
 
-    pub fn block_range_request_state_mut(&self) -> RwLockWriteGuard<BlockRangeRequestState> {
-        self.block_range_request_state.write()
+    pub fn block_range_request_mut(&self) -> RwLockWriteGuard<BlockRangeRequest> {
+        self.block_range_request.write()
     }
 
     pub fn block_by_root_requests(&self) -> RwLockReadGuard<BlockByRootRequests> {
