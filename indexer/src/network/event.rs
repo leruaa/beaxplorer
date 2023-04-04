@@ -12,7 +12,7 @@ pub enum NetworkEvent<E: EthSpec> {
     RangeRequestSuccedeed,
     RangeRequestFailed(PeerId),
     BlockRequestFailed(Hash256, PeerId),
-    NewBlock(BlockState<E>),
+    NewBlock(BlockState<E>, PeerId),
     UnknownBlockRoot(Slot, Hash256),
     BlockRootFound(Hash256, Slot, PeerId),
     BlockRootNotFound(Hash256),
@@ -26,7 +26,7 @@ impl<E: EthSpec> Display for NetworkEvent<E> {
             NetworkEvent::RangeRequestSuccedeed => write!(f, "Range request succedeed"),
             NetworkEvent::RangeRequestFailed(_) => write!(f, "Range request failed"),
             NetworkEvent::BlockRequestFailed(_, _) => write!(f, "Block request failed"),
-            NetworkEvent::NewBlock(block) => match block {
+            NetworkEvent::NewBlock(block, _) => match block {
                 BlockState::Proposed(block) => {
                     write!(f, "New proposed block at {}", block.slot())
                 }
