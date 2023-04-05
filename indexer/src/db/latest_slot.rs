@@ -24,3 +24,13 @@ impl DerefMut for LatestSlot {
         &mut self.0
     }
 }
+
+impl PartialEq<u64> for LatestSlot {
+    fn eq(&self, other: &u64) -> bool {
+        if let Some(slot) = self.0 {
+            slot.as_u64() == *other
+        } else {
+            false
+        }
+    }
+}
