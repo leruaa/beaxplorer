@@ -36,7 +36,7 @@ impl<E: EthSpec> Stores<E> {
     pub fn new(
         network_globals: Arc<NetworkGlobals<E>>,
         block_requests: Vec<BlockRequestModelWithId>,
-        good_peers: HashMap<PeerId, Multiaddr>,
+        good_peers: Vec<(PeerId, Multiaddr)>,
     ) -> Self {
         let latest_epoch = Arc::new(RwLock::new(LatestEpoch::default()));
 
@@ -49,7 +49,10 @@ impl<E: EthSpec> Stores<E> {
             block_by_root_requests: RwLock::new(BlockByRootRequests::from_block_requests(
                 block_requests,
             )),
-            peer_db: RwLock::new(PeerDb::new(network_globals, good_peers)),
+            peer_db: RwLock::new(PeerDb::new(
+                network_globals,
+                good_peers.into_iter().collect(),
+            )),
         }
     }
 

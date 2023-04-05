@@ -72,7 +72,7 @@ impl Indexer {
                 let (network_event_send, mut network_event_recv) = mpsc::unbounded_channel();
 
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
-                let stores = Arc::new(Stores::new(network_globals.clone(), block_requests.collect(), good_peers.into_iter().collect()));
+                let stores = Arc::new(Stores::new(network_globals.clone(), block_requests.collect(), good_peers));
 
 
                 let workers = Workers::new(&executor, base_dir.clone(), beacon_context, shutdown_trigger.clone());
