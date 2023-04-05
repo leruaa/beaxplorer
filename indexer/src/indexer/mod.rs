@@ -26,6 +26,9 @@ mod eth_events;
 mod network_events;
 mod works;
 
+#[cfg(test)]
+mod test_utils;
+
 #[derive(Default)]
 pub struct Indexer;
 

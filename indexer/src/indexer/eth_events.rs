@@ -73,7 +73,7 @@ pub fn handle<E: EthSpec>(
                             .unwrap();
                     });
 
-                new_blocks(block, peer_id, &stores).for_each(|event| {
+                new_blocks(block, peer_id, stores).for_each(|event| {
                     network_event_send.send(event).unwrap();
                 });
 
@@ -131,4 +131,41 @@ fn new_blocks<E: EthSpec>(
             BlockState::Proposed(block),
             from,
         )))
+}
+
+#[cfg(test)]
+mod tests {
+    use lighthouse_network::{NetworkEvent as LighthouseNetworkEvent, PeerId, Response};
+    use lighthouse_types::{MainnetEthSpec, Slot};
+    use std::sync::Arc;
+    use tokio::sync::mpsc::unbounded_channel;
+
+    use crate::{
+        indexer::test_utils::{build_stores, BeaconChainHarness},
+        network::augmented_network_service::RequestId,
+    };
+
+    use super::handle;
+
+    #[tokio::test]
+    async fn test_latest_slot_updated() {
+        let stores = build_stores::<MainnetEthSpec>();
+        let (network_event_send, mut network_event_recv) = unbounded_channel();
+
+        let mut harness = BeaconChainHarness::new();
+
+        let block = harness.make_block(0).await;
+
+        handle(
+            LighthouseNetworkEvent::ResponseReceived {
+                peer_id: PeerId::random(),
+                id: RequestId::Range(0),
+                response: Response::BlocksByRange(Some(Arc::new(block))),
+            },
+            &network_event_send,
+            &stores,
+        );
+
+        assert!(*stores.latest_slot() == 0_u64);
+    }
 }
