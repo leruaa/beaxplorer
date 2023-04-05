@@ -4,9 +4,6 @@ build-db:
 update-indexes:
   cd indexer_cli && cargo run -- update-indexes
 
-search-orphans:
-  cd indexer_cli && cargo run -- search-orphans > out.txt
-
 wasm:
   cd web && pnpm wasm
 
