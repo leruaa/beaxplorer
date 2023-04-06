@@ -1,10 +1,11 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useRouter } from 'next/router'
 import { TabPanel, useTabs } from 'react-headless-tabs';
 import cx from 'classnames';
 import Breadcrumb from "../../components/breadcrumb";
 import TabSelector from '../../components/tab-selector';
-import { useBlock, useAttestations, useVotes, useCommittees } from "../../hooks/blocks";
+import { useQuery } from '@tanstack/react-query';
+import { App, getAttestations, getBlockExtended, getCommittees, getVotes } from '../../pkg/web';
 
 const Validators = ({ validators, aggregation_bits = [] }) => {
   if (!validators) {
@@ -20,42 +21,60 @@ const Validators = ({ validators, aggregation_bits = [] }) => {
   ));
 }
 
-const Committees = ({ slot }) => {
-  const { data: committees } = useCommittees(slot);
-
-  if (!committees) {
+const Committees = ({ app, slot }) => {
+  debugger;
+  const { isLoading, error, data: committees } = useQuery(
+    ["committees", slot],
+    () => getCommittees(app, BigInt(slot))
+  );
+  if (isLoading) {
     return (
       <p>Loading...</p>
     );
   }
 
-  return committees.map(c => (
-    <dl key={c.index}>
-      <dt>{c.index}</dt>
-      <dd className="flex flex-wrap"><Validators validators={c.validators} /></dd>
-    </dl>
-  ));
+  return <>
+    {
+      committees.map(c => (
+        <dl key={c.index}>
+          <dt>{c.index}</dt>
+          <dd className="flex flex-wrap"><Validators validators={c.validators} /></dd>
+        </dl>
+      ))
+    }
+  </>
 }
 
-const Votes = ({ slot }) => {
-  const { data: votes } = useVotes(slot);
+const Votes = ({ app, slot }) => {
+  const { isLoading, error, data: votes } = useQuery(
+    ["votes", slot],
+    () => getVotes(app, BigInt(slot))
+  );
 
-  if (!votes) {
+  if (isLoading) {
     return (
       <p>Loading...</p>
     );
   }
 
-  return votes.map((v, i) => (
-    <Vote key={i} vote={v} />
-  ));
+  return <>
+    {
+      votes.map((v, i) => (
+        <Vote app key={i} vote={v} />
+      ))
+    }
+  </>
 }
 
-const Vote = ({ vote }) => {
-  const { data: committees } = useCommittees(vote.slot);
+const Vote = ({ app, vote }) => {
+  const { isLoading, error, data: committees } = useQuery(
+    ["committees", vote.slot],
+    () => getCommittees(app, BigInt(vote.slot))
+  );
+
   const validators = useMemo(() => committees ? committees[vote.committee_index].validators : undefined, [committees]);
 
-  if (!validators) {
+  if (isLoading) {
     return (
       <p>Loading...</p>
     );
@@ -75,29 +94,39 @@ const Vote = ({ vote }) => {
   );
 }
 
-const Attestations = ({ slot }) => {
-  const { data: attestations } = useAttestations(slot);
+const Attestations = ({ app, slot }) => {
+  const { isLoading, error, data: attestations } = useQuery(
+    ["attestations", slot],
+    () => getAttestations(app, BigInt(slot))
+  );
 
-  if (!attestations) {
+  if (isLoading) {
     return (
       <p>Loading...</p>
     );
   }
 
-  return attestations.map((a, i) => (
-    <div key={i}>
-      <h3>Attestation {i}</h3>
-      <Attestation attestation={a} />
-    </div>
-  ));
+  return <>
+    {
+      attestations.map((a, i) => (
+        <div key={i}>
+          <h3>Attestation {i}</h3>
+          <Attestation app={app} attestation={a} />
+        </div>
+      ))
+    }
+  </>
 }
 
-const Attestation = ({ attestation }) => {
-  const { data: committees } = useCommittees(attestation.slot);
+const Attestation = ({ app, attestation }) => {
+  const { isLoading, error, data: committees } = useQuery(
+    ["committees", attestation.slot],
+    () => getCommittees(app, BigInt(attestation.slot))
+  );
 
-  if (!committees) {
+  if (isLoading) {
     return (
-      <p>Loading... {attestation.slot}</p>
+      <p>Loading...</p>
     );
   }
 
@@ -121,9 +150,20 @@ const Attestation = ({ attestation }) => {
 }
 
 export default () => {
+  const app = new App(process.env.NEXT_PUBLIC_HOST);
   const router = useRouter();
-  const { slot } = router.query;
-  const { data: block, error } = useBlock(slot as string);
+  const slot = router.query.slot as string;
+
+  if (!slot) {
+    return (
+      <p>Loading...</p>
+    )
+  }
+
+  const { isLoading, error, data: block } = useQuery(
+    ["block", slot],
+    () => getBlockExtended(app, BigInt(slot))
+  );
 
   const [selectedTab, setSelectedTab] = useTabs([
     'overview',
@@ -186,15 +226,15 @@ export default () => {
           </TabPanel>
 
           <TabPanel hidden={selectedTab !== 'committees'}>
-            <Committees slot={slot} />
+            <Committees app={app} slot={slot} />
           </TabPanel>
 
           <TabPanel hidden={selectedTab !== 'votes'}>
-            <Votes slot={slot} />
+            <Votes app={app} slot={slot} />
           </TabPanel>
 
           <TabPanel hidden={selectedTab !== 'attestations'}>
-            <Attestations slot={slot} />
+            <Attestations app={app} slot={slot} />
           </TabPanel>
         </div>
       </section>
