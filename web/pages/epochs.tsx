@@ -13,12 +13,10 @@ import Link from 'next/link';
 
 
 export async function getStaticProps() {
-  const host = process.env.HOST;
   const app = new App("http://localhost:3000");
   const meta = await getEpochMeta(app);
   return {
     props: {
-      host,
       epochs: [],//await getEpochs(app, 0, 10, "default", false, meta.count),
       epochsCount: meta.count
     }
@@ -26,7 +24,7 @@ export async function getStaticProps() {
 }
 
 export default (props) => {
-  const app = new App(props.host);
+  const app = new App(process.env.NEXT_PUBLIC_HOST);
   const columnHelper = createColumnHelper<EpochView>()
 
   const columns = [

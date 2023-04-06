@@ -8,25 +8,14 @@ import Ethers from "../../components/ethers";
 import { App, getEpochExtended } from '../../pkg/web';
 
 
-export async function getServerSideProps(context) {
-  const host = process.env.HOST;
-  return {
-    props: {
-      host
-    }
-  }
-}
-
 export default (props) => {
-  const app = new App(props.host);
+  const app = new App(process.env.NEXT_PUBLIC_HOST);
   const router = useRouter();
   const id = router.query.epoch as string;
   const { isLoading, error, data: epoch } = useQuery(
     ["epoch", id],
     () => getEpochExtended(app, BigInt(id))
   );
-
-
 
   return (
     <>

@@ -11,13 +11,11 @@ import { App, BlockView, getBlock, getBlockMeta } from "../pkg";
 import { createColumnHelper } from "@tanstack/react-table";
 import useDataTable from "../hooks/data-table";
 
-export async function getServerSideProps(context) {
-  const host = process.env.HOST;
+export async function getStaticProps() {
   const app = new App("http://localhost:3000");
   const meta = await getBlockMeta(app);
   return {
     props: {
-      host,
       blocks: [], //await blocks.page(pageIndex || 0, 10, "default", false),
       blocksCount: meta.count
     }
@@ -25,7 +23,7 @@ export async function getServerSideProps(context) {
 }
 
 export default (props) => {
-  const app = new App(props.host);
+  const app = new App(process.env.NEXT_PUBLIC_HOST);
   const columnHelper = createColumnHelper<BlockView>()
 
   const columns = [
