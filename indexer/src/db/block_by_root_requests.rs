@@ -41,6 +41,10 @@ impl BlockByRootRequests {
         attempt.possible_slots.insert(slot);
     }
 
+    pub fn remove(&mut self, root: &Hash256) -> bool {
+        self.0.remove(root).is_some()
+    }
+
     pub fn update_attempt<F>(&mut self, root: &Hash256, f: F)
     where
         F: Fn(&mut RequestAttempts),

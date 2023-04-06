@@ -58,10 +58,10 @@ pub fn handle<E: EthSpec>(
                     .request_peer_if_possible(nonce, peer_id)
                 {
                     let slot = block.slot();
+                    let root = block.canonical_root();
 
-                    stores
-                        .proposed_block_roots_mut()
-                        .insert(block.canonical_root());
+                    stores.proposed_block_roots_mut().insert(root);
+                    stores.block_by_root_requests_mut().remove(&root);
 
                     block
                         .message()
