@@ -74,12 +74,9 @@ pub fn handle<E: EthSpec>(
                     attempt.remove_peer(&peer_id);
                 });
         }
-        NetworkEvent::NewBlock(state, from) => {
-            debug!(%state, slot = %state.slot(), %from, "New block");
-
-            if let Some(work) = stores.block_by_epoch_mut().build_epoch(state) {
-                work_send.send(work).unwrap();
-            }
+        NetworkEvent::NewBlock(block, from) => {
+            debug!(state = %block, slot = %block.slot(), %from, "New block");
+            work_send.send(Work::PersistBlock(block)).unwrap();
         }
         NetworkEvent::UnknownBlockRoot(slot, root) => {
             stores.block_by_root_requests_mut().add(slot, root);

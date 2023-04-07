@@ -6,13 +6,12 @@ use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use types::block_request::BlockRequestModelWithId;
 
 use self::{
-    block_range_request_state::BlockRangeRequest, blocks_by_epoch::BlocksByEpoch,
-    latest_epoch::LatestEpoch, latest_slot::LatestSlot, proposed_block_roots::ProposedBlockRoots,
+    block_range_request_state::BlockRangeRequest, latest_epoch::LatestEpoch,
+    latest_slot::LatestSlot, proposed_block_roots::ProposedBlockRoots,
 };
 
 mod block_by_root_requests;
 mod block_range_request_state;
-mod blocks_by_epoch;
 mod latest_epoch;
 mod latest_slot;
 mod peer_db;
@@ -24,8 +23,6 @@ pub use peer_db::PeerDb;
 #[derive(Debug)]
 pub struct Stores<E: EthSpec> {
     latest_slot: RwLock<LatestSlot>,
-    latest_epoch: Arc<RwLock<LatestEpoch>>,
-    block_by_epoch: RwLock<BlocksByEpoch<E>>,
     proposed_block_roots: RwLock<ProposedBlockRoots>,
     block_range_request: RwLock<BlockRangeRequest>,
     block_by_root_requests: RwLock<BlockByRootRequests>,
@@ -38,12 +35,8 @@ impl<E: EthSpec> Stores<E> {
         block_requests: Vec<BlockRequestModelWithId>,
         good_peers: Vec<(PeerId, Multiaddr)>,
     ) -> Self {
-        let latest_epoch = Arc::new(RwLock::new(LatestEpoch::default()));
-
         Self {
             latest_slot: RwLock::default(),
-            latest_epoch: latest_epoch.clone(),
-            block_by_epoch: RwLock::new(BlocksByEpoch::new(latest_epoch)),
             proposed_block_roots: RwLock::default(),
             block_range_request: RwLock::default(),
             block_by_root_requests: RwLock::new(BlockByRootRequests::from_block_requests(
@@ -62,18 +55,6 @@ impl<E: EthSpec> Stores<E> {
 
     pub fn latest_slot_mut(&self) -> RwLockWriteGuard<LatestSlot> {
         self.latest_slot.write()
-    }
-
-    pub fn latest_epoch(&self) -> RwLockReadGuard<LatestEpoch> {
-        self.latest_epoch.read()
-    }
-
-    pub fn block_by_epoch(&self) -> RwLockReadGuard<BlocksByEpoch<E>> {
-        self.block_by_epoch.read()
-    }
-
-    pub fn block_by_epoch_mut(&self) -> RwLockWriteGuard<BlocksByEpoch<E>> {
-        self.block_by_epoch.write()
     }
 
     pub fn proposed_block_roots(&self) -> RwLockReadGuard<ProposedBlockRoots> {

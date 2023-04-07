@@ -1,9 +1,10 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, rc::Rc, sync::Arc};
 
 use lighthouse_types::{
     BeaconState, BlindedPayload, ChainSpec, Epoch, EthSpec, SignedBeaconBlock, Slot,
 };
 
+use parking_lot::RwLock;
 use state_processing::{
     per_block_processing, per_epoch_processing::base::process_epoch, per_slot_processing,
     BlockReplayError, BlockSignatureStrategy, ConsensusContext, VerifyBlockRoot,
@@ -15,6 +16,7 @@ use tokio::sync::{
 };
 use tracing::{error, info, instrument};
 use types::{
+    attestation::AttestationModelsWithId,
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
     persistable::Persistable,
@@ -33,7 +35,7 @@ impl<E: EthSpec> PersistEpochWorker<E> {
     pub fn new(
         executor: &TaskExecutor,
         base_dir: String,
-        mut beacon_state: BeaconState<E>,
+        beacon_state: Arc<RwLock<BeaconState<E>>>,
         spec: ChainSpec,
         mut shutdown_trigger: Receiver<()>,
     ) -> Self {
@@ -44,7 +46,7 @@ impl<E: EthSpec> PersistEpochWorker<E> {
                 loop {
                     tokio::select! {
                         Some((epoch, blocks)) = work_recv.recv() => {
-                            handle_work(epoch, blocks, &base_dir, &mut beacon_state, &spec);
+                            handle_work(epoch, blocks, &base_dir, &mut beacon_state.write(), &spec);
                         }
 
                         _ = shutdown_trigger.changed() => {
@@ -98,8 +100,6 @@ fn handle_work<E: EthSpec>(
                     .map(|(slot, block_status)| {
                         ConsolidatedBlock::new(
                             block_status,
-                            slot,
-                            epoch,
                             beacon_state.get_beacon_proposer_index(slot, spec).unwrap() as u64,
                         )
                     })
@@ -119,14 +119,18 @@ fn handle_work<E: EthSpec>(
 
                 let consolidated_epoch = ConsolidatedEpoch::new(
                     epoch,
-                    blocks,
+                    blocks.clone(),
                     &summary,
                     beacon_state.balances().clone().into(),
                 );
 
                 let epoch_model = EpochModelWithId::from(&consolidated_epoch);
-
                 let extended_epoch_model = EpochExtendedModelWithId::from(&consolidated_epoch);
+
+                let attestation_models = blocks
+                    .iter()
+                    .map(AttestationModelsWithId::from)
+                    .collect::<Vec<_>>();
 
                 EpochsMeta::new(epoch.as_usize() + 1).persist(base_dir);
                 BlocksMeta::new(last_slot.as_usize() + 1).persist(base_dir);
@@ -135,6 +139,7 @@ fn handle_work<E: EthSpec>(
                 extended_epoch_model.persist(base_dir);
                 block_models.persist(base_dir);
                 extended_block_models.persist(base_dir);
+                attestation_models.persist(base_dir);
             }
             Err(err) => error!(?err),
         },

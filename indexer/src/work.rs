@@ -1,17 +1,11 @@
-use std::collections::HashMap;
-
 use lighthouse_network::PeerId;
-use lighthouse_types::{Epoch, EthSpec, Hash256, Slot};
+use lighthouse_types::{EthSpec, Hash256};
 use types::utils::RequestAttempts;
 
 use crate::types::block_state::BlockState;
 
 #[derive(Debug, Clone)]
 pub enum Work<E: EthSpec> {
-    PersistEpoch {
-        epoch: Epoch,
-        blocks: HashMap<Slot, BlockState<E>>,
-    },
     PersistBlock(BlockState<E>),
     PersistBlockRequest(Hash256, RequestAttempts),
     PersistAllBlockRequests,

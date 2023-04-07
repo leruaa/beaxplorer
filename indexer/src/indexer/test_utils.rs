@@ -4,7 +4,6 @@ use beacon_node::beacon_chain::{
     builder::Witness, eth1_chain::CachingEth1Backend, slot_clock::ManualSlotClock,
     test_utils::BeaconChainHarness as LighthouseBeaconChainHarness,
 };
-use client::BeaconChainTypes;
 use genesis::generate_deterministic_keypairs;
 use lighthouse_network::NetworkGlobals;
 use lighthouse_types::{

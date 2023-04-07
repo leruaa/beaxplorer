@@ -5,7 +5,6 @@ use lighthouse_network::{
     Request,
 };
 use lighthouse_types::EthSpec;
-use task_executor::TaskExecutor;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::warn;
 use types::{
@@ -16,26 +15,22 @@ use types::{
 
 use crate::{
     db::{BlockByRootRequests, PeerDb, Stores},
-    network::{
-        augmented_network_service::{NetworkCommand, RequestId},
-        workers::Workers,
-    },
+    network::augmented_network_service::{NetworkCommand, RequestId},
+    types::block_state::BlockState,
     work::Work,
 };
 
 pub fn handle<E: EthSpec>(
-    executor: &TaskExecutor,
     base_dir: String,
     work: Work<E>,
-    workers: &Workers<E>,
     stores: &Arc<Stores<E>>,
     network_command_send: &UnboundedSender<NetworkCommand>,
+    persist_work_send: &UnboundedSender<BlockState<E>>,
 ) {
     match work {
-        Work::PersistEpoch { epoch, blocks } => workers.epoch_persister.work(epoch, blocks),
-
-        Work::PersistBlock(block) => workers.existing_block_persister.spawn(executor, block),
-
+        Work::PersistBlock(block) => {
+            persist_work_send.send(block).unwrap();
+        }
         Work::PersistBlockRequest(root, attempts) => {
             let block_request = BlockRequestModelWithId::from((&root, &attempts));
 

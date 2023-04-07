@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use lighthouse_types::{Epoch, EthSpec, Slot};
+use lighthouse_types::{BeaconState, ChainSpec, Epoch, EthSpec, OwnedBeaconCommittee, Slot};
 use store::SignedBeaconBlock;
 use types::{
     attestation::{AttestationModel, AttestationModelsWithId},
-    block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId},
+    block::{BlockExtendedModelWithId, BlockModel, BlockModelWithId},
 };
 
 use super::block_state::BlockState;
@@ -15,23 +15,26 @@ pub struct ConsolidatedBlock<E: EthSpec> {
     epoch: Epoch,
     slot: Slot,
     proposer_index: u64,
+    committees: Vec<OwnedBeaconCommittee>,
 }
 
 impl<E: EthSpec> ConsolidatedBlock<E> {
-    fn block(&self) -> Option<Arc<SignedBeaconBlock<E>>> {
-        match &self.block {
-            BlockState::Proposed(block) => Some(block.clone()),
-            BlockState::Missed(_) => None,
-            BlockState::Orphaned(block) => Some(block.clone()),
-        }
-    }
+    pub fn new(block: BlockState<E>, beacon_state: &BeaconState<E>, spec: &ChainSpec) -> Self {
+        let slot = block.slot();
+        let proposer_index = beacon_state.get_beacon_proposer_index(slot, spec).unwrap() as u64;
+        let committees = beacon_state
+            .get_beacon_committees_at_slot(slot)
+            .unwrap()
+            .into_iter()
+            .map(|c| c.into_owned())
+            .collect();
 
-    pub fn new(block: BlockState<E>, slot: Slot, epoch: Epoch, proposer_index: u64) -> Self {
         ConsolidatedBlock {
             block,
-            epoch,
+            epoch: slot.epoch(E::slots_per_epoch()),
             slot,
             proposer_index,
+            committees,
         }
     }
 
@@ -97,54 +100,18 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockModelWithId {
 
 impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockExtendedModelWithId {
     fn from(value: &ConsolidatedBlock<E>) -> Self {
-        let model = value.block().map(|block| BlockExtendedModel {
-            block_root: block.canonical_root().as_bytes().to_vec(),
-            parent_root: block.message().parent_root().as_bytes().to_vec(),
-            state_root: block.message().state_root().as_bytes().to_vec(),
-            randao_reveal: block
-                .message()
-                .body()
-                .randao_reveal()
-                .to_string()
-                .as_bytes()
-                .to_vec(),
-            signature: block.signature().to_string().as_bytes().to_vec(),
-            graffiti: block
-                .message()
-                .body()
-                .graffiti()
-                .to_string()
-                .as_bytes()
-                .to_vec(),
-            graffiti_text: block.message().body().graffiti().to_string(),
-            votes_count: 0,
-            eth1data_deposit_root: block
-                .message()
-                .body()
-                .eth1_data()
-                .deposit_root
-                .as_bytes()
-                .to_vec(),
-            eth1data_deposit_count: block.message().body().eth1_data().deposit_count,
-            eth1data_block_hash: block
-                .message()
-                .body()
-                .eth1_data()
-                .block_hash
-                .as_bytes()
-                .to_vec(),
-        });
-
         BlockExtendedModelWithId {
             id: value.slot.as_u64(),
-            model,
+            model: (&value.block).into(),
         }
     }
 }
 
 impl<E: EthSpec> From<&ConsolidatedBlock<E>> for AttestationModelsWithId {
     fn from(value: &ConsolidatedBlock<E>) -> Self {
-        let attestations = if let Some(block) = value.block() {
+        let block: Option<Arc<SignedBeaconBlock<E>>> = (&value.block).into();
+
+        let attestations = if let Some(block) = block {
             block
                 .message()
                 .body()

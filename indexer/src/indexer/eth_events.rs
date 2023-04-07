@@ -1,7 +1,7 @@
 use std::{iter::once, sync::Arc};
 
 use itertools::Itertools;
-use lighthouse_network::{NetworkEvent as LighthouseNetworkEvent, PeerId, Response};
+use lighthouse_network::{NetworkEvent as LighthouseNetworkEvent, Response};
 use lighthouse_types::{EthSpec, SignedBeaconBlock, Slot};
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -77,8 +77,10 @@ pub fn handle<E: EthSpec>(
                                 .unwrap();
                         });
 
-                    new_blocks(block, peer_id, stores).for_each(|event| {
-                        network_event_send.send(event).unwrap();
+                    new_blocks(block, stores).for_each(|block| {
+                        network_event_send
+                            .send(NetworkEvent::NewBlock(block, peer_id))
+                            .unwrap();
                     });
 
                     stores.latest_slot_mut().replace(slot);
@@ -120,9 +122,8 @@ pub fn handle<E: EthSpec>(
 
 fn new_blocks<E: EthSpec>(
     block: Arc<SignedBeaconBlock<E>>,
-    from: PeerId,
     stores: &Arc<Stores<E>>,
-) -> impl Iterator<Item = NetworkEvent<E>> {
+) -> impl Iterator<Item = BlockState<E>> {
     let previous_latest_slot = stores
         .latest_slot()
         .map(|s| s.as_u64() + 1)
@@ -131,11 +132,8 @@ fn new_blocks<E: EthSpec>(
 
     (previous_latest_slot..latest_slot.as_u64())
         .map(Slot::new)
-        .map(move |s| NetworkEvent::NewBlock(BlockState::Missed(s), from))
-        .chain(once(NetworkEvent::NewBlock(
-            BlockState::Proposed(block),
-            from,
-        )))
+        .map(move |s| BlockState::Missed(s))
+        .chain(once(BlockState::Proposed(block)))
 }
 
 #[cfg(test)]
@@ -196,4 +194,7 @@ mod tests {
         assert!(matches!(ev1.unwrap(), NetworkEvent::NewBlock(_, p) if p == peer1));
         assert!(ev2.is_none());
     }
+
+    #[tokio::test]
+    async fn test_range_request_failed() {}
 }
