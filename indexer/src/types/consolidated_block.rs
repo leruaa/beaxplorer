@@ -132,3 +132,14 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for AttestationModelsWithId {
         }
     }
 }
+
+impl<E: EthSpec> From<&ConsolidatedBlock<E>> for CommitteeModelsWithId {
+    fn from(value: &ConsolidatedBlock<E>) -> Self {
+        let committees = value.committees.iter().map(CommitteeModel::from).collect();
+
+        CommitteeModelsWithId {
+            id: value.slot.as_u64(),
+            model: committees,
+        }
+    }
+}
