@@ -7,19 +7,25 @@ use beacon_node::beacon_chain::{
 use genesis::generate_deterministic_keypairs;
 use lighthouse_network::NetworkGlobals;
 use lighthouse_types::{
-    BeaconBlock, BeaconState, EthSpec, MainnetEthSpec, Signature, SignedBeaconBlock, Slot,
+    BeaconBlock, BeaconState, ChainSpec, MainnetEthSpec, Signature, SignedBeaconBlock, Slot,
 };
 use slog::{o, Logger};
 use store::MemoryStore;
 use tracing_slog::TracingSlogDrain;
 
-use crate::db::Stores;
+use crate::{beacon_chain::beacon_context::BeaconContext, db::Stores};
 
-pub fn build_stores<E: EthSpec>() -> Arc<Stores<E>> {
+pub fn build_stores(spec: ChainSpec) -> Arc<Stores<MainnetEthSpec>> {
     let logger = Logger::root(TracingSlogDrain, o!());
     let network_globals = NetworkGlobals::new_test_globals(&logger);
+    let beacon_context = BeaconContext::build(spec).unwrap();
 
-    Arc::new(Stores::new(Arc::new(network_globals), vec![], vec![]))
+    Arc::new(Stores::new(
+        Arc::new(network_globals),
+        Arc::new(beacon_context),
+        vec![],
+        vec![],
+    ))
 }
 
 pub struct BeaconChainHarness {
@@ -46,6 +52,14 @@ impl BeaconChainHarness {
         let state = harness.get_current_state();
 
         Self { harness, state }
+    }
+
+    pub fn spec(&self) -> ChainSpec {
+        self.harness.spec.clone()
+    }
+
+    pub fn state(&self) -> BeaconState<MainnetEthSpec> {
+        self.state.clone()
     }
 
     pub async fn make_block(&mut self, slot: u64) -> SignedBeaconBlock<MainnetEthSpec> {

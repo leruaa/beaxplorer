@@ -133,3 +133,11 @@ fn persist_block<E: EthSpec>(
     BlockExtendedModelWithId::from(&block).persist(base_dir);
     AttestationModelsWithId::from(&block).persist(base_dir);
 }
+
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn test_range_request_nonce() {
+        let mut harness = BeaconChainHarness::new();
+    }
+}

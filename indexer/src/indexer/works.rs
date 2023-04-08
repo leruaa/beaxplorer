@@ -4,10 +4,13 @@ use lighthouse_network::{
     rpc::{BlocksByRangeRequest, BlocksByRootRequest},
     Request,
 };
-use lighthouse_types::EthSpec;
+use lighthouse_types::{BeaconState, ChainSpec, EthSpec};
+use task_executor::TaskExecutor;
 use tokio::sync::mpsc::UnboundedSender;
-use tracing::warn;
+use tracing::{info, warn};
 use types::{
+    attestation::AttestationModelsWithId,
+    block::{BlockExtendedModelWithId, BlockModelWithId},
     block_request::{BlockRequestModelWithId, BlockRequestsMeta},
     good_peer::{GoodPeerModelWithId, GoodPeersMeta},
     persistable::Persistable,
@@ -16,8 +19,9 @@ use types::{
 use crate::{
     db::{BlockByRootRequests, PeerDb, Stores},
     network::augmented_network_service::{NetworkCommand, RequestId},
-    types::block_state::BlockState,
+    types::{block_state::BlockState, consolidated_block::ConsolidatedBlock},
     work::Work,
+    workers::{spawn_persist_block_worker, spawn_persist_epoch_worker},
 };
 
 pub fn handle<E: EthSpec>(
@@ -25,12 +29,13 @@ pub fn handle<E: EthSpec>(
     work: Work<E>,
     stores: &Arc<Stores<E>>,
     network_command_send: &UnboundedSender<NetworkCommand>,
-    persist_work_send: &UnboundedSender<BlockState<E>>,
+    executor: &TaskExecutor,
 ) {
     match work {
-        Work::PersistBlock(block) => {
-            persist_work_send.send(block).unwrap();
-        }
+        Work::PersistBlock(block) => spawn_persist_block_worker(base_dir, block, executor),
+
+        Work::PersistEpoch(epoch) => spawn_persist_epoch_worker(base_dir, epoch, executor),
+
         Work::PersistBlockRequest(root, attempts) => {
             let block_request = BlockRequestModelWithId::from((&root, &attempts));
 
@@ -51,9 +56,12 @@ pub fn handle<E: EthSpec>(
             match to.or_else(|| stores.peer_db().get_best_connected_peer()) {
                 Some(to) => {
                     let start_slot = stores
+                        .indexing_state()
                         .latest_slot()
                         .map(|s| s.as_u64() + 1)
                         .unwrap_or_default();
+
+                    info!(start_slot, "Send range request");
 
                     network_command_send
                         .send(NetworkCommand::SendRequest {

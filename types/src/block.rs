@@ -21,7 +21,7 @@ pub struct BlockModel {
     pub attestations_count: usize,
     pub deposits_count: usize,
     pub voluntary_exits_count: usize,
-    pub proposer: u64,
+    pub proposer: Option<u64>,
     pub status: String,
 }
 

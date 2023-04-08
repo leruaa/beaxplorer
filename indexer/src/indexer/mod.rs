@@ -17,16 +17,13 @@ use crate::{
     beacon_chain::beacon_context::BeaconContext,
     db::Stores,
     network::{
-        augmented_network_service::AugmentedNetworkService, persist_worker::spawn_persist_worker,
+        augmented_network_service::AugmentedNetworkService,
     },
 };
 
 mod eth_events;
 mod network_events;
 mod works;
-
-#[cfg(test)]
-mod test_utils;
 
 #[derive(Default)]
 pub struct Indexer;
@@ -72,10 +69,9 @@ impl Indexer {
 
                 let (work_send, mut work_recv) = mpsc::unbounded_channel();
                 let (network_event_send, mut network_event_recv) = mpsc::unbounded_channel();
-                let persist_work_send = spawn_persist_worker(&executor, base_dir.clone(), beacon_context, shutdown_trigger.clone());
 
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
-                let stores = Arc::new(Stores::new(network_globals.clone(), block_requests.collect(), good_peers));
+                let stores = Arc::new(Stores::new(network_globals.clone(), beacon_context, block_requests.collect(), good_peers));
 
                 let start_instant = Instant::now();
                 let interval_duration = Duration::from_secs(1);
@@ -84,7 +80,7 @@ impl Indexer {
                 loop {
                     tokio::select! {
                         Some(event) = internal_network_event_recv.recv() => {
-                            eth_events::handle(event, &network_event_send, &stores);
+                            eth_events::handle(event, &network_event_send, &work_send, &stores);
                         },
 
                         Some(event) = network_event_recv.recv() => {
@@ -92,7 +88,7 @@ impl Indexer {
                         },
 
                         Some(work) = work_recv.recv() => {
-                            works::handle(base_dir.clone(), work, &stores, &network_command_send, &persist_work_send);
+                            works::handle(base_dir.clone(), work, &stores, &network_command_send, &executor);
                         },
 
                         _ = interval.tick() => {

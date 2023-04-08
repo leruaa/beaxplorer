@@ -3,7 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use lighthouse_types::{EthSpec, SignedBeaconBlock, Slot};
+use lighthouse_types::{Epoch, EthSpec, SignedBeaconBlock, Slot};
 use types::block::BlockExtendedModel;
 
 #[derive(Debug, Clone)]
@@ -20,6 +20,10 @@ impl<E: EthSpec> BlockState<E> {
             BlockState::Missed(s) => s.clone(),
             BlockState::Orphaned(block) => block.slot(),
         }
+    }
+
+    pub fn epoch(&self) -> Epoch {
+        self.slot().epoch(E::slots_per_epoch())
     }
 }
 

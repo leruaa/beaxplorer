@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
-use environment::{Environment, EnvironmentBuilder};
-use eth2_network_config::{Eth2NetworkConfig, DEFAULT_HARDCODED_NETWORK};
-use lighthouse_types::EthSpec;
+use environment::EnvironmentBuilder;
+use lighthouse_types::MainnetEthSpec;
 
 use tokio::{
     signal,
@@ -24,12 +23,15 @@ use types::{
     vote::VoteModel,
 };
 
-use crate::{beacon_chain::beacon_context::BeaconContext, indexer::Indexer};
+use crate::{
+    beacon_chain::beacon_context::{build_environment, BeaconContext},
+    indexer::Indexer,
+};
 
 pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
     let (environment, _) = build_environment(EnvironmentBuilder::mainnet())?;
     let context = environment.core_context();
-    let beacon_context = BeaconContext::build(&context)?;
+    let beacon_context = BeaconContext::<MainnetEthSpec>::build(context.eth2_config.spec)?;
     let executor = context.executor;
 
     if reset {
@@ -71,20 +73,6 @@ pub fn update_indexes(base_dir: String) -> Result<(), String> {
     GoodPeerModelWithId::iter(&base_dir)?.persist_sortables(&base_dir)?;
 
     Ok(())
-}
-
-fn build_environment<E: EthSpec>(
-    environment_builder: EnvironmentBuilder<E>,
-) -> Result<(Environment<E>, Eth2NetworkConfig), String> {
-    let eth2_network_config = Eth2NetworkConfig::constant(DEFAULT_HARDCODED_NETWORK)?
-        .ok_or("Failed to build Eth2 network config")?;
-    let environment = environment_builder
-        .eth2_network_config(eth2_network_config.clone())?
-        .null_logger()?
-        .multi_threaded_tokio_runtime()?
-        .build()?;
-
-    Ok((environment, eth2_network_config))
 }
 
 fn create_dirs(base_dir: &str) -> Result<(), String> {

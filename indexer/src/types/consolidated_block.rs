@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use lighthouse_types::{BeaconState, ChainSpec, Epoch, EthSpec, OwnedBeaconCommittee, Slot};
+use lighthouse_types::{
+    BeaconState, ChainSpec, Epoch, Error as BeaconStateError, EthSpec, OwnedBeaconCommittee, Slot,
+};
 use store::SignedBeaconBlock;
 use types::{
     attestation::{AttestationModel, AttestationModelsWithId},
@@ -14,20 +16,17 @@ pub struct ConsolidatedBlock<E: EthSpec> {
     block: BlockState<E>,
     epoch: Epoch,
     slot: Slot,
-    proposer_index: u64,
+    proposer_index: Option<u64>,
     committees: Vec<OwnedBeaconCommittee>,
 }
 
 impl<E: EthSpec> ConsolidatedBlock<E> {
-    pub fn new(block: BlockState<E>, beacon_state: &BeaconState<E>, spec: &ChainSpec) -> Self {
+    pub fn new(
+        block: BlockState<E>,
+        proposer_index: Option<u64>,
+        committees: Vec<OwnedBeaconCommittee>,
+    ) -> Self {
         let slot = block.slot();
-        let proposer_index = beacon_state.get_beacon_proposer_index(slot, spec).unwrap() as u64;
-        let committees = beacon_state
-            .get_beacon_committees_at_slot(slot)
-            .unwrap()
-            .into_iter()
-            .map(|c| c.into_owned())
-            .collect();
 
         ConsolidatedBlock {
             block,
@@ -36,6 +35,10 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
             proposer_index,
             committees,
         }
+    }
+
+    pub fn slot(&self) -> Slot {
+        self.slot
     }
 
     pub fn get_attestations_count(&self) -> usize {

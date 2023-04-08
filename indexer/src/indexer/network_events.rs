@@ -7,6 +7,7 @@ use tracing::{debug, info, instrument, warn};
 use crate::{
     db::Stores,
     network::{augmented_network_service::NetworkCommand, event::NetworkEvent},
+    types::block_state::BlockState,
     work::Work,
 };
 
@@ -76,7 +77,12 @@ pub fn handle<E: EthSpec>(
         }
         NetworkEvent::NewBlock(block, from) => {
             debug!(state = %block, slot = %block.slot(), %from, "New block");
-            work_send.send(Work::PersistBlock(block)).unwrap();
+
+            if let BlockState::Proposed(block) = &block {
+                stores
+                    .block_by_root_requests_mut()
+                    .remove(&block.canonical_root());
+            }
         }
         NetworkEvent::UnknownBlockRoot(slot, root) => {
             stores.block_by_root_requests_mut().add(slot, root);

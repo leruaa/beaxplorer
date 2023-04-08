@@ -9,3 +9,7 @@ pub mod launcher;
 mod network;
 pub mod types;
 pub mod work;
+pub mod workers;
+
+#[cfg(test)]
+mod test_utils;
