@@ -45,6 +45,10 @@ impl<E: EthSpec> ConsolidatedEpoch<E> {
         }
     }
 
+    pub fn number(&self) -> usize {
+        self.epoch.as_usize()
+    }
+
     pub fn get_total_validators_balance(&self) -> u64 {
         self.validator_balances.iter().sum()
     }

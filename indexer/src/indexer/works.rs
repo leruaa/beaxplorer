@@ -4,13 +4,11 @@ use lighthouse_network::{
     rpc::{BlocksByRangeRequest, BlocksByRootRequest},
     Request,
 };
-use lighthouse_types::{BeaconState, ChainSpec, EthSpec};
+use lighthouse_types::EthSpec;
 use task_executor::TaskExecutor;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{info, warn};
 use types::{
-    attestation::AttestationModelsWithId,
-    block::{BlockExtendedModelWithId, BlockModelWithId},
     block_request::{BlockRequestModelWithId, BlockRequestsMeta},
     good_peer::{GoodPeerModelWithId, GoodPeersMeta},
     persistable::Persistable,
@@ -19,7 +17,6 @@ use types::{
 use crate::{
     db::{BlockByRootRequests, PeerDb, Stores},
     network::augmented_network_service::{NetworkCommand, RequestId},
-    types::{block_state::BlockState, consolidated_block::ConsolidatedBlock},
     work::Work,
     workers::{spawn_persist_block_worker, spawn_persist_epoch_worker},
 };

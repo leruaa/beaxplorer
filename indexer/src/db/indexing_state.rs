@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use lighthouse_types::{BeaconState, ChainSpec, EthSpec, Hash256, Slot};
+use lighthouse_types::{BeaconState, ChainSpec, EthSpec, Hash256, RelativeEpoch, Slot};
 use state_processing::{
-    per_block_processing, per_epoch_processing, per_slot_processing, BlockReplayError,
-    BlockSignatureStrategy, ConsensusContext, VerifyBlockRoot,
+    per_block_processing, per_epoch_processing, per_slot_processing, BlockSignatureStrategy,
+    ConsensusContext, VerifyBlockRoot,
 };
 
 use crate::{
@@ -90,7 +90,7 @@ impl<E: EthSpec> IndexingState<E> {
                 block.epoch(),
                 self.aggregated_epoch_data.clone(),
                 &s,
-                vec![],
+                beacon_state.balances().to_owned().into(),
             )
         });
 
@@ -98,8 +98,13 @@ impl<E: EthSpec> IndexingState<E> {
             block,
             consensus_context
                 .get_proposer_index(&beacon_state, &self.spec)
-                .ok(),
-            vec![],
+                .map_err(|err| format!("Error while processing proposer: {err:?}"))?,
+            beacon_state
+                .get_beacon_committees_at_epoch(RelativeEpoch::Previous)
+                .map_err(|err| format!("Error while processing committees: {err:?}"))?
+                .into_iter()
+                .map(|c| c.into_owned())
+                .collect(),
         );
 
         self.beacon_state = beacon_state;

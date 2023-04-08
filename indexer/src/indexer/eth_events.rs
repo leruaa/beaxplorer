@@ -9,7 +9,7 @@ use tracing::{error, info};
 use crate::{
     db::Stores,
     network::{augmented_network_service::RequestId, event::NetworkEvent},
-    types::{block_state::BlockState, consolidated_block::ConsolidatedBlock},
+    types::block_state::BlockState,
     work::Work,
 };
 
