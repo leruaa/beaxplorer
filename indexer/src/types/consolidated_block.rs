@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
-use lighthouse_types::{
-    BeaconState, ChainSpec, Epoch, Error as BeaconStateError, EthSpec, OwnedBeaconCommittee, Slot,
-};
+use lighthouse_types::{Epoch, EthSpec, OwnedBeaconCommittee, Slot};
 use store::SignedBeaconBlock;
 use types::{
     attestation::{AttestationModel, AttestationModelsWithId},
     block::{BlockExtendedModelWithId, BlockModel, BlockModelWithId},
+    committee::{CommitteeModel, CommitteeModelsWithId},
 };
 
 use super::block_state::BlockState;
@@ -16,14 +15,14 @@ pub struct ConsolidatedBlock<E: EthSpec> {
     block: BlockState<E>,
     epoch: Epoch,
     slot: Slot,
-    proposer_index: Option<u64>,
+    proposer_index: u64,
     committees: Vec<OwnedBeaconCommittee>,
 }
 
 impl<E: EthSpec> ConsolidatedBlock<E> {
     pub fn new(
         block: BlockState<E>,
-        proposer_index: Option<u64>,
+        proposer_index: u64,
         committees: Vec<OwnedBeaconCommittee>,
     ) -> Self {
         let slot = block.slot();
