@@ -4,7 +4,8 @@ use task_executor::TaskExecutor;
 use tracing::{debug, instrument};
 use types::{
     attestation::AttestationModelsWithId,
-    block::{BlockExtendedModelWithId, BlockModelWithId},
+    block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
+    committee::CommitteeModelsWithId,
     persistable::Persistable,
 };
 
@@ -28,4 +29,6 @@ fn persist_block<E: EthSpec>(base_dir: &str, block: ConsolidatedBlock<E>) {
     BlockModelWithId::from(&block).persist(base_dir);
     BlockExtendedModelWithId::from(&block).persist(base_dir);
     AttestationModelsWithId::from(&block).persist(base_dir);
+    CommitteeModelsWithId::from(&block).persist(base_dir);
+    BlocksMeta::new(block.slot().as_usize() + 1).persist(base_dir);
 }
