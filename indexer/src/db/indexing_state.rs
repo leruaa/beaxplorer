@@ -55,7 +55,7 @@ impl<E: EthSpec> IndexingState<E> {
     pub fn process_block(
         &mut self,
         block: BlockState<E>,
-    ) -> Result<(ConsolidatedBlock<E>, Option<ConsolidatedEpoch<E>>), BlockReplayError> {
+    ) -> Result<(ConsolidatedBlock<E>, Option<ConsolidatedEpoch<E>>), String> {
         let mut beacon_state = self.beacon_state.clone();
         let mut consensus_context = ConsensusContext::new(block.slot());
 
@@ -63,7 +63,7 @@ impl<E: EthSpec> IndexingState<E> {
             BlockState::Proposed(beacon_block) => {
                 if block.slot() > 0 {
                     let summary = per_slot_processing(&mut beacon_state, None, &self.spec)
-                        .map_err(BlockReplayError::from)?;
+                        .map_err(|err| format!("Error while processing slot: {err:?}"))?;
 
                     per_block_processing(
                         &mut beacon_state,
@@ -73,7 +73,7 @@ impl<E: EthSpec> IndexingState<E> {
                         &mut consensus_context,
                         &self.spec,
                     )
-                    .map_err(BlockReplayError::from)?;
+                    .map_err(|err| format!("Error while processing block: {err:?}"))?;
 
                     summary
                 } else {
@@ -81,7 +81,7 @@ impl<E: EthSpec> IndexingState<E> {
                 }
             }
             BlockState::Missed(_) => per_slot_processing(&mut beacon_state, None, &self.spec)
-                .map_err(BlockReplayError::from)?,
+                .map_err(|err| format!("Error while processing slot: {err:?}"))?,
             BlockState::Orphaned(_) => None,
         };
 
