@@ -151,10 +151,10 @@ pub fn persistable(input: TokenStream) -> TokenStream {
                 #to_path
             }
 
-            fn dirs(base_dir: &str) -> Vec<String> {
+            fn dirs(base_dir: &str) -> Vec<std::path::PathBuf> {
                 vec![
-                    format!("{}/{}", base_dir, Self::prefix()),
-                    #( format!("{}/{}", base_dir, Self::sortable_field_prefix(#field_names)), )*
+                    std::path::PathBuf::from(format!("{}{}", base_dir, Self::prefix())),
+                    #( std::path::PathBuf::from(format!("{}{}", base_dir, Self::sortable_field_prefix(#field_names))), )*
                 ]
             }
         }

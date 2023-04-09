@@ -1,13 +1,13 @@
-use std::fs;
+use std::{fs, path::PathBuf};
 
 use serde::de::DeserializeOwned;
 
-pub trait ToPath<Id> {
+pub trait ToPath<Id>: Sized {
     fn prefix() -> String;
 
     fn to_path(base_dir: &str, id: &Id) -> String;
 
-    fn dirs(base_dir: &str) -> Vec<String>;
+    fn dirs(base_dir: &str) -> Vec<PathBuf>;
 
     fn sortable_field_prefix(field_name: &str) -> String {
         format!("{}/s/{}", Self::prefix(), field_name)
@@ -15,13 +15,17 @@ pub trait ToPath<Id> {
 
     fn create_dirs(base_dir: &str) -> Result<(), String> {
         Self::dirs(base_dir).into_iter().try_for_each(|d| {
-            fs::create_dir_all(&d).map_err(|err| format!("failed to create '{d}': {err}"))
+            fs::create_dir_all(&d).map_err(|err| format!("Failed to create '{d:?}': {err}"))
         })
     }
 
     fn remove_dirs(base_dir: &str) -> Result<(), String> {
         Self::dirs(base_dir).into_iter().try_for_each(|d| {
-            fs::remove_dir_all(&d).map_err(|err| format!("failed to remove '{d}': {err}"))
+            if d.exists() {
+                fs::remove_dir_all(&d).map_err(|err| format!("Failed to remove '{d:?}': {err}"))
+            } else {
+                Ok(())
+            }
         })
     }
 }
@@ -38,7 +42,7 @@ where
         T::to_path(base_dir, id)
     }
 
-    fn dirs(base_dir: &str) -> Vec<String> {
+    fn dirs(base_dir: &str) -> Vec<PathBuf> {
         T::dirs(base_dir)
     }
 }
@@ -55,7 +59,7 @@ where
         T::to_path(base_dir, id)
     }
 
-    fn dirs<'a>(base_dir: &str) -> Vec<String> {
+    fn dirs(base_dir: &str) -> Vec<PathBuf> {
         T::dirs(base_dir)
     }
 }

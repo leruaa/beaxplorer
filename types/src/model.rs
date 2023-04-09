@@ -1,4 +1,4 @@
-use std::{fs, str::FromStr};
+use std::{fs, path::PathBuf, str::FromStr};
 
 use serde::de::DeserializeOwned;
 
@@ -54,7 +54,7 @@ where
         T::to_path(base_dir, id)
     }
 
-    fn dirs(base_dir: &str) -> Vec<String> {
+    fn dirs(base_dir: &str) -> Vec<PathBuf> {
         T::dirs(base_dir)
     }
 }
