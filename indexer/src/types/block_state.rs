@@ -3,7 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use lighthouse_types::{Epoch, EthSpec, SignedBeaconBlock, Slot};
+use lighthouse_types::{Epoch, EthSpec, Hash256, SignedBeaconBlock, Slot};
 use types::block::BlockExtendedModel;
 
 #[derive(Debug, Clone)]
@@ -16,14 +16,22 @@ pub enum BlockState<E: EthSpec> {
 impl<E: EthSpec> BlockState<E> {
     pub fn slot(&self) -> Slot {
         match self {
-            BlockState::Proposed(block) => block.slot(),
+            BlockState::Proposed(block) | BlockState::Orphaned(block) => block.slot(),
             BlockState::Missed(s) => s.clone(),
-            BlockState::Orphaned(block) => block.slot(),
         }
     }
 
     pub fn epoch(&self) -> Epoch {
         self.slot().epoch(E::slots_per_epoch())
+    }
+
+    pub fn root(&self) -> Option<Hash256> {
+        match self {
+            BlockState::Proposed(block) | BlockState::Orphaned(block) => {
+                Some(block.canonical_root())
+            }
+            _ => None,
+        }
     }
 }
 

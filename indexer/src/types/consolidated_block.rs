@@ -5,6 +5,7 @@ use store::SignedBeaconBlock;
 use types::{
     attestation::{AttestationModel, AttestationModelsWithId},
     block::{BlockExtendedModelWithId, BlockModel, BlockModelWithId},
+    block_root::{BlockRootModel, BlockRootModelWithId},
     committee::{CommitteeModel, CommitteeModelsWithId},
 };
 
@@ -105,6 +106,23 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockExtendedModelWithId {
         BlockExtendedModelWithId {
             id: value.slot.as_u64(),
             model: (&value.block).into(),
+        }
+    }
+}
+
+impl<E: EthSpec> From<&ConsolidatedBlock<E>> for Option<BlockRootModelWithId> {
+    fn from(value: &ConsolidatedBlock<E>) -> Self {
+        if let Some(root) = value.block.root() {
+            let block_root = BlockRootModelWithId {
+                id: format!("{root:?}"),
+                model: BlockRootModel {
+                    slot: value.slot.as_u64(),
+                },
+            };
+
+            Some(block_root)
+        } else {
+            None
         }
     }
 }

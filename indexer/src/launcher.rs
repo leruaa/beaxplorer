@@ -15,6 +15,7 @@ use types::{
     attestation::AttestationModel,
     block::{BlockExtendedModel, BlockModel},
     block_request::{BlockRequestModel, BlockRequestModelWithId, PersistIteratorBlockRequestModel},
+    block_root::BlockRootModel,
     committee::CommitteeModel,
     epoch::{EpochExtendedModel, EpochModel, EpochModelWithId, PersistIteratorEpochModel},
     good_peer::{GoodPeerModel, GoodPeerModelWithId, PersistIteratorGoodPeerModel},
@@ -80,6 +81,7 @@ fn create_dirs(base_dir: &str) -> Result<(), String> {
     EpochExtendedModel::create_dirs(base_dir)?;
     BlockModel::create_dirs(base_dir)?;
     BlockExtendedModel::create_dirs(base_dir)?;
+    BlockRootModel::create_dirs(base_dir)?;
     AttestationModel::create_dirs(base_dir)?;
     CommitteeModel::create_dirs(base_dir)?;
     VoteModel::create_dirs(base_dir)?;
@@ -95,6 +97,7 @@ fn remove_dirs(base_dir: &str) -> Result<(), String> {
     EpochExtendedModel::remove_dirs(base_dir)?;
     BlockModel::remove_dirs(base_dir)?;
     BlockExtendedModel::remove_dirs(base_dir)?;
+    BlockRootModel::remove_dirs(base_dir)?;
     AttestationModel::remove_dirs(base_dir)?;
     CommitteeModel::remove_dirs(base_dir)?;
     VoteModel::remove_dirs(base_dir)?;
