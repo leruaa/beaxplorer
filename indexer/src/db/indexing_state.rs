@@ -56,6 +56,7 @@ impl<E: EthSpec> IndexingState<E> {
         &mut self,
         block: BlockState<E>,
     ) -> Result<(ConsolidatedBlock<E>, Option<ConsolidatedEpoch<E>>), String> {
+        let slot = block.slot();
         let mut beacon_state = self.beacon_state.clone();
         let mut consensus_context = ConsensusContext::new(block.slot());
 
@@ -94,17 +95,23 @@ impl<E: EthSpec> IndexingState<E> {
             )
         });
 
+        let committees = if slot == 0 {
+            vec![]
+        } else {
+            beacon_state
+                .get_beacon_committees_at_slot(slot)
+                .map_err(|err| format!("Error while processing committees: {err:?}"))?
+                .into_iter()
+                .map(|c| c.into_owned())
+                .collect()
+        };
+
         let consolidated_block = ConsolidatedBlock::new(
             block,
             consensus_context
                 .get_proposer_index(&beacon_state, &self.spec)
                 .map_err(|err| format!("Error while processing proposer: {err:?}"))?,
-            beacon_state
-                .get_beacon_committees_at_epoch(RelativeEpoch::Previous)
-                .map_err(|err| format!("Error while processing committees: {err:?}"))?
-                .into_iter()
-                .map(|c| c.into_owned())
-                .collect(),
+            committees,
         );
 
         self.beacon_state = beacon_state;
