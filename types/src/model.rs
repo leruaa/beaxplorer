@@ -1,11 +1,13 @@
-use std::{fs, path::PathBuf, str::FromStr};
+use std::{
+    fs,
+    hash::{Hash, Hasher},
+    path::PathBuf,
+    str::FromStr,
+};
 
 use serde::de::DeserializeOwned;
 
 use crate::path::{FromPath, ToPath};
-
-#[cfg(feature = "indexing")]
-use rmp_serde;
 
 pub struct ModelWithId<Id, M> {
     pub id: Id,
@@ -67,5 +69,25 @@ where
 {
     fn from_path(base_dir: &str, id: &Id) -> Result<M, String> {
         M::from_path(base_dir, id)
+    }
+}
+
+impl<Id, M> PartialEq for ModelWithId<Id, M>
+where
+    Id: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl<Id, M> Eq for ModelWithId<Id, M> where Id: PartialEq {}
+
+impl<Id, M> Hash for ModelWithId<Id, M>
+where
+    Id: Hash,
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
     }
 }

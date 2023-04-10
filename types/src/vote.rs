@@ -12,11 +12,11 @@ pub struct VoteModel {
 }
 
 #[cfg(feature = "indexing")]
-impl<E: lighthouse_types::EthSpec> From<&lighthouse_types::Attestation<E>> for VoteModel {
-    fn from(value: &lighthouse_types::Attestation<E>) -> Self {
+impl From<&lighthouse_types::AttestationData> for VoteModel {
+    fn from(value: &lighthouse_types::AttestationData) -> Self {
         VoteModel {
-            slot: value.data.slot.as_u64(),
-            committee_index: value.data.index,
+            slot: value.slot.as_u64(),
+            committee_index: value.index,
         }
     }
 }
@@ -36,7 +36,11 @@ impl<E: lighthouse_types::EthSpec>
     ) -> Self {
         VoteModelsWithId {
             id: value.0.as_u64(),
-            model: value.1.iter().map(VoteModel::from).collect::<Vec<_>>(),
+            model: value
+                .1
+                .iter()
+                .map(|a| VoteModel::from(&a.data))
+                .collect::<Vec<_>>(),
         }
     }
 }

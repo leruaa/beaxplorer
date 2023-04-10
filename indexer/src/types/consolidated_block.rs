@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use lighthouse_types::{Epoch, EthSpec, OwnedBeaconCommittee, Slot};
+use lighthouse_types::{Attestation, Epoch, EthSpec, OwnedBeaconCommittee, Slot};
 use store::SignedBeaconBlock;
 use types::{
     attestation::{AttestationModel, AttestationModelsWithId},
@@ -41,43 +41,45 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
         self.slot
     }
 
+    pub fn attestations(&self) -> Vec<Attestation<E>> {
+        match &self.block {
+            BlockState::Proposed(block) => block.message().body().attestations().to_vec(),
+            _ => vec![],
+        }
+    }
+
     pub fn get_attestations_count(&self) -> usize {
         match &self.block {
             BlockState::Proposed(block) => block.message().body().attestations().len(),
-            BlockState::Missed(_) => 0,
-            BlockState::Orphaned(_) => 0,
+            _ => 0,
         }
     }
 
     pub fn get_deposits_count(&self) -> usize {
         match &self.block {
             BlockState::Proposed(block) => block.message().body().deposits().len(),
-            BlockState::Missed(_) => 0,
-            BlockState::Orphaned(_) => 0,
+            _ => 0,
         }
     }
 
     pub fn get_voluntary_exits_count(&self) -> usize {
         match &self.block {
             BlockState::Proposed(block) => block.message().body().voluntary_exits().len(),
-            BlockState::Missed(_) => 0,
-            BlockState::Orphaned(_) => 0,
+            _ => 0,
         }
     }
 
     pub fn get_proposer_slashings_count(&self) -> usize {
         match &self.block {
             BlockState::Proposed(block) => block.message().body().proposer_slashings().len(),
-            BlockState::Missed(_) => 0,
-            BlockState::Orphaned(_) => 0,
+            _ => 0,
         }
     }
 
     pub fn get_attester_slashings_count(&self) -> usize {
         match &self.block {
             BlockState::Proposed(block) => block.message().body().attester_slashings().len(),
-            BlockState::Missed(_) => 0,
-            BlockState::Orphaned(_) => 0,
+            _ => 0,
         }
     }
 }

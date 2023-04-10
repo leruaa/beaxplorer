@@ -21,6 +21,7 @@ pub fn build_stores(spec: ChainSpec) -> Arc<Stores<MainnetEthSpec>> {
     let beacon_context = BeaconContext::build(spec).unwrap();
 
     Arc::new(Stores::new(
+        String::from(""),
         Arc::new(network_globals),
         Arc::new(beacon_context),
         vec![],

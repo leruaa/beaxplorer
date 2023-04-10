@@ -25,6 +25,7 @@ clap = "2.34"
 rand = "0.8.5"
 pin-project = "1.0.10"
 parking_lot = "0.12"
+lru = "0.10"
 shared = { path = "../shared" }
 types = { path = "../types", features = ["indexing"] }
 indexer_macro = { path = "../indexer_macro" }

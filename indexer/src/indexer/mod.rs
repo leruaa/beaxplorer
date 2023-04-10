@@ -73,7 +73,7 @@ impl Indexer {
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
                 let stores = Arc::new(Stores::new(base_dir.clone(), network_globals.clone(), beacon_context, block_requests.collect(), good_peers));
 
-                let new_block_send = spawn_persist_block_worker(base_dir.clone(), shutdown_trigger.clone(), &executor);
+                let new_block_send = spawn_persist_block_worker(base_dir.clone(), stores.clone(), shutdown_trigger.clone(), &executor);
 
                 let start_instant = Instant::now();
                 let interval_duration = Duration::from_secs(1);
