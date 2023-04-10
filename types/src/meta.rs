@@ -10,7 +10,7 @@ where
 {
     type MetaType: FromPath<(), Self::MetaType>;
 
-    fn meta(base_dir: &str) -> Self::MetaType {
+    fn meta(base_dir: &str) -> Result<Self::MetaType, String> {
         Self::MetaType::from_path(base_dir, &())
     }
 }

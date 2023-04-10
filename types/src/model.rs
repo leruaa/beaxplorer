@@ -36,7 +36,9 @@ where
                     })
                     .map(|file_name| file_name.replace(".msg", ""))
                     .filter_map(|id| id.replace(".msg", "").parse::<Id>().ok())
-                    .map(move |id| ModelWithId::new(id.clone(), T::from_path(base_path, &id)))
+                    .map(move |id| {
+                        ModelWithId::new(id.clone(), T::from_path(base_path, &id).unwrap())
+                    })
             })
             .map_err(|err| err.to_string())
     }
@@ -63,9 +65,7 @@ impl<Id, M> FromPath<Id, M> for ModelWithId<Id, M>
 where
     M: ToPath<Id> + DeserializeOwned,
 {
-    fn from_path(base_dir: &str, id: &Id) -> M {
-        let path = M::to_path(base_dir, id);
-        let file = std::fs::File::open(path).unwrap();
-        rmp_serde::from_read::<_, M>(file).unwrap()
+    fn from_path(base_dir: &str, id: &Id) -> Result<M, String> {
+        M::from_path(base_dir, id)
     }
 }

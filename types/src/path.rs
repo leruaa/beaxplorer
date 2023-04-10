@@ -65,16 +65,17 @@ where
 }
 
 pub trait FromPath<Id, M> {
-    fn from_path(base_dir: &str, id: &Id) -> M;
+    fn from_path(base_dir: &str, id: &Id) -> Result<M, String>;
 }
 
 impl<Id, M> FromPath<Id, M> for M
 where
     M: ToPath<Id> + DeserializeOwned,
 {
-    fn from_path(base_dir: &str, id: &Id) -> Self {
+    fn from_path(base_dir: &str, id: &Id) -> Result<Self, String> {
         let path = Self::to_path(base_dir, id);
-        let file = std::fs::File::open(path).unwrap();
-        rmp_serde::from_read::<_, M>(file).unwrap()
+        let file = std::fs::File::open(path.clone())
+            .map_err(|err| format!("Can't open '{path}': {err}"))?;
+        rmp_serde::from_read::<_, M>(file).map_err(|err| format!("Can't deserialize {path}: {err}"))
     }
 }
