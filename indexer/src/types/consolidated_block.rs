@@ -112,12 +112,11 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockExtendedModelWithId {
 
 impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockRootModelWithId {
     fn from(value: &ConsolidatedBlock<E>) -> Self {
-        let model = BlockRootModel {
-            slot: value.slot.as_u64(),
-        };
         BlockRootModelWithId {
             id: format!("{:?}", value.block.root()),
-            model: Some(model),
+            model: BlockRootModel {
+                slot: value.slot.as_u64(),
+            },
         }
     }
 }
