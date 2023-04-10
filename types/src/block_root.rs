@@ -9,7 +9,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 #[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
 #[cfg_attr(feature = "wasm", derive(Tsify))]
 #[persistable(id = "String")]
-#[persistable(model = "default")]
+#[persistable(model = "option")]
 #[persistable(prefix = "/blocks/root")]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub struct BlockRootModel {
