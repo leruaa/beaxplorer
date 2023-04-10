@@ -8,12 +8,14 @@ use types::block_request::BlockRequestModelWithId;
 use crate::beacon_chain::beacon_context::BeaconContext;
 
 use self::{
-    block_range_request_state::BlockRangeRequest, indexing_state::IndexingState,
-    latest_slot::LatestSlot, proposed_block_roots::ProposedBlockRoots,
+    block_range_request_state::BlockRangeRequest, block_roots_cache::BlockRootsCache,
+    indexing_state::IndexingState, latest_slot::LatestSlot,
+    proposed_block_roots::ProposedBlockRoots,
 };
 
 mod block_by_root_requests;
 mod block_range_request_state;
+mod block_roots_cache;
 mod indexing_state;
 mod latest_epoch;
 mod latest_slot;
@@ -31,10 +33,12 @@ pub struct Stores<E: EthSpec> {
     block_range_request: RwLock<BlockRangeRequest>,
     block_by_root_requests: RwLock<BlockByRootRequests>,
     peer_db: RwLock<PeerDb<E>>,
+    block_roots_cache: Arc<RwLock<BlockRootsCache>>,
 }
 
 impl<E: EthSpec> Stores<E> {
     pub fn new(
+        base_dir: String,
         network_globals: Arc<NetworkGlobals<E>>,
         beacon_context: Arc<BeaconContext<E>>,
         block_requests: Vec<BlockRequestModelWithId>,
@@ -43,7 +47,7 @@ impl<E: EthSpec> Stores<E> {
         Self {
             latest_slot: RwLock::default(),
             proposed_block_roots: RwLock::default(),
-            indexing_state: RwLock::new(IndexingState::new(beacon_context)),
+            indexing_state: RwLock::new(IndexingState::new(base_dir.clone(), beacon_context)),
             block_range_request: RwLock::default(),
             block_by_root_requests: RwLock::new(BlockByRootRequests::from_block_requests(
                 block_requests,
@@ -52,6 +56,7 @@ impl<E: EthSpec> Stores<E> {
                 network_globals,
                 good_peers.into_iter().collect(),
             )),
+            block_roots_cache: Arc::new(RwLock::new(BlockRootsCache::new(base_dir))),
         }
     }
 
@@ -85,6 +90,10 @@ impl<E: EthSpec> Stores<E> {
 
     pub fn peer_db_mut(&self) -> RwLockWriteGuard<PeerDb<E>> {
         self.peer_db.write()
+    }
+
+    pub fn block_roots_cache(&self) -> Arc<RwLock<BlockRootsCache>> {
+        self.block_roots_cache.clone()
     }
 
     pub fn beacon_state(&self) -> MappedRwLockReadGuard<BeaconState<E>> {
