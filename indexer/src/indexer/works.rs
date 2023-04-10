@@ -17,8 +17,9 @@ use types::{
 use crate::{
     db::{BlockByRootRequests, PeerDb, Stores},
     network::augmented_network_service::{NetworkCommand, RequestId},
+    types::consolidated_block::ConsolidatedBlock,
     work::Work,
-    workers::{spawn_persist_block_worker, spawn_persist_epoch_worker},
+    workers::spawn_persist_epoch_worker,
 };
 
 pub fn handle<E: EthSpec>(
@@ -26,10 +27,11 @@ pub fn handle<E: EthSpec>(
     work: Work<E>,
     stores: &Arc<Stores<E>>,
     network_command_send: &UnboundedSender<NetworkCommand>,
+    new_block_send: &UnboundedSender<ConsolidatedBlock<E>>,
     executor: &TaskExecutor,
 ) {
     match work {
-        Work::PersistBlock(block) => spawn_persist_block_worker(base_dir, block, executor),
+        Work::PersistBlock(block) => new_block_send.send(block).unwrap(),
 
         Work::PersistEpoch(epoch) => spawn_persist_epoch_worker(base_dir, epoch, executor),
 

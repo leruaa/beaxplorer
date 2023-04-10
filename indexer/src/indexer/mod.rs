@@ -18,7 +18,7 @@ use crate::{
     db::Stores,
     network::{
         augmented_network_service::AugmentedNetworkService,
-    },
+    }, workers::spawn_persist_block_worker,
 };
 
 mod eth_events;
@@ -71,7 +71,9 @@ impl Indexer {
                 let (network_event_send, mut network_event_recv) = mpsc::unbounded_channel();
 
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
-                let stores = Arc::new(Stores::new(network_globals.clone(), beacon_context, block_requests.collect(), good_peers));
+                let stores = Arc::new(Stores::new(base_dir.clone(), network_globals.clone(), beacon_context, block_requests.collect(), good_peers));
+
+                let new_block_send = spawn_persist_block_worker(base_dir.clone(), shutdown_trigger.clone(), &executor);
 
                 let start_instant = Instant::now();
                 let interval_duration = Duration::from_secs(1);
@@ -88,7 +90,7 @@ impl Indexer {
                         },
 
                         Some(work) = work_recv.recv() => {
-                            works::handle(base_dir.clone(), work, &stores, &network_command_send, &executor);
+                            works::handle(base_dir.clone(), work, &stores, &network_command_send, &new_block_send, &executor);
                         },
 
                         _ = interval.tick() => {

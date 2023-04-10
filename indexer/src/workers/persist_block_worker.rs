@@ -1,7 +1,11 @@
 use lighthouse_types::EthSpec;
 use task_executor::TaskExecutor;
 
-use tracing::{debug, instrument};
+use tokio::sync::{
+    mpsc::{unbounded_channel, UnboundedSender},
+    watch::Receiver,
+};
+use tracing::{debug, info, instrument};
 use types::{
     attestation::AttestationModelsWithId,
     block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
@@ -14,13 +18,30 @@ use crate::types::consolidated_block::ConsolidatedBlock;
 
 pub fn spawn_persist_block_worker<E: EthSpec>(
     base_dir: String,
-    block: ConsolidatedBlock<E>,
+    mut shutdown_trigger: Receiver<()>,
     executor: &TaskExecutor,
-) {
+) -> UnboundedSender<ConsolidatedBlock<E>> {
+    let (new_block_send, mut new_block_recv) = unbounded_channel();
+
     executor.spawn(
-        async move { persist_block(&base_dir, block) },
+        async move {
+            loop {
+                tokio::select! {
+                    Some(block) = new_block_recv.recv() => {
+                        persist_block::<E>(&base_dir, block);
+                    }
+
+                    _ = shutdown_trigger.changed() => {
+                        info!("Shutting down blocks worker...");
+                        return;
+                    }
+                }
+            }
+        },
         "persist block worker",
     );
+
+    new_block_send
 }
 
 #[instrument(name = "BlockPersist", skip_all)]
