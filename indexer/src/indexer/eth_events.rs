@@ -61,6 +61,11 @@ pub fn handle<E: EthSpec>(
                     .request_peer_if_possible(nonce, peer_id)
                     && stores.indexing_state().can_process_slot(block.slot())
                 {
+                    stores
+                        .block_roots_cache()
+                        .write()
+                        .put(block.canonical_root(), block.slot());
+
                     let processing_result =
                         new_blocks(block.clone(), stores).try_for_each(|block| {
                             match stores.indexing_state_mut().process_block(block) {
@@ -85,7 +90,7 @@ pub fn handle<E: EthSpec>(
                                 .iter()
                                 .map(|a| (a.data.slot, a.data.beacon_block_root))
                                 .dedup()
-                                .filter(|(_, r)| !stores.indexing_state().contains_block_root(r))
+                                .filter(|(_, r)| !stores.block_roots_cache().write().contains(*r))
                                 .for_each(|(slot, root)| {
                                     info!(%slot, "Unknown root");
                                     network_event_send

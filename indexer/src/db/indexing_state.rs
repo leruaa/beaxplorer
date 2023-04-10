@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use lighthouse_types::{BeaconState, ChainSpec, EthSpec, Hash256, RelativeEpoch, Slot};
+use lighthouse_types::{BeaconState, ChainSpec, EthSpec, Slot};
 use state_processing::{
     per_block_processing, per_epoch_processing, per_slot_processing, BlockSignatureStrategy,
     ConsensusContext, VerifyBlockRoot,
@@ -46,10 +46,6 @@ impl<E: EthSpec> IndexingState<E> {
             Some(latest_slot) => slot > latest_slot,
             None => true,
         }
-    }
-
-    pub fn contains_block_root(&self, root: &Hash256) -> bool {
-        self.beacon_state.block_roots().contains(root)
     }
 
     pub fn process_block(
@@ -182,10 +178,5 @@ mod tests {
             at_3.canonical_root(),
             indexing_state.beacon_state.get_block_root(Slot::new(3))
         );
-
-        //assert!(indexing_state.contains_block_root(&at_0.canonical_root()));
-        assert!(indexing_state.contains_block_root(&at_1.canonical_root()));
-        assert!(indexing_state.contains_block_root(&at_2.canonical_root()));
-        assert!(indexing_state.contains_block_root(&at_3.canonical_root()));
     }
 }
