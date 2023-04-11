@@ -7,19 +7,13 @@ use types::block_request::BlockRequestModelWithId;
 
 use crate::beacon_chain::beacon_context::BeaconContext;
 
-use self::{
-    block_range_request_state::BlockRangeRequest, indexing_state::IndexingState,
-    latest_slot::LatestSlot, proposed_block_roots::ProposedBlockRoots,
-};
+use self::{block_range_request_state::BlockRangeRequest, indexing_state::IndexingState};
 
 mod block_by_root_requests;
 mod block_range_request_state;
 mod block_roots_cache;
 mod indexing_state;
-mod latest_epoch;
-mod latest_slot;
 mod peer_db;
-mod proposed_block_roots;
 mod votes_cache;
 
 pub use block_by_root_requests::BlockByRootRequests;
@@ -29,8 +23,6 @@ pub use votes_cache::VotesCache;
 
 #[derive(Debug)]
 pub struct Stores<E: EthSpec> {
-    latest_slot: RwLock<LatestSlot>,
-    proposed_block_roots: RwLock<ProposedBlockRoots>,
     indexing_state: RwLock<IndexingState<E>>,
     block_range_request: RwLock<BlockRangeRequest>,
     block_by_root_requests: RwLock<BlockByRootRequests>,
@@ -47,8 +39,6 @@ impl<E: EthSpec> Stores<E> {
         good_peers: Vec<(PeerId, Multiaddr)>,
     ) -> Self {
         Self {
-            latest_slot: RwLock::default(),
-            proposed_block_roots: RwLock::default(),
             indexing_state: RwLock::new(IndexingState::new(beacon_context)),
             block_range_request: RwLock::default(),
             block_by_root_requests: RwLock::new(BlockByRootRequests::from_block_requests(

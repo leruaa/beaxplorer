@@ -33,7 +33,7 @@ impl VotesCache {
 
     pub fn drain_dirty<F: FnMut(&VoteModelsWithId)>(&mut self, mut f: F) {
         self.dirty_slots.iter().for_each(|s| {
-            if let Some(votes) = self.votes_cache.peek(&s) {
+            if let Some(votes) = self.votes_cache.peek(s) {
                 f(votes)
             }
         });
