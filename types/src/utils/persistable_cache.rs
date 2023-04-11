@@ -23,7 +23,7 @@ where
 impl<P> PersistableCache<P>
 where
     P: FromPath,
-    P::Id: Hash + Eq,
+    P::Id: Hash + Eq + Clone,
 {
     pub fn new(base_dir: String) -> Self {
         Self {
@@ -31,6 +31,14 @@ where
             cache: LruCache::new(NonZeroUsize::new(64).unwrap()),
             dirty: HashSet::new(),
         }
+    }
+
+    pub fn put(&mut self, value: ModelWithId<P::Id, P::Model>) {
+        self.cache.put(value.id.clone(), value);
+    }
+
+    pub fn contains(&self, id: P::Id) -> bool {
+        self.cache.contains(&id)
     }
 }
 

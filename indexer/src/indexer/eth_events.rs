@@ -5,6 +5,7 @@ use lighthouse_network::{NetworkEvent as LighthouseNetworkEvent, Response};
 use lighthouse_types::{EthSpec, SignedBeaconBlock, Slot};
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{error, info};
+use types::block_root::{BlockRootModel, BlockRootModelWithId};
 
 use crate::{
     db::Stores,
@@ -64,7 +65,12 @@ pub fn handle<E: EthSpec>(
                     stores
                         .block_roots_cache()
                         .write()
-                        .put(block.canonical_root(), block.slot());
+                        .put(BlockRootModelWithId {
+                            id: format!("{:?}", block.canonical_root()),
+                            model: BlockRootModel {
+                                slot: block.slot().as_u64(),
+                            },
+                        });
 
                     let processing_result =
                         new_blocks(block.clone(), stores).try_for_each(|block| {
@@ -90,7 +96,12 @@ pub fn handle<E: EthSpec>(
                                 .iter()
                                 .map(|a| (a.data.slot, a.data.beacon_block_root))
                                 .dedup()
-                                .filter(|(_, r)| !stores.block_roots_cache().write().contains(*r))
+                                .filter(|(_, r)| {
+                                    !stores
+                                        .block_roots_cache()
+                                        .write()
+                                        .contains(format!("{r:?}"))
+                                })
                                 .for_each(|(slot, root)| {
                                     info!(%slot, "Unknown root");
                                     network_event_send

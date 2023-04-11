@@ -19,10 +19,7 @@ use types::{
     vote::{VoteModel, VoteModelsWithId},
 };
 
-use crate::{
-    db::{BlockRootsCache, Stores},
-    types::consolidated_block::ConsolidatedBlock,
-};
+use crate::{db::Stores, types::consolidated_block::ConsolidatedBlock};
 
 pub fn spawn_persist_block_worker<E: EthSpec>(
     base_dir: String,
@@ -59,7 +56,7 @@ pub fn spawn_persist_block_worker<E: EthSpec>(
 fn persist_block<E: EthSpec>(
     base_dir: &str,
     block: ConsolidatedBlock<E>,
-    block_roots_cache: Arc<RwLock<BlockRootsCache>>,
+    block_roots_cache: Arc<RwLock<PersistableCache<BlockRootModelWithId>>>,
     votes_cache: &mut PersistableCache<VoteModelsWithId>,
 ) {
     debug!(slot = %block.slot(), "Persisting block");
@@ -72,10 +69,13 @@ fn persist_block<E: EthSpec>(
     BlockRootModelWithId::from(&block).persist(base_dir);
 
     block.attestations().iter().for_each(|attestation| {
-        match block_roots_cache.get(attestation.data.beacon_block_root) {
-            Some(s) => {
+        match block_roots_cache
+            .get_mut(format!("{:?}", attestation.data.beacon_block_root))
+            .ok()
+        {
+            Some(m) => {
                 votes_cache
-                    .get_or_default_mut(s.as_u64())
+                    .get_or_default_mut(m.model.slot)
                     .model
                     .push(VoteModel::from(&attestation.data));
             }

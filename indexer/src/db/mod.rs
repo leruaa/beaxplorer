@@ -3,7 +3,10 @@ use std::sync::Arc;
 use lighthouse_network::{Multiaddr, NetworkGlobals, PeerId};
 use lighthouse_types::{BeaconState, ChainSpec, EthSpec};
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
-use types::block_request::BlockRequestModelWithId;
+use types::{
+    block_request::BlockRequestModelWithId, block_root::BlockRootModelWithId,
+    utils::PersistableCache,
+};
 
 use crate::beacon_chain::beacon_context::BeaconContext;
 
@@ -11,21 +14,18 @@ use self::{block_range_request_state::BlockRangeRequest, indexing_state::Indexin
 
 mod block_by_root_requests;
 mod block_range_request_state;
-mod block_roots_cache;
 mod indexing_state;
 mod peer_db;
 
 pub use block_by_root_requests::BlockByRootRequests;
-pub use block_roots_cache::BlockRootsCache;
 pub use peer_db::PeerDb;
 
-#[derive(Debug)]
 pub struct Stores<E: EthSpec> {
     indexing_state: RwLock<IndexingState<E>>,
     block_range_request: RwLock<BlockRangeRequest>,
     block_by_root_requests: RwLock<BlockByRootRequests>,
     peer_db: RwLock<PeerDb<E>>,
-    block_roots_cache: Arc<RwLock<BlockRootsCache>>,
+    block_roots_cache: Arc<RwLock<PersistableCache<BlockRootModelWithId>>>,
 }
 
 impl<E: EthSpec> Stores<E> {
@@ -46,7 +46,7 @@ impl<E: EthSpec> Stores<E> {
                 network_globals,
                 good_peers.into_iter().collect(),
             )),
-            block_roots_cache: Arc::new(RwLock::new(BlockRootsCache::new(base_dir))),
+            block_roots_cache: Arc::new(RwLock::new(PersistableCache::new(base_dir))),
         }
     }
 
@@ -82,7 +82,7 @@ impl<E: EthSpec> Stores<E> {
         self.peer_db.write()
     }
 
-    pub fn block_roots_cache(&self) -> Arc<RwLock<BlockRootsCache>> {
+    pub fn block_roots_cache(&self) -> Arc<RwLock<PersistableCache<BlockRootModelWithId>>> {
         self.block_roots_cache.clone()
     }
 
