@@ -8,7 +8,7 @@ pub trait WithMeta
 where
     Self: Sized,
 {
-    type MetaType: FromPath<(), Self::MetaType>;
+    type MetaType: FromPath<Id = (), Model = Self::MetaType>;
 
     fn meta(base_dir: &str) -> Result<Self::MetaType, String> {
         Self::MetaType::from_path(base_dir, &())

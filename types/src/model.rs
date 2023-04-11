@@ -22,7 +22,7 @@ impl<Id, M> ModelWithId<Id, M> {
 
 impl<Id, T> ModelWithId<Id, T>
 where
-    T: DeserializeOwned + ToPath<Id>,
+    T: DeserializeOwned + ToPath<Id = Id>,
     Id: FromStr + Clone,
 {
     pub fn iter(base_path: &str) -> Result<impl Iterator<Item = ModelWithId<Id, T>> + '_, String> {
@@ -46,28 +46,33 @@ where
     }
 }
 
-impl<T, Id> ToPath<Id> for ModelWithId<Id, T>
+impl<Id, M> ToPath for ModelWithId<Id, M>
 where
-    T: ToPath<Id>,
+    M: ToPath,
 {
+    type Id = M::Id;
+
     fn prefix() -> String {
-        T::prefix()
+        M::prefix()
     }
 
-    fn to_path(base_dir: &str, id: &Id) -> String {
-        T::to_path(base_dir, id)
+    fn to_path(base_dir: &str, id: &Self::Id) -> String {
+        M::to_path(base_dir, id)
     }
 
     fn dirs(base_dir: &str) -> Vec<PathBuf> {
-        T::dirs(base_dir)
+        M::dirs(base_dir)
     }
 }
 
-impl<Id, M> FromPath<Id, M> for ModelWithId<Id, M>
+impl<M> FromPath for ModelWithId<M::Id, M>
 where
-    M: ToPath<Id> + DeserializeOwned,
+    M: ToPath + DeserializeOwned,
 {
-    fn from_path(base_dir: &str, id: &Id) -> Result<M, String> {
+    type Id = M::Id;
+    type Model = M;
+
+    fn from_path(base_dir: &str, id: &M::Id) -> Result<M, String> {
         M::from_path(base_dir, id)
     }
 }

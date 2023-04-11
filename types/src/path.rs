@@ -2,10 +2,12 @@ use std::{fs, path::PathBuf};
 
 use serde::de::DeserializeOwned;
 
-pub trait ToPath<Id>: Sized {
+pub trait ToPath: Sized {
+    type Id;
+
     fn prefix() -> String;
 
-    fn to_path(base_dir: &str, id: &Id) -> String;
+    fn to_path(base_dir: &str, id: &Self::Id) -> String;
 
     fn dirs(base_dir: &str) -> Vec<PathBuf>;
 
@@ -30,15 +32,17 @@ pub trait ToPath<Id>: Sized {
     }
 }
 
-impl<T, Id> ToPath<Id> for Option<T>
+impl<T> ToPath for Option<T>
 where
-    T: ToPath<Id>,
+    T: ToPath,
 {
+    type Id = T::Id;
+
     fn prefix() -> String {
         T::prefix()
     }
 
-    fn to_path(base_dir: &str, id: &Id) -> String {
+    fn to_path(base_dir: &str, id: &T::Id) -> String {
         T::to_path(base_dir, id)
     }
 
@@ -47,15 +51,17 @@ where
     }
 }
 
-impl<T, Id> ToPath<Id> for Vec<T>
+impl<T> ToPath for Vec<T>
 where
-    T: ToPath<Id>,
+    T: ToPath,
 {
+    type Id = T::Id;
+
     fn prefix() -> String {
         T::prefix()
     }
 
-    fn to_path(base_dir: &str, id: &Id) -> String {
+    fn to_path(base_dir: &str, id: &T::Id) -> String {
         T::to_path(base_dir, id)
     }
 
@@ -64,15 +70,21 @@ where
     }
 }
 
-pub trait FromPath<Id, M> {
-    fn from_path(base_dir: &str, id: &Id) -> Result<M, String>;
+pub trait FromPath {
+    type Id;
+    type Model;
+
+    fn from_path(base_dir: &str, id: &Self::Id) -> Result<Self::Model, String>;
 }
 
-impl<Id, M> FromPath<Id, M> for M
+impl<M> FromPath for M
 where
-    M: ToPath<Id> + DeserializeOwned,
+    M: ToPath + DeserializeOwned,
 {
-    fn from_path(base_dir: &str, id: &Id) -> Result<Self, String> {
+    type Id = M::Id;
+    type Model = M;
+
+    fn from_path(base_dir: &str, id: &Self::Id) -> Result<Self, String> {
         let path = Self::to_path(base_dir, id);
         let file = std::fs::File::open(path.clone())
             .map_err(|err| format!("Can't open '{path}': {err}"))?;

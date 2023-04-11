@@ -10,7 +10,7 @@ pub trait Persistable {
 
 impl<Id, M> Persistable for ModelWithId<Id, M>
 where
-    M: Serialize + ToPath<Id>,
+    M: Serialize + ToPath<Id = Id>,
 {
     fn persist(&self, base_dir: &str) {
         let path = M::to_path(base_dir, &self.id);
@@ -21,7 +21,7 @@ where
 
 impl<T> Persistable for T
 where
-    T: Serialize + ToPath<()>,
+    T: Serialize + ToPath<Id = ()>,
 {
     fn persist(&self, base_dir: &str) {
         let path = T::to_path(base_dir, &());
