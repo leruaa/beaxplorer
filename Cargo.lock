@@ -8434,6 +8434,7 @@ version = "0.1.0"
 dependencies = [
  "indexer_macro",
  "lighthouse_network",
+ "lru 0.10.0",
  "ordered-float",
  "rmp-serde",
  "serde",

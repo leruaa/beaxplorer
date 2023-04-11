@@ -103,7 +103,7 @@ pub fn persistable(input: TokenStream) -> TokenStream {
                             where
                                 Self: Sized,
                             {
-                                let prefix = <Self::Item as crate::path::ToPath<#model_id>>::prefix();
+                                let prefix = <Self::Item as crate::path::ToPath>::prefix();
                                 let prefixed_dir = format!("{}/{}", base_dir, prefix);
                                 #( let mut #heap_fields = crate::utils::FieldBinaryHeap::<#model_id, #heap_types>::new(); )*
 
@@ -126,6 +126,7 @@ pub fn persistable(input: TokenStream) -> TokenStream {
             Some(quote! {
                 pub type #model_with_id = ModelWithId<#model_ty>;
 
+
                 impl crate::persistable::Persistable for Vec<#model_with_id>
                 {
                     fn persist(&self, base_dir: &str) {
@@ -142,7 +143,9 @@ pub fn persistable(input: TokenStream) -> TokenStream {
     };
 
     let expanded = quote! {
-        impl crate::path::ToPath<#model_id> for #model_ident {
+        impl crate::path::ToPath for #model_ident {
+            type Id = #model_id;
+
             fn prefix() -> String {
                 String::from(#prefix)
             }

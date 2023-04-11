@@ -14,12 +14,10 @@ mod block_range_request_state;
 mod block_roots_cache;
 mod indexing_state;
 mod peer_db;
-mod votes_cache;
 
 pub use block_by_root_requests::BlockByRootRequests;
 pub use block_roots_cache::BlockRootsCache;
 pub use peer_db::PeerDb;
-pub use votes_cache::VotesCache;
 
 #[derive(Debug)]
 pub struct Stores<E: EthSpec> {

@@ -15,11 +15,12 @@ use types::{
     block_root::BlockRootModelWithId,
     committee::CommitteeModelsWithId,
     persistable::Persistable,
-    vote::VoteModel,
+    utils::PersistableCache,
+    vote::{VoteModel, VoteModelsWithId},
 };
 
 use crate::{
-    db::{BlockRootsCache, Stores, VotesCache},
+    db::{BlockRootsCache, Stores},
     types::consolidated_block::ConsolidatedBlock,
 };
 
@@ -31,7 +32,7 @@ pub fn spawn_persist_block_worker<E: EthSpec>(
 ) -> UnboundedSender<ConsolidatedBlock<E>> {
     let (new_block_send, mut new_block_recv) = unbounded_channel();
 
-    let mut votes_cache = VotesCache::new(base_dir.clone());
+    let mut votes_cache = PersistableCache::new(base_dir.clone());
 
     executor.spawn(
         async move {
@@ -59,7 +60,7 @@ fn persist_block<E: EthSpec>(
     base_dir: &str,
     block: ConsolidatedBlock<E>,
     block_roots_cache: Arc<RwLock<BlockRootsCache>>,
-    votes_cache: &mut VotesCache,
+    votes_cache: &mut PersistableCache<VoteModelsWithId>,
 ) {
     debug!(slot = %block.slot(), "Persisting block");
     let mut block_roots_cache = block_roots_cache.write();
@@ -74,7 +75,7 @@ fn persist_block<E: EthSpec>(
         match block_roots_cache.get(attestation.data.beacon_block_root) {
             Some(s) => {
                 votes_cache
-                    .get_mut(s)
+                    .get_or_default_mut(s.as_u64())
                     .model
                     .push(VoteModel::from(&attestation.data));
             }
@@ -85,9 +86,7 @@ fn persist_block<E: EthSpec>(
         }
     });
 
-    votes_cache.drain_dirty(|votes| {
-        votes.persist(base_dir);
-    });
+    votes_cache.persist_dirty();
 
     BlocksMeta::new(block.slot().as_usize() + 1).persist(base_dir);
 }
