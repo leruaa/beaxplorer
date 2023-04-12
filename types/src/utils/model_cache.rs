@@ -1,11 +1,12 @@
 use std::{hash::Hash, num::NonZeroUsize};
 
 use lru::LruCache;
-
+use serde::Serialize;
 
 use crate::{
     model::ModelWithId,
-    path::{FromPath},
+    path::{FromPath, ToPath},
+    persistable::Persistable,
 };
 
 #[derive(Debug)]
@@ -78,5 +79,26 @@ where
             id: id.clone(),
             model: P::from_path(&base_dir, &id).unwrap_or_default(),
         })
+    }
+}
+
+impl<P> ModelCache<P>
+where
+    P: FromPath,
+    P::Id: Hash + Eq + Clone,
+    P::Model: Serialize + ToPath<Id = P::Id>,
+{
+    pub fn update_and_persist<F>(&mut self, id: P::Id, f: F) -> Result<(), String>
+    where
+        F: FnOnce(&mut ModelWithId<P::Id, P::Model>),
+    {
+        let base_dir = self.base_dir.clone();
+        let model = self.get_mut(id)?;
+
+        f(model);
+
+        model.persist(&base_dir);
+
+        Ok(())
     }
 }
