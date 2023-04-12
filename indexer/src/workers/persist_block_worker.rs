@@ -29,6 +29,7 @@ pub fn spawn_persist_block_worker<E: EthSpec>(
 ) -> UnboundedSender<ConsolidatedBlock<E>> {
     let (new_block_send, mut new_block_recv) = unbounded_channel();
 
+    let mut extended_blocks_cache = ModelCache::new(base_dir.clone());
     let mut votes_cache = PersistableCache::new(base_dir.clone());
 
     executor.spawn(
@@ -36,7 +37,7 @@ pub fn spawn_persist_block_worker<E: EthSpec>(
             loop {
                 tokio::select! {
                     Some(block) = new_block_recv.recv() => {
-                        persist_block::<E>(&base_dir, block, stores.block_roots_cache(), &mut votes_cache);
+                        persist_block::<E>(&base_dir, block, stores.block_roots_cache(), &mut extended_blocks_cache, &mut votes_cache);
                     }
 
                     _ = shutdown_trigger.changed() => {
@@ -57,6 +58,7 @@ fn persist_block<E: EthSpec>(
     base_dir: &str,
     block: ConsolidatedBlock<E>,
     block_roots_cache: Arc<RwLock<ModelCache<BlockRootModelWithId>>>,
+    extended_blocks_cache: &mut ModelCache<BlockExtendedModelWithId>,
     votes_cache: &mut PersistableCache<VoteModelsWithId>,
 ) {
     debug!(slot = %block.slot(), "Persisting block");
@@ -83,6 +85,19 @@ fn persist_block<E: EthSpec>(
                 "Attestation found with unknown root '{}'",
                 attestation.data.beacon_block_root
             ),
+        }
+    });
+
+    votes_cache.dirty_iter().for_each(|votes| {
+        if let Err(err) = extended_blocks_cache.update_and_persist(votes.id, |block_extended| {
+            if let Some(model) = &mut block_extended.model {
+                model.votes_count = votes.model.len()
+            }
+        }) {
+            error!(
+                "Unable to update votes for extended block '{}': {err}",
+                votes.id
+            );
         }
     });
 

@@ -51,6 +51,11 @@ where
         self.dirty.insert(id.clone());
         self.cache.get_mut(id)
     }
+
+    pub fn dirty_iter(&self) -> impl Iterator<Item = &ModelWithId<P::Id, P::Model>>
+    {
+        self.dirty.iter().filter_map(move |id| self.cache.peek(id))
+    }
 }
 
 impl<P> PersistableCache<P>
