@@ -15,7 +15,7 @@ use types::{
     block_root::BlockRootModelWithId,
     committee::CommitteeModelsWithId,
     persistable::Persistable,
-    utils::PersistableCache,
+    utils::{ModelCache, PersistableCache},
     vote::{VoteModel, VoteModelsWithId},
 };
 
@@ -56,7 +56,7 @@ pub fn spawn_persist_block_worker<E: EthSpec>(
 fn persist_block<E: EthSpec>(
     base_dir: &str,
     block: ConsolidatedBlock<E>,
-    block_roots_cache: Arc<RwLock<PersistableCache<BlockRootModelWithId>>>,
+    block_roots_cache: Arc<RwLock<ModelCache<BlockRootModelWithId>>>,
     votes_cache: &mut PersistableCache<VoteModelsWithId>,
 ) {
     debug!(slot = %block.slot(), "Persisting block");
