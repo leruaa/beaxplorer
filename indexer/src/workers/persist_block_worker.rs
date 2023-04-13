@@ -80,7 +80,7 @@ fn persist_block<E: EthSpec>(
                 .push(VoteModel {
                     slot: attestation.data.slot.as_u64(),
                     committee_index: attestation.data.index,
-                    validators: block.attestation_validators(attestation)
+                    validators: block.attestation_validators(attestation),
                 });
         }
     });
@@ -88,7 +88,7 @@ fn persist_block<E: EthSpec>(
     votes_cache.dirty_iter().for_each(|votes| {
         if let Err(err) = extended_blocks_cache.update_and_persist(votes.id, |block_extended| {
             if let Some(model) = &mut block_extended.model {
-                model.votes_count = votes.model.len()
+                model.votes_count = votes.model.iter().map(|v| v.validators.len()).sum()
             }
         }) {
             error!(
