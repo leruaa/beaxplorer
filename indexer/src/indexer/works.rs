@@ -7,7 +7,7 @@ use lighthouse_network::{
 use lighthouse_types::EthSpec;
 use task_executor::TaskExecutor;
 use tokio::sync::mpsc::UnboundedSender;
-use tracing::{info, warn};
+use tracing::{debug, warn};
 use types::{
     block_request::{BlockRequestModelWithId, BlockRequestsMeta},
     good_peer::{GoodPeerModelWithId, GoodPeersMeta},
@@ -56,7 +56,7 @@ pub fn handle<E: EthSpec>(
                         .map(|s| s.as_u64() + 1)
                         .unwrap_or_default();
 
-                    info!(start_slot, "Send range request");
+                    debug!(start_slot, "Send range request");
 
                     network_command_send
                         .send(NetworkCommand::SendRequest {
@@ -70,7 +70,7 @@ pub fn handle<E: EthSpec>(
                         .unwrap();
                 }
                 None => {
-                    warn!("No peer available to a new range request");
+                    warn!("No peer available for a new range request");
                 }
             }
         }

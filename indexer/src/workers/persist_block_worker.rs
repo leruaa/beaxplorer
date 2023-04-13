@@ -71,20 +71,13 @@ fn persist_block<E: EthSpec>(
     BlockRootModelWithId::from(&block).persist(base_dir);
 
     block.attestations().iter().for_each(|attestation| {
-        match block_roots_cache
-            .get_mut(format!("{:?}", attestation.data.beacon_block_root))
-            .ok()
+        if let Ok(m) =
+            block_roots_cache.get_mut(format!("{:?}", attestation.data.beacon_block_root))
         {
-            Some(m) => {
-                votes_cache
-                    .get_or_default_mut(m.model.slot)
-                    .model
-                    .push(VoteModel::from(&attestation.data));
-            }
-            None => error!(
-                "Attestation found with unknown root '{}'",
-                attestation.data.beacon_block_root
-            ),
+            votes_cache
+                .get_or_default_mut(m.model.slot)
+                .model
+                .push(VoteModel::from(&attestation.data));
         }
     });
 
