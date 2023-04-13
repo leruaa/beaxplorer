@@ -22,7 +22,7 @@ pub struct AugmentedNetworkService<E: EthSpec> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RequestId {
-    Range(u64),
+    Range,
     Block(Hash256),
 }
 
@@ -181,7 +181,7 @@ impl<E: EthSpec> AugmentedNetworkService<E> {
 
     fn send_request(&mut self, peer_id: PeerId, request_id: RequestId, request: Request) {
         match request_id {
-            RequestId::Range(nonce) => debug!(to = %peer_id, nonce, "Send range request"),
+            RequestId::Range => debug!(to = %peer_id, "Send range request"),
             RequestId::Block(root) => debug!(to = %peer_id, %root, "Send block by root request"),
         }
 

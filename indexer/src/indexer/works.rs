@@ -48,10 +48,6 @@ pub fn handle<E: EthSpec>(
         Work::PersistAllGoodPeers => persist_good_peers(&base_dir, &stores.peer_db()),
 
         Work::SendRangeRequest(to) => {
-            let mut block_range_request = stores.block_range_request_mut();
-
-            block_range_request.set_to_awaiting_peer();
-
             match to.or_else(|| stores.peer_db().get_best_connected_peer()) {
                 Some(to) => {
                     let start_slot = stores
@@ -65,7 +61,7 @@ pub fn handle<E: EthSpec>(
                     network_command_send
                         .send(NetworkCommand::SendRequest {
                             peer_id: to,
-                            request_id: RequestId::Range(block_range_request.increment_nonce()),
+                            request_id: RequestId::Range,
                             request: Box::new(Request::BlocksByRange(BlocksByRangeRequest {
                                 start_slot,
                                 count: 32,

@@ -24,7 +24,7 @@ pub fn handle<E: EthSpec>(
                 info!(peer = %peer_id, "Good peer connected");
             }
 
-            if !stores.block_range_request().is_requesting() {
+            if !stores.block_range_requests().is_requesting() {
                 work_send
                     .send(Work::SendRangeRequest(Some(peer_id)))
                     .unwrap();
@@ -42,9 +42,13 @@ pub fn handle<E: EthSpec>(
                 });
         }
         NetworkEvent::PeerDisconnected(peer_id) => {
-            if stores.block_range_request().matches_peer(peer_id) {
+            let mut block_range_requests = stores.block_range_requests_mut();
+
+            if block_range_requests.request_terminated(&peer_id) {
                 debug!(to = %peer_id, "Range request cancelled");
-                work_send.send(Work::SendRangeRequest(None)).unwrap();
+                if !block_range_requests.is_requesting() {
+                    work_send.send(Work::SendRangeRequest(None)).unwrap();
+                }
             }
 
             stores
@@ -56,7 +60,10 @@ pub fn handle<E: EthSpec>(
         }
         NetworkEvent::RangeRequestSuccedeed => {
             debug!("Range request succedeed");
-            work_send.send(Work::SendRangeRequest(None)).unwrap();
+
+            if !stores.block_range_requests().is_requesting() {
+                work_send.send(Work::SendRangeRequest(None)).unwrap();
+            }
         }
         NetworkEvent::RangeRequestFailed(peer_id) => {
             network_command_send

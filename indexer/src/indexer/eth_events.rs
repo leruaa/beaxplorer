@@ -34,7 +34,7 @@ pub fn handle<E: EthSpec>(
         }
 
         LighthouseNetworkEvent::RPCFailed {
-            id: RequestId::Range(_),
+            id: RequestId::Range,
             peer_id,
         } => {
             network_event_send
@@ -52,26 +52,26 @@ pub fn handle<E: EthSpec>(
         }
 
         LighthouseNetworkEvent::ResponseReceived {
-            id: RequestId::Range(nonce),
+            id: RequestId::Range,
             response: Response::BlocksByRange(block),
             peer_id,
         } => {
-            if let Some(block) = block {
-                if stores
-                    .block_range_request_mut()
-                    .request_peer_if_possible(nonce, peer_id)
-                    && stores.indexing_state().can_process_slot(block.slot())
-                {
-                    stores
-                        .block_roots_cache()
-                        .write()
-                        .put(BlockRootModelWithId {
-                            id: format!("{:?}", block.canonical_root()),
-                            model: BlockRootModel {
-                                slot: block.slot().as_u64(),
-                            },
-                        });
+            let mut block_range_requests = stores.block_range_requests_mut();
 
+            if let Some(block) = block {
+                stores
+                    .block_roots_cache()
+                    .write()
+                    .put(BlockRootModelWithId {
+                        id: format!("{:?}", block.canonical_root()),
+                        model: BlockRootModel {
+                            slot: block.slot().as_u64(),
+                        },
+                    });
+
+                let block = block_range_requests.next_or(block);
+
+                if Some(block.slot()) > stores.indexing_state().latest_slot() {
                     let processing_result =
                         new_blocks(block.clone(), stores).try_for_each(|block| {
                             match stores.indexing_state_mut().process_block(block) {
@@ -103,7 +103,7 @@ pub fn handle<E: EthSpec>(
                                         .contains(format!("{r:?}"))
                                 })
                                 .for_each(|(slot, root)| {
-                                    info!(%slot, "Unknown root");
+                                    info!(%slot, %root, "Unknown root while processing block {}", block.slot());
                                     network_event_send
                                         .send(NetworkEvent::UnknownBlockRoot(slot, root))
                                         .unwrap();
@@ -112,8 +112,8 @@ pub fn handle<E: EthSpec>(
                         Err(err) => error!("{err:?}"),
                     }
                 }
-            } else if stores.block_range_request().matches_nonce(nonce) {
-                // A block range response has finished
+            } else if block_range_requests.request_terminated(&peer_id) {
+                // The is no more active range requests
                 network_event_send
                     .send(NetworkEvent::RangeRequestSuccedeed)
                     .unwrap();
@@ -182,7 +182,6 @@ mod tests {
 
     fn handle_new_block<E: EthSpec>(
         peer: PeerId,
-        nonce: u64,
         block: SignedBeaconBlock<E>,
         network_event_send: &UnboundedSender<NetworkEvent<E>>,
         work_send: &UnboundedSender<Work<E>>,
@@ -191,7 +190,7 @@ mod tests {
         handle(
             LighthouseNetworkEvent::ResponseReceived {
                 peer_id: peer,
-                id: RequestId::Range(nonce),
+                id: RequestId::Range,
                 response: Response::BlocksByRange(Some(Arc::new(block))),
             },
             network_event_send,
@@ -214,7 +213,6 @@ mod tests {
 
         handle_new_block(
             peer1,
-            1,
             block.clone(),
             &network_event_send,
             &work_send,
@@ -222,7 +220,6 @@ mod tests {
         );
         handle_new_block(
             peer2,
-            2,
             block.clone(),
             &network_event_send,
             &work_send,
@@ -236,8 +233,6 @@ mod tests {
 
         assert!(matches!(ev1.unwrap(), NetworkEvent::NewBlock(_, p) if p == peer1));
         assert_eq!(stores.indexing_state().latest_slot(), Some(Slot::new(0)));
-        assert!(stores.block_range_request().matches_nonce(1));
-        assert!(stores.block_range_request().matches_peer(peer1));
         assert!(ev2.is_none());
     }
 

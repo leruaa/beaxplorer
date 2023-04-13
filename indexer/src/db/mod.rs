@@ -9,10 +9,10 @@ use types::{
 
 use crate::beacon_chain::beacon_context::BeaconContext;
 
-use self::{block_range_request_state::BlockRangeRequest, indexing_state::IndexingState};
+use self::{block_range_requests::BlockRangeRequests, indexing_state::IndexingState};
 
 mod block_by_root_requests;
-mod block_range_request_state;
+mod block_range_requests;
 mod indexing_state;
 mod peer_db;
 
@@ -21,7 +21,7 @@ pub use peer_db::PeerDb;
 
 pub struct Stores<E: EthSpec> {
     indexing_state: RwLock<IndexingState<E>>,
-    block_range_request: RwLock<BlockRangeRequest>,
+    block_range_requests: RwLock<BlockRangeRequests<E>>,
     block_by_root_requests: RwLock<BlockByRootRequests>,
     peer_db: RwLock<PeerDb<E>>,
     block_roots_cache: Arc<RwLock<ModelCache<BlockRootModelWithId>>>,
@@ -37,7 +37,7 @@ impl<E: EthSpec> Stores<E> {
     ) -> Self {
         Self {
             indexing_state: RwLock::new(IndexingState::new(beacon_context)),
-            block_range_request: RwLock::default(),
+            block_range_requests: RwLock::default(),
             block_by_root_requests: RwLock::new(BlockByRootRequests::from_block_requests(
                 block_requests,
             )),
@@ -57,12 +57,12 @@ impl<E: EthSpec> Stores<E> {
         self.indexing_state.write()
     }
 
-    pub fn block_range_request(&self) -> RwLockReadGuard<BlockRangeRequest> {
-        self.block_range_request.read()
+    pub fn block_range_requests(&self) -> RwLockReadGuard<BlockRangeRequests<E>> {
+        self.block_range_requests.read()
     }
 
-    pub fn block_range_request_mut(&self) -> RwLockWriteGuard<BlockRangeRequest> {
-        self.block_range_request.write()
+    pub fn block_range_requests_mut(&self) -> RwLockWriteGuard<BlockRangeRequests<E>> {
+        self.block_range_requests.write()
     }
 
     pub fn block_by_root_requests(&self) -> RwLockReadGuard<BlockByRootRequests> {
