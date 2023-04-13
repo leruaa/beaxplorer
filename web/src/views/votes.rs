@@ -5,6 +5,7 @@ use types::vote::VoteModel;
 pub struct VoteView {
     pub slot: u64,
     pub committee_index: u64,
+    pub validators: Vec<usize>,
 }
 
 impl From<VoteModel> for VoteView {
@@ -12,6 +13,7 @@ impl From<VoteModel> for VoteView {
         VoteView {
             slot: model.slot,
             committee_index: model.committee_index,
+            validators: model.validators,
         }
     }
 }
