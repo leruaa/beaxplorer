@@ -77,7 +77,11 @@ fn persist_block<E: EthSpec>(
             votes_cache
                 .get_or_default_mut(m.model.slot)
                 .model
-                .push(VoteModel::from(&attestation.data));
+                .push(VoteModel {
+                    slot: attestation.data.slot.as_u64(),
+                    committee_index: attestation.data.index,
+                    validators: block.attestation_validators(attestation)
+                });
         }
     });
 

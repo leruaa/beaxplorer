@@ -60,26 +60,13 @@ const Votes = ({ app, slot }) => {
   return <>
     {
       votes.map((v, i) => (
-        <Vote app key={i} vote={v} />
+        <Vote key={i} vote={v} />
       ))
     }
   </>
 }
 
-const Vote = ({ app, vote }) => {
-  const { isLoading, error, data: committees } = useQuery(
-    ["committees", vote.slot],
-    () => getCommittees(app, BigInt(vote.slot))
-  );
-
-  const validators = useMemo(() => committees ? committees[vote.committee_index].validators : undefined, [committees]);
-
-  if (isLoading) {
-    return (
-      <p>Loading...</p>
-    );
-  }
-
+const Vote = ({ vote }) => {
   return (
     <dl>
       <dt>Slot</dt>
@@ -89,7 +76,7 @@ const Vote = ({ app, vote }) => {
       <dd>{vote.committee_index}</dd>
 
       <dt>Validators</dt>
-      <dd className="flex flex-wrap"><Validators validators={validators} /></dd>
+      <dd className="flex flex-wrap"><Validators validators={vote.validators} /></dd>
     </dl>
   );
 }

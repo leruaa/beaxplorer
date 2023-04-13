@@ -82,6 +82,28 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
             _ => 0,
         }
     }
+
+    pub fn attestation_validators(&self, attestation: &Attestation<E>) -> Vec<usize> {
+        let committee = &self
+            .committees
+            .iter()
+            .find(|c| c.index == attestation.data.index)
+            .expect("The committee should exist")
+            .committee;
+
+        attestation
+            .aggregation_bits
+            .iter()
+            .enumerate()
+            .filter_map(|(index, active)| {
+                if active {
+                    committee.get(index).copied()
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
 }
 
 impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockModelWithId {

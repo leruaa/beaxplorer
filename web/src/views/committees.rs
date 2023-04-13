@@ -4,7 +4,7 @@ use types::committee::CommitteeModel;
 #[derive(Serialize, Debug, Clone)]
 pub struct CommitteeView {
     pub index: u64,
-    pub validators: Vec<u64>,
+    pub validators: Vec<usize>,
 }
 
 impl From<CommitteeModel> for CommitteeView {
