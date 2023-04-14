@@ -2,7 +2,7 @@
   "source": "src/index.html",
   "scripts": {
     "dev": "next dev",
-    "dev-code-server": "NEXT_PUBLIC_HOST=https://code.aurel.cloud/proxy/3000 ASSET_PREFIX=/proxy/3000 next dev -H 0.0.0.0 -p 3000",
+    "dev-code-server": "NEXT_PUBLIC_HOST=https://3000.code.aurel.cloud/ next dev",
     "build": "next build",
     "wasm": "wasm-pack build",
     "start": "next start",
