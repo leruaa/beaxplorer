@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, Table, useReactTable } from "@tanstack/react-table";
 import { useQuery } from "@tanstack/react-query";
 import { App, getRangeAsNumbers, getRangeAsStrings, getDefaultRange } from "../pkg/web";

@@ -5,27 +5,31 @@ import cx from 'classnames';
 import Breadcrumb from "../../components/breadcrumb";
 import TabSelector from '../../components/tab-selector';
 import { useQuery } from '@tanstack/react-query';
-import { App, getAttestations, getBlockExtended, getCommittees, getVotes } from '../../pkg/web';
+import { App, AttestationView, getAttestations, getBlockExtended, getCommittees, getVotes } from '../../pkg/web';
 
-const Validators = ({ validators, aggregation_bits = [] }) => {
-  if (!validators) {
+const Validators = (props: { validators: number[], aggregationBits?: boolean[] }) => {
+  if (!props.validators) {
     return (
       <p>Loading...</p>
     );
   }
 
-  return validators.map((v, i) => (
-    <span key={v} className={cx({ 'w-16': true, "text-gray-400": aggregation_bits.length > 0 && !aggregation_bits[i] })}>
-      {v}
-    </span>
-  ));
+  let validators = props.validators.map(
+    (v, i) => (
+      <span key={v} className={cx({ 'w-16': true, "text-gray-400": props.aggregationBits && props.aggregationBits.length > 0 && !props.aggregationBits[i] })}>
+        {v}
+      </span>
+    )
+  );
+
+  return <>{validators}</>
 }
 
-const Committees = ({ app, slot }) => {
+const Committees = (props: { app: App, slot: string }) => {
   debugger;
   const { isLoading, error, data: committees } = useQuery(
-    ["committees", slot],
-    () => getCommittees(app, BigInt(slot))
+    ["committees", props.slot],
+    () => getCommittees(props.app, BigInt(props.slot))
   );
   if (isLoading) {
     return (
@@ -45,10 +49,10 @@ const Committees = ({ app, slot }) => {
   </>
 }
 
-const Votes = ({ app, slot }) => {
+const Votes = (props: { app: App, slot: string }) => {
   const { isLoading, error, data: votes } = useQuery(
-    ["votes", slot],
-    () => getVotes(app, BigInt(slot))
+    ["votes", props.slot],
+    () => getVotes(props.app, BigInt(props.slot))
   );
 
   if (isLoading) {
@@ -81,10 +85,10 @@ const Vote = ({ vote }) => {
   );
 }
 
-const Attestations = ({ app, slot }) => {
+const Attestations = (props: { app: App, slot: string }) => {
   const { isLoading, error, data: attestations } = useQuery(
-    ["attestations", slot],
-    () => getAttestations(app, BigInt(slot))
+    ["attestations", props.slot],
+    () => getAttestations(props.app, BigInt(props.slot))
   );
 
   if (isLoading) {
@@ -98,17 +102,17 @@ const Attestations = ({ app, slot }) => {
       attestations.map((a, i) => (
         <div key={i}>
           <h3>Attestation {i}</h3>
-          <Attestation app={app} attestation={a} />
+          <Attestation app={props.app} attestation={a} />
         </div>
       ))
     }
   </>
 }
 
-const Attestation = ({ app, attestation }) => {
+const Attestation = (props: { app: App, attestation: AttestationView }) => {
   const { isLoading, error, data: committees } = useQuery(
-    ["committees", attestation.slot],
-    () => getCommittees(app, BigInt(attestation.slot))
+    ["committees", props.attestation.slot],
+    () => getCommittees(props.app, BigInt(props.attestation.slot))
   );
 
   if (isLoading) {
@@ -120,16 +124,16 @@ const Attestation = ({ app, attestation }) => {
   return (
     <dl>
       <dt>Slot</dt>
-      <dd>{attestation.slot}</dd>
+      <dd>{props.attestation.slot}</dd>
 
       <dt>Committee index</dt>
-      <dd>{attestation.committee_index}</dd>
+      <dd>{props.attestation.committeeIndex}</dd>
 
       <dt>Validators</dt>
       <dd className="flex flex-wrap">
         <Validators
-          validators={committees[attestation.committee_index].validators}
-          aggregation_bits={attestation.aggregation_bits} />
+          validators={committees[props.attestation.committeeIndex].validators}
+          aggregationBits={props.attestation.aggregationBits} />
       </dd>
 
     </dl>

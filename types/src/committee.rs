@@ -1,12 +1,16 @@
 use indexer_macro::Persistable;
 use serde::Deserialize;
 use serde::Serialize;
+#[cfg(feature = "wasm")]
+use tsify::Tsify;
 
 use crate::model::ModelWithId;
 
 #[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(feature = "wasm", derive(Tsify))]
 #[persistable(model = "collection")]
 #[persistable(prefix = "/blocks/c")]
+#[serde(rename_all = "camelCase")]
 pub struct CommitteeModel {
     pub index: u64,
     pub validators: Vec<usize>,

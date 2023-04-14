@@ -1,7 +1,10 @@
 use serde::Serialize;
+use tsify::Tsify;
 use types::attestation::AttestationModel;
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Tsify, Debug, Clone)]
+#[tsify(into_wasm_abi)]
+#[serde(rename_all = "camelCase")]
 pub struct AttestationView {
     pub slot: u64,
     pub aggregation_bits: Vec<bool>,

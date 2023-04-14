@@ -1,7 +1,10 @@
 use serde::Serialize;
+use tsify::Tsify;
 use types::vote::VoteModel;
 
-#[derive(Serialize, Debug, Clone)]
+#[derive(Serialize, Tsify, Debug, Clone)]
+#[tsify(into_wasm_abi)]
+#[serde(rename_all = "camelCase")]
 pub struct VoteView {
     pub slot: u64,
     pub committee_index: u64,

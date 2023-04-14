@@ -50,6 +50,7 @@ pub struct BlockExtendedModel {
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
 #[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(feature = "wasm", derive(Tsify))]
 #[persistable(prefix = "/blocks/meta")]
 pub struct BlocksMeta {
     pub count: usize,
