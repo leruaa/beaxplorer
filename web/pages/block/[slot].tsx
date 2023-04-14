@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router'
-import { TabPanel, useTabs } from 'react-headless-tabs';
+import { Tab } from '@headlessui/react'
 import cx from 'classnames';
 import Breadcrumb from "../../components/breadcrumb";
 import TabSelector from '../../components/tab-selector';
@@ -26,7 +26,6 @@ const Validators = (props: { validators: number[], aggregationBits?: boolean[] }
 }
 
 const Committees = (props: { app: App, slot: string }) => {
-  debugger;
   const { isLoading, error, data: committees } = useQuery(
     ["committees", props.slot],
     () => getCommittees(props.app, BigInt(props.slot))
@@ -156,13 +155,6 @@ export default () => {
     () => getBlockExtended(app, BigInt(slot))
   );
 
-  const [selectedTab, setSelectedTab] = useTabs([
-    'overview',
-    'committees',
-    'votes',
-    'attestations'
-  ]);
-
   if (error) {
     return (
       <p>Failed to load {error}</p>
@@ -175,58 +167,33 @@ export default () => {
       <section className="container mx-auto">
         <div className="tabular-data">
           <p>Showing block</p>
-
-          <nav>
-            <TabSelector
-              isActive={selectedTab === 'overview'}
-              onClick={() => setSelectedTab('overview')}
-            >
-              Overview
-            </TabSelector>
-
-            <TabSelector
-              isActive={selectedTab === 'committees'}
-              onClick={() => setSelectedTab('committees')}
-            >
-              Committees
-            </TabSelector>
-
-
-            <TabSelector
-              isActive={selectedTab === 'votes'}
-              onClick={() => setSelectedTab('votes')}
-            >
-              Votes ({block && block.votes_count})
-            </TabSelector>
-
-            <TabSelector
-              isActive={selectedTab === 'attestations'}
-              onClick={() => setSelectedTab('attestations')}
-            >
-              Attestations ({block && block.attestations_count})
-            </TabSelector>
-          </nav>
-
-          <TabPanel hidden={selectedTab !== 'overview'}>
-            <dl>
-              <dt>Epoch</dt>
-              <dd>{block && block.epoch}</dd>
-              <dt>Slot</dt>
-              <dd>{block && block.slot}</dd>
-            </dl>
-          </TabPanel>
-
-          <TabPanel hidden={selectedTab !== 'committees'}>
-            <Committees app={app} slot={slot} />
-          </TabPanel>
-
-          <TabPanel hidden={selectedTab !== 'votes'}>
-            <Votes app={app} slot={slot} />
-          </TabPanel>
-
-          <TabPanel hidden={selectedTab !== 'attestations'}>
-            <Attestations app={app} slot={slot} />
-          </TabPanel>
+          <Tab.Group>
+            <Tab.List>
+              <Tab>Overview</Tab>
+              <Tab>Committees</Tab>
+              <Tab>Votes ({block && block.votes_count})</Tab>
+              <Tab>Attestations ({block && block.attestations_count})</Tab>
+            </Tab.List>
+            <Tab.Panels>
+              <Tab.Panel>
+                <dl>
+                  <dt>Epoch</dt>
+                  <dd>{block && block.epoch}</dd>
+                  <dt>Slot</dt>
+                  <dd>{block && block.slot}</dd>
+                </dl>
+              </Tab.Panel>
+              <Tab.Panel>
+                <Committees app={app} slot={slot} />
+              </Tab.Panel>
+              <Tab.Panel>
+                <Votes app={app} slot={slot} />
+              </Tab.Panel>
+              <Tab.Panel>
+                <Attestations app={app} slot={slot} />
+              </Tab.Panel>
+            </Tab.Panels>
+          </Tab.Group>
         </div>
       </section>
     </>
