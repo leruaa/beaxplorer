@@ -31,7 +31,7 @@ export default (props) => {
     blockRequestsColumnHelper.accessor("root", {
       header: "Root",
       cell: props =>
-        <Root className="font-mono" value={props.getValue()} />
+        <Root value={props.getValue()} />
     }),
     blockRequestsColumnHelper.accessor("possibleSlots", {
       header: "Possible slots",

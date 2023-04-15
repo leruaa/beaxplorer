@@ -6,6 +6,8 @@ import Breadcrumb from "../../components/breadcrumb";
 import TabSelector from '../../components/tab-selector';
 import { useQuery } from '@tanstack/react-query';
 import { App, AttestationView, getAttestations, getBlockExtended, getCommittees, getVotes } from '../../pkg/web';
+import Root from '../../components/root';
+import Link from 'next/link';
 
 const Validators = (props: { validators: number[], aggregationBits?: boolean[] }) => {
   if (!props.validators) {
@@ -135,6 +137,23 @@ const Attestation = (props: { app: App, attestation: AttestationView }) => {
           aggregationBits={props.attestation.aggregationBits} />
       </dd>
 
+      <dt>Beacon block root</dt>
+      <dd><span className="font-mono">{props.attestation.beaconBlockRoot}</span></dd>
+
+      <dt>Source</dt>
+      <dd>
+        Epoch <Link href={`/epoch/${props.attestation.sourceEpoch}`}>{props.attestation.sourceEpoch}</Link>
+        &nbsp;(<span className="font-mono">{props.attestation.sourceRoot}</span>)
+      </dd>
+
+      <dt>Target</dt>
+      <dd>
+        Epoch <Link href={`/epoch/${props.attestation.targetEpoch}`}>{props.attestation.targetEpoch}</Link>
+        &nbsp;(<span className="font-mono">{props.attestation.targetRoot}</span>)
+      </dd>
+
+      <dt>Signature</dt>
+      <dd><span className="font-mono break-words">{props.attestation.signature}</span></dd>
     </dl>
   );
 }
