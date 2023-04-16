@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/router'
-import { Tab } from '@headlessui/react'
+import * as Tabs from '@radix-ui/react-tabs';
 import cx from 'classnames';
 import Breadcrumb from "../../components/breadcrumb";
 import TabSelector from '../../components/tab-selector';
@@ -186,33 +186,31 @@ export default () => {
       <section className="container mx-auto">
         <div className="tabular-data">
           <p>Showing block</p>
-          <Tab.Group>
-            <Tab.List>
-              <Tab>Overview</Tab>
-              <Tab>Committees</Tab>
-              <Tab>Votes ({block && block.votes_count})</Tab>
-              <Tab>Attestations ({block && block.attestations_count})</Tab>
-            </Tab.List>
-            <Tab.Panels>
-              <Tab.Panel>
-                <dl>
-                  <dt>Epoch</dt>
-                  <dd>{block && block.epoch}</dd>
-                  <dt>Slot</dt>
-                  <dd>{block && block.slot}</dd>
-                </dl>
-              </Tab.Panel>
-              <Tab.Panel>
-                <Committees app={app} slot={slot} />
-              </Tab.Panel>
-              <Tab.Panel>
-                <Votes app={app} slot={slot} />
-              </Tab.Panel>
-              <Tab.Panel>
-                <Attestations app={app} slot={slot} />
-              </Tab.Panel>
-            </Tab.Panels>
-          </Tab.Group>
+          <Tabs.Root defaultValue="overview">
+            <Tabs.List>
+              <Tabs.Trigger value="overview">Overview</Tabs.Trigger >
+              <Tabs.Trigger value="committees">Committees</Tabs.Trigger >
+              <Tabs.Trigger value="votes">Votes ({block && block.votes_count})</Tabs.Trigger >
+              <Tabs.Trigger value="attestations">Attestations ({block && block.attestations_count})</Tabs.Trigger >
+            </Tabs.List>
+            <Tabs.Content value="overview">
+              <dl>
+                <dt>Epoch</dt>
+                <dd>{block && block.epoch}</dd>
+                <dt>Slot</dt>
+                <dd>{block && block.slot}</dd>
+              </dl>
+            </Tabs.Content>
+            <Tabs.Content value="committees">
+              <Committees app={app} slot={slot} />
+            </Tabs.Content>
+            <Tabs.Content value="votes">
+              <Votes app={app} slot={slot} />
+            </Tabs.Content>
+            <Tabs.Content value="attestations">
+              <Attestations app={app} slot={slot} />
+            </Tabs.Content>
+          </Tabs.Root>
         </div>
       </section>
     </>
