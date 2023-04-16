@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { App, AttestationView, getAttestations, getBlockExtended, getCommittees, getVotes } from '../../pkg/web';
 import Root from '../../components/root';
 import Link from 'next/link';
+import AggregationBits from '../../components/aggregation-bits';
 
 const Validators = (props: { validators: number[], aggregationBits?: boolean[] }) => {
   if (!props.validators) {
@@ -129,6 +130,11 @@ const Attestation = (props: { app: App, attestation: AttestationView }) => {
 
       <dt>Committee index</dt>
       <dd>{props.attestation.committeeIndex}</dd>
+
+      <dt>Aggregation bits</dt>
+      <dd className="flex flex-wrap">
+        <AggregationBits bits={props.attestation.aggregationBits} />
+      </dd>
 
       <dt>Validators</dt>
       <dd className="flex flex-wrap">
