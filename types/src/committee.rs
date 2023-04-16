@@ -21,7 +21,7 @@ impl From<&lighthouse_types::OwnedBeaconCommittee> for CommitteeModel {
     fn from(value: &lighthouse_types::OwnedBeaconCommittee) -> Self {
         CommitteeModel {
             index: value.index,
-            validators: value.committee.iter().map(|i| *i).collect(),
+            validators: value.committee.to_vec(),
         }
     }
 }

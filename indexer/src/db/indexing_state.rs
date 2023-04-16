@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use lighthouse_types::{BeaconState, ChainSpec, EthSpec, Slot};
+use lighthouse_types::{BeaconState, ChainSpec, EthSpec, RelativeEpoch, Slot};
 use state_processing::{
     per_block_processing, per_epoch_processing, per_slot_processing, BlockSignatureStrategy,
     ConsensusContext, VerifyBlockRoot,
@@ -92,7 +92,14 @@ impl<E: EthSpec> IndexingState<E> {
         });
 
         let committees = if slot == 0 {
-            vec![]
+            beacon_state
+                .committee_cache(RelativeEpoch::Previous)
+                .map_err(|_| "The genesis committee cache has not been initialized".to_string())?
+                .get_beacon_committees_at_slot(slot)
+                .map_err(|_| "The committees at slot 0 are not in the cache".to_string())?
+                .into_iter()
+                .map(|c| c.into_owned())
+                .collect()
         } else {
             beacon_state
                 .get_beacon_committees_at_slot(slot)

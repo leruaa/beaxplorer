@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use lighthouse_types::EthSpec;
 use parking_lot::RwLock;
+use state_processing::common::get_attesting_indices;
 use task_executor::TaskExecutor;
 
 use tokio::sync::{
@@ -37,7 +38,15 @@ pub fn spawn_persist_block_worker<E: EthSpec>(
             loop {
                 tokio::select! {
                     Some(block) = new_block_recv.recv() => {
-                        persist_block::<E>(&base_dir, block, stores.block_roots_cache(), &mut extended_blocks_cache, &mut votes_cache);
+                        if let Err(err) = persist_block::<E>(
+                            &base_dir, block,
+                            stores.block_roots_cache(),
+                            stores.committees_cache(),
+                            &mut extended_blocks_cache,
+                            &mut votes_cache)
+                        {
+                            error!("{err}");
+                        }
                     }
 
                     _ = shutdown_trigger.changed() => {
@@ -58,11 +67,13 @@ fn persist_block<E: EthSpec>(
     base_dir: &str,
     block: ConsolidatedBlock<E>,
     block_roots_cache: Arc<RwLock<ModelCache<BlockRootModelWithId>>>,
+    committees_cache: Arc<RwLock<ModelCache<CommitteeModelsWithId>>>,
     extended_blocks_cache: &mut ModelCache<BlockExtendedModelWithId>,
     votes_cache: &mut PersistableCache<VoteModelsWithId>,
-) {
+) -> Result<(), String> {
     debug!(slot = %block.slot(), "Persisting block");
     let mut block_roots_cache = block_roots_cache.write();
+    let mut committees_cache = committees_cache.write();
 
     BlockModelWithId::from(&block).persist(base_dir);
     BlockExtendedModelWithId::from(&block).persist(base_dir);
@@ -70,20 +81,44 @@ fn persist_block<E: EthSpec>(
     CommitteeModelsWithId::from(&block).persist(base_dir);
     BlockRootModelWithId::from(&block).persist(base_dir);
 
-    block.attestations().iter().for_each(|attestation| {
+    block.attestations().iter().try_for_each(|attestation| {
         if let Ok(m) =
             block_roots_cache.get_mut(format!("{:?}", attestation.data.beacon_block_root))
         {
+            let slot = attestation.data.slot.as_u64();
+
             votes_cache
                 .get_or_default_mut(m.model.slot)
                 .model
                 .push(VoteModel {
-                    slot: attestation.data.slot.as_u64(),
+                    slot,
+                    included_in: block.slot().as_u64(),
                     committee_index: attestation.data.index,
-                    validators: block.attestation_validators(attestation),
+                    validators: get_attesting_indices::<E>(
+                        &committees_cache
+                            .get_mut(slot)?
+                            .model
+                            .get(attestation.data.index as usize)
+                            .ok_or(format!(
+                                "The attestation '{}' is out of bound of committees at slot {slot}",
+                                attestation.data.index
+                            ))?
+                            .validators,
+                        &attestation.aggregation_bits,
+                    )
+                    .map_err(|err| {
+                        format!(
+                            "Error while getting attesting indices on slot {} for committee index{}: {err:?}",
+                            block.slot(),
+                            attestation.data.index
+                        )
+                    })
+                    .unwrap_or_default(),
                 });
         }
-    });
+
+        Ok::<_, String>(())
+    })?;
 
     votes_cache.dirty_iter().for_each(|votes| {
         if let Err(err) = extended_blocks_cache.update_and_persist(votes.id, |block_extended| {
@@ -101,4 +136,6 @@ fn persist_block<E: EthSpec>(
     votes_cache.persist_dirty();
 
     BlocksMeta::new(block.slot().as_usize() + 1).persist(base_dir);
+
+    Ok(())
 }

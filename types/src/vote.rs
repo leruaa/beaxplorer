@@ -12,6 +12,7 @@ use tsify::Tsify;
 #[serde(rename_all = "camelCase")]
 pub struct VoteModel {
     pub slot: u64,
+    pub included_in: u64,
     pub committee_index: u64,
-    pub validators: Vec<usize>,
+    pub validators: Vec<u64>,
 }

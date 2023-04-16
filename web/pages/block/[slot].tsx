@@ -5,7 +5,7 @@ import cx from 'classnames';
 import Breadcrumb from "../../components/breadcrumb";
 import TabSelector from '../../components/tab-selector';
 import { useQuery } from '@tanstack/react-query';
-import { App, AttestationView, getAttestations, getBlockExtended, getCommittees, getVotes } from '../../pkg/web';
+import { App, AttestationView, VoteView, getAttestations, getBlockExtended, getCommittees, getVotes } from '../../pkg/web';
 import Root from '../../components/root';
 import Link from 'next/link';
 import AggregationBits from '../../components/aggregation-bits';
@@ -72,17 +72,21 @@ const Votes = (props: { app: App, slot: string }) => {
   </>
 }
 
-const Vote = ({ vote }) => {
+const Vote = (props: { vote: VoteView }) => {
+
   return (
     <dl>
       <dt>Slot</dt>
-      <dd>{vote.slot}</dd>
+      <dd>{props.vote.slot}</dd>
 
       <dt>Committee index</dt>
-      <dd>{vote.committee_index}</dd>
+      <dd>{props.vote.committeeIndex}</dd>
+
+      <dt>Included in block</dt>
+      <dd>{props.vote.includedIn}</dd>
 
       <dt>Validators</dt>
-      <dd className="flex flex-wrap"><Validators validators={vote.validators} /></dd>
+      <dd className="flex flex-wrap"><Validators validators={props.vote.validators} /></dd>
     </dl>
   );
 }
