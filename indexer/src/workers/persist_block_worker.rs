@@ -62,7 +62,7 @@ pub fn spawn_persist_block_worker<E: EthSpec>(
     new_block_send
 }
 
-#[instrument(name = "BlockPersist", skip_all)]
+#[instrument(level = "debug", name = "BlockPersist", fields(duration), skip_all)]
 fn persist_block<E: EthSpec>(
     base_dir: &str,
     block: ConsolidatedBlock<E>,

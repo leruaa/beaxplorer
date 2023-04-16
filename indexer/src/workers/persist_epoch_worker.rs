@@ -19,7 +19,7 @@ pub fn spawn_persist_epoch_worker<E: EthSpec>(
     );
 }
 
-#[instrument(name = "EpochPersist", skip_all)]
+#[instrument(name = "EpochPersist", fields(duration), skip_all)]
 fn persist_epoch<E: EthSpec>(base_dir: &str, epoch: ConsolidatedEpoch<E>) {
     info!(%epoch, "Persisting epoch");
 

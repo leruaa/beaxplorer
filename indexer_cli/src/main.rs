@@ -4,24 +4,35 @@ use clap::StructOpt;
 use cli::Commands;
 use dotenv::dotenv;
 use indexer::launcher;
-use tracing_subscriber::{filter::LevelFilter, EnvFilter};
+use span_duration::SpanDurationLayer;
+use tracing_subscriber::{
+    filter::{filter_fn, LevelFilter},
+    fmt::format::FmtSpan,
+    prelude::__tracing_subscriber_SubscriberExt,
+    util::SubscriberInitExt,
+    EnvFilter, Layer,
+};
 
 use crate::cli::Cli;
 
 mod cli;
-// mod node_to_files;
+mod span_duration;
 
 fn main() {
     dotenv().ok();
 
-    tracing_subscriber::fmt()
+    let stdout_log = tracing_subscriber::fmt::layer()
         .compact()
         .with_target(false)
-        .with_env_filter(
+        .with_filter(
             EnvFilter::builder()
                 .with_default_directive(LevelFilter::INFO.into())
                 .from_env_lossy(),
-        )
+        );
+
+    tracing_subscriber::registry()
+        .with(stdout_log)
+        .with(SpanDurationLayer)
         .init();
 
     let cli = Cli::parse();

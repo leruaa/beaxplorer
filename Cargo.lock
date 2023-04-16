@@ -3315,6 +3315,7 @@ dependencies = [
  "dotenv",
  "indexer",
  "tokio",
+ "tracing",
  "tracing-subscriber",
 ]
 
