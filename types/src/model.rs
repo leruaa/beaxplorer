@@ -7,7 +7,10 @@ use std::{
 
 use serde::de::DeserializeOwned;
 
-use crate::path::{FromPath, ToPath};
+use crate::{
+    path::{FromPath, ToPath},
+    persistable::{Persistable, ResolvablePersistable},
+};
 
 pub struct ModelWithId<Id, M> {
     pub id: Id,
@@ -20,13 +23,23 @@ impl<Id, M> ModelWithId<Id, M> {
     }
 }
 
-impl<Id, T> ModelWithId<Id, T>
+impl<Id, M> ResolvablePersistable for ModelWithId<Id, M>
 where
-    T: DeserializeOwned + ToPath<Id = Id>,
+    M: Persistable + ToPath<Id = Id>,
+{
+    fn save(&self, base_path: &str) -> Result<(), String> {
+        let full_path = M::to_path(base_path, &self.id);
+        self.model.persist(&full_path)
+    }
+}
+
+impl<Id, M> ModelWithId<Id, M>
+where
+    M: DeserializeOwned + ToPath<Id = Id> + FromPath,
     Id: FromStr + Clone,
 {
-    pub fn iter(base_path: &str) -> Result<impl Iterator<Item = ModelWithId<Id, T>> + '_, String> {
-        let path = format!("{}/{}", base_path, T::prefix());
+    pub fn iter(base_path: &str) -> Result<impl Iterator<Item = ModelWithId<Id, M>> + '_, String> {
+        let path = format!("{}/{}", base_path, M::prefix());
 
         fs::read_dir(path)
             .map(|r| {
@@ -39,7 +52,7 @@ where
                     .map(|file_name| file_name.replace(".msg", ""))
                     .filter_map(|id| id.replace(".msg", "").parse::<Id>().ok())
                     .map(move |id| {
-                        ModelWithId::new(id.clone(), T::from_path(base_path, &id).unwrap())
+                        ModelWithId::new(id.clone(), M::from_path(base_path, &id).unwrap())
                     })
             })
             .map_err(|err| err.to_string())
@@ -62,18 +75,6 @@ where
 
     fn dirs(base_dir: &str) -> Vec<PathBuf> {
         M::dirs(base_dir)
-    }
-}
-
-impl<M> FromPath for ModelWithId<M::Id, M>
-where
-    M: ToPath + DeserializeOwned,
-{
-    type Id = M::Id;
-    type Model = M;
-
-    fn from_path(base_dir: &str, id: &M::Id) -> Result<M, String> {
-        M::from_path(base_dir, id)
     }
 }
 

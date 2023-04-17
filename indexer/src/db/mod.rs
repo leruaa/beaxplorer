@@ -4,8 +4,8 @@ use lighthouse_network::{Multiaddr, NetworkGlobals, PeerId};
 use lighthouse_types::{BeaconState, ChainSpec, EthSpec};
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use types::{
-    block_request::BlockRequestModelWithId, block_root::BlockRootModelWithId,
-    committee::CommitteeModelsWithId, utils::ModelCache,
+    block_request::BlockRequestModelWithId, block_root::BlockRootModel, committee::CommitteeModel,
+    utils::ModelCache,
 };
 
 use crate::beacon_chain::beacon_context::BeaconContext;
@@ -25,8 +25,8 @@ pub struct Stores<E: EthSpec> {
     block_range_requests: RwLock<BlockRangeRequests<E>>,
     block_by_root_requests: RwLock<BlockByRootRequests>,
     peer_db: RwLock<PeerDb<E>>,
-    block_roots_cache: Arc<RwLock<ModelCache<BlockRootModelWithId>>>,
-    committees_cache: Arc<RwLock<ModelCache<CommitteeModelsWithId>>>,
+    block_roots_cache: Arc<RwLock<ModelCache<BlockRootModel>>>,
+    committees_cache: Arc<RwLock<ModelCache<Vec<CommitteeModel>>>>,
 }
 
 impl<E: EthSpec> Stores<E> {
@@ -84,11 +84,11 @@ impl<E: EthSpec> Stores<E> {
         self.peer_db.write()
     }
 
-    pub fn block_roots_cache(&self) -> Arc<RwLock<ModelCache<BlockRootModelWithId>>> {
+    pub fn block_roots_cache(&self) -> Arc<RwLock<ModelCache<BlockRootModel>>> {
         self.block_roots_cache.clone()
     }
 
-    pub fn committees_cache(&self) -> Arc<RwLock<ModelCache<CommitteeModelsWithId>>> {
+    pub fn committees_cache(&self) -> Arc<RwLock<ModelCache<Vec<CommitteeModel>>>> {
         self.committees_cache.clone()
     }
 

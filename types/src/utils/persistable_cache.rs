@@ -1,11 +1,9 @@
 use std::{collections::HashSet, hash::Hash};
 
-use serde::Serialize;
-
 use crate::{
     model::ModelWithId,
-    path::{FromPath, ToPath},
-    persistable::Persistable,
+    path::FromPath,
+    persistable::{Persistable, ResolvablePersistable},
 };
 
 use super::ModelCache;
@@ -33,7 +31,7 @@ where
         }
     }
 
-    pub fn put(&mut self, value: ModelWithId<P::Id, P::Model>) {
+    pub fn put(&mut self, value: ModelWithId<P::Id, P>) {
         self.cache.put(value);
     }
 
@@ -47,24 +45,22 @@ where
     P: FromPath,
     P::Id: Hash + Eq + Clone,
 {
-    pub fn get_mut(&mut self, id: P::Id) -> Result<&mut ModelWithId<P::Id, P::Model>, String> {
+    pub fn get_mut(&mut self, id: P::Id) -> Result<&mut ModelWithId<P::Id, P>, String> {
         self.dirty.insert(id.clone());
         self.cache.get_mut(id)
     }
 
-    pub fn dirty_iter(&self) -> impl Iterator<Item = &ModelWithId<P::Id, P::Model>>
-    {
+    pub fn dirty_iter(&self) -> impl Iterator<Item = &ModelWithId<P::Id, P>> {
         self.dirty.iter().filter_map(move |id| self.cache.peek(id))
     }
 }
 
 impl<P> PersistableCache<P>
 where
-    P: FromPath,
+    P: FromPath + Default,
     P::Id: Hash + Eq + Clone,
-    P::Model: Default,
 {
-    pub fn get_or_default_mut(&mut self, id: P::Id) -> &mut ModelWithId<P::Id, P::Model> {
+    pub fn get_or_default_mut(&mut self, id: P::Id) -> &mut ModelWithId<P::Id, P> {
         self.dirty.insert(id.clone());
         self.cache.get_or_default_mut(id)
     }
@@ -72,16 +68,15 @@ where
 
 impl<P> PersistableCache<P>
 where
-    P: FromPath,
+    P: FromPath + Persistable,
     P::Id: Hash + Eq,
-    P::Model: Serialize + ToPath<Id = P::Id>,
 {
     pub fn persist_dirty(&mut self) {
         let base_dir = self.base_dir.clone();
 
         self.dirty.iter().for_each(|s| {
             if let Some(persistable) = self.cache.peek(s) {
-                persistable.persist(&base_dir)
+                persistable.save(&base_dir).unwrap()
             }
         });
 

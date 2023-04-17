@@ -89,7 +89,7 @@ pub fn persistable(input: TokenStream) -> TokenStream {
                                 Self: Sized,
                             {
                                 for m in self {
-                                    crate::persistable::Persistable::persist(&m, base_dir);
+                                    crate::persistable::ResolvablePersistable::save(&m, base_dir);
                                 }
                             }
 
@@ -120,34 +120,17 @@ pub fn persistable(input: TokenStream) -> TokenStream {
             quote! {
                 pub type #model_with_id = ModelWithId<#model_ty>;
 
-
-                impl crate::persistable::Persistable for Vec<#model_with_id>
-                {
-                    fn persist(&self, base_dir: &str) {
-                        for m in self {
-                            m.persist(base_dir);
-                        }
-                    }
-                }
-
                 #persist_iterator
             }
         }
         None => {
-            quote! {
-                impl crate::persistable::Persistable for #model_ident
-                {
-                    fn persist(&self, base_dir: &str) {
-                        let path = <Self as crate::path::ToPath>::to_path(base_dir, &());
-                        let mut f = std::io::BufWriter::new(std::fs::File::create(path).unwrap());
-                        self.serialize(&mut rmp_serde::Serializer::new(&mut f)).unwrap();
-                    }
-                }
-            }
+            quote! {}
         }
     };
 
     let expanded = quote! {
+        impl crate::persistable::SelfPersistable for #model_ident {}
+
         impl crate::path::ToPath for #model_ident {
             type Id = #model_id;
 

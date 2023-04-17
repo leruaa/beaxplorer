@@ -3,7 +3,7 @@ use task_executor::TaskExecutor;
 use tracing::{info, instrument};
 use types::{
     epoch::{EpochExtendedModelWithId, EpochModelWithId, EpochsMeta},
-    persistable::Persistable,
+    persistable::ResolvablePersistable,
 };
 
 use crate::types::consolidated_epoch::ConsolidatedEpoch;
@@ -23,7 +23,9 @@ pub fn spawn_persist_epoch_worker<E: EthSpec>(
 fn persist_epoch<E: EthSpec>(base_dir: &str, epoch: ConsolidatedEpoch<E>) {
     info!(%epoch, "Persisting epoch");
 
-    EpochModelWithId::from(&epoch).persist(base_dir);
-    EpochExtendedModelWithId::from(&epoch).persist(base_dir);
-    EpochsMeta::new(epoch.number() + 1).persist(base_dir);
+    EpochModelWithId::from(&epoch).save(base_dir).unwrap();
+    EpochExtendedModelWithId::from(&epoch)
+        .save(base_dir)
+        .unwrap();
+    EpochsMeta::new(epoch.number() + 1).save(base_dir).unwrap();
 }

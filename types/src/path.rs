@@ -70,24 +70,14 @@ where
     }
 }
 
-pub trait FromPath {
-    type Id;
-    type Model;
-
-    fn from_path(base_dir: &str, id: &Self::Id) -> Result<Self::Model, String>;
-}
-
-impl<M> FromPath for M
-where
-    M: ToPath + DeserializeOwned,
-{
-    type Id = M::Id;
-    type Model = M;
-
+pub trait FromPath: ToPath + DeserializeOwned {
     fn from_path(base_dir: &str, id: &Self::Id) -> Result<Self, String> {
         let path = Self::to_path(base_dir, id);
         let file = std::fs::File::open(path.clone())
             .map_err(|err| format!("Can't open '{path}': {err}"))?;
-        rmp_serde::from_read::<_, M>(file).map_err(|err| format!("Can't deserialize {path}: {err}"))
+        rmp_serde::from_read::<_, Self>(file)
+            .map_err(|err| format!("Can't deserialize {path}: {err}"))
     }
 }
+
+impl<T: ToPath + DeserializeOwned> FromPath for T {}

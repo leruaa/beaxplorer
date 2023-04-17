@@ -12,12 +12,12 @@ use tokio::sync::{
 use tracing::{debug, error, info, instrument};
 use types::{
     attestation::AttestationModelsWithId,
-    block::{BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
-    block_root::BlockRootModelWithId,
-    committee::CommitteeModelsWithId,
-    persistable::Persistable,
+    block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
+    block_root::{BlockRootModel, BlockRootModelWithId},
+    committee::{CommitteeModel, CommitteeModelsWithId},
+    persistable::ResolvablePersistable,
     utils::{ModelCache, PersistableCache},
-    vote::{VoteModel, VoteModelsWithId},
+    vote::VoteModel,
 };
 
 use crate::{db::Stores, types::consolidated_block::ConsolidatedBlock};
@@ -66,20 +66,26 @@ pub fn spawn_persist_block_worker<E: EthSpec>(
 fn persist_block<E: EthSpec>(
     base_dir: &str,
     block: ConsolidatedBlock<E>,
-    block_roots_cache: Arc<RwLock<ModelCache<BlockRootModelWithId>>>,
-    committees_cache: Arc<RwLock<ModelCache<CommitteeModelsWithId>>>,
-    extended_blocks_cache: &mut ModelCache<BlockExtendedModelWithId>,
-    votes_cache: &mut PersistableCache<VoteModelsWithId>,
+    block_roots_cache: Arc<RwLock<ModelCache<BlockRootModel>>>,
+    committees_cache: Arc<RwLock<ModelCache<Vec<CommitteeModel>>>>,
+    extended_blocks_cache: &mut ModelCache<Option<BlockExtendedModel>>,
+    votes_cache: &mut PersistableCache<Vec<VoteModel>>,
 ) -> Result<(), String> {
     debug!(slot = %block.slot(), "Persisting block");
     let mut block_roots_cache = block_roots_cache.write();
     let mut committees_cache = committees_cache.write();
 
-    BlockModelWithId::from(&block).persist(base_dir);
-    BlockExtendedModelWithId::from(&block).persist(base_dir);
-    AttestationModelsWithId::from(&block).persist(base_dir);
-    CommitteeModelsWithId::from(&block).persist(base_dir);
-    Option::<BlockRootModelWithId>::from(&block).persist(base_dir);
+    BlockModelWithId::from(&block).save(base_dir).unwrap();
+    BlockExtendedModelWithId::from(&block)
+        .save(base_dir)
+        .unwrap();
+    AttestationModelsWithId::from(&block)
+        .save(base_dir)
+        .unwrap();
+    CommitteeModelsWithId::from(&block).save(base_dir).unwrap();
+    Option::<BlockRootModelWithId>::from(&block)
+        .save(base_dir)
+        .unwrap();
 
     block.attestations().iter().try_for_each(|attestation| {
         if let Ok(m) =
@@ -135,7 +141,9 @@ fn persist_block<E: EthSpec>(
 
     votes_cache.persist_dirty();
 
-    BlocksMeta::new(block.slot().as_usize() + 1).persist(base_dir);
+    BlocksMeta::new(block.slot().as_usize() + 1)
+        .save(base_dir)
+        .unwrap();
 
     Ok(())
 }

@@ -11,7 +11,7 @@ use tracing::{debug, warn};
 use types::{
     block_request::{BlockRequestModelWithId, BlockRequestsMeta},
     good_peer::{GoodPeerModelWithId, GoodPeersMeta},
-    persistable::Persistable,
+    persistable::ResolvablePersistable,
 };
 
 use crate::{
@@ -38,7 +38,7 @@ pub fn handle<E: EthSpec>(
         Work::PersistBlockRequest(root, attempts) => {
             let block_request = BlockRequestModelWithId::from((&root, &attempts));
 
-            block_request.persist(&base_dir);
+            block_request.save(&base_dir).unwrap();
         }
 
         Work::PersistAllBlockRequests => {
@@ -93,15 +93,15 @@ pub fn persist_block_requests(base_dir: &str, block_by_root_requests: &BlockByRo
     let block_requests = Vec::<BlockRequestModelWithId>::from(block_by_root_requests);
     let meta = BlockRequestsMeta::new(block_requests.len());
 
-    block_requests.persist(base_dir);
-    meta.persist(base_dir);
+    block_requests.save(base_dir).unwrap();
+    meta.save(base_dir).unwrap();
 }
 
 pub fn persist_good_peers<E: EthSpec>(base_dir: &str, peer_db: &PeerDb<E>) {
     let good_peers = Vec::<GoodPeerModelWithId>::from(peer_db);
     let meta = GoodPeersMeta::new(good_peers.len());
 
-    good_peers.persist(base_dir);
-    meta.persist(base_dir);
+    good_peers.save(base_dir).unwrap();
+    meta.save(base_dir).unwrap();
     //info_span!(self.log, "Good peers persisted");
 }
