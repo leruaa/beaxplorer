@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{convert::TryFrom, sync::Arc};
 
 use lighthouse_types::{Attestation, Epoch, EthSpec, OwnedBeaconCommittee, Slot};
 use store::SignedBeaconBlock;
@@ -112,14 +112,14 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockExtendedModelWithId {
     }
 }
 
-impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockRootModelWithId {
+impl<E: EthSpec> From<&ConsolidatedBlock<E>> for Option<BlockRootModelWithId> {
     fn from(value: &ConsolidatedBlock<E>) -> Self {
-        BlockRootModelWithId {
-            id: format!("{:?}", value.block.root()),
+        value.block.root().map(|root| BlockRootModelWithId {
+            id: format!("{:?}", root),
             model: BlockRootModel {
                 slot: value.slot.as_u64(),
             },
-        }
+        })
     }
 }
 

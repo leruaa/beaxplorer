@@ -79,7 +79,7 @@ fn persist_block<E: EthSpec>(
     BlockExtendedModelWithId::from(&block).persist(base_dir);
     AttestationModelsWithId::from(&block).persist(base_dir);
     CommitteeModelsWithId::from(&block).persist(base_dir);
-    BlockRootModelWithId::from(&block).persist(base_dir);
+    Option::<BlockRootModelWithId>::from(&block).persist(base_dir);
 
     block.attestations().iter().try_for_each(|attestation| {
         if let Ok(m) =
