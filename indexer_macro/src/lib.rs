@@ -59,19 +59,13 @@ pub fn persistable(input: TokenStream) -> TokenStream {
         .map(|f| format_ident!("{}_heap", f.name))
         .collect::<Vec<_>>();
 
-    let all_from_fields = opts
-        .sortable_fields
-        .iter()
-        .map(|f| format_ident!("all_from_{}", f.name))
-        .collect::<Vec<_>>();
-
     let heap_types = opts
         .sortable_fields
         .iter()
         .map(|f| f.ty.clone())
         .collect::<Vec<_>>();
 
-    let model_with_id_related = match opts.model {
+    let persistable_related = match opts.model {
         Some(model) => {
             let model_with_id = match model {
                 Model::Collection => format_ident!("{}sWithId", model_ident),
@@ -123,7 +117,7 @@ pub fn persistable(input: TokenStream) -> TokenStream {
                 _ => None,
             };
 
-            Some(quote! {
+            quote! {
                 pub type #model_with_id = ModelWithId<#model_ty>;
 
 
@@ -137,9 +131,20 @@ pub fn persistable(input: TokenStream) -> TokenStream {
                 }
 
                 #persist_iterator
-            })
+            }
         }
-        None => None,
+        None => {
+            quote! {
+                impl crate::persistable::Persistable for #model_ident
+                {
+                    fn persist(&self, base_dir: &str) {
+                        let path = <Self as crate::path::ToPath>::to_path(base_dir, &());
+                        let mut f = std::io::BufWriter::new(std::fs::File::create(path).unwrap());
+                        self.serialize(&mut rmp_serde::Serializer::new(&mut f)).unwrap();
+                    }
+                }
+            }
+        }
     };
 
     let expanded = quote! {
@@ -162,7 +167,7 @@ pub fn persistable(input: TokenStream) -> TokenStream {
             }
         }
 
-        #model_with_id_related
+        #persistable_related
     };
 
     TokenStream::from(expanded)
