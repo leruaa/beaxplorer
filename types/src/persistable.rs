@@ -2,8 +2,8 @@ use rmp_serde::Serializer;
 use serde::Serialize;
 use std::{fs::File, io::BufWriter};
 
-pub trait SelfPersistable: Serialize {
-    fn persist(&self, full_path: &str) -> Result<(), String> {
+pub trait MsgPackSerializable: Serialize {
+    fn serialize_to_file(&self, full_path: &str) -> Result<(), String> {
         let file = File::create(full_path)
             .map_err(|err| format!("Can't create file '{full_path}': {err}"))?;
         let mut f = BufWriter::new(file);
@@ -12,13 +12,15 @@ pub trait SelfPersistable: Serialize {
     }
 }
 
+impl<T> MsgPackSerializable for Vec<T> where T: MsgPackSerializable {}
+
 pub trait Persistable {
     fn persist(&self, full_path: &str) -> Result<(), String>;
 }
 
-impl<T: SelfPersistable> Persistable for T {
+impl<T: MsgPackSerializable> Persistable for T {
     fn persist(&self, full_path: &str) -> Result<(), String> {
-        T::persist(&self, full_path)
+        T::serialize_to_file(self, full_path)
     }
 }
 
@@ -32,15 +34,6 @@ where
         } else {
             Ok(())
         }
-    }
-}
-
-impl<T> Persistable for Vec<T>
-where
-    T: Persistable,
-{
-    fn persist(&self, full_path: &str) -> Result<(), String> {
-        self.iter().try_for_each(|p| p.persist(full_path))
     }
 }
 

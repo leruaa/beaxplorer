@@ -84,13 +84,13 @@ pub fn persistable(input: TokenStream) -> TokenStream {
                     Some(quote! {
                         pub trait #persist_iterator: Iterator<Item = #model_with_id> {
 
-                            fn persist(self, base_dir: &str)
+                            fn persist(mut self, base_dir: &str) -> Result<(), String>
                             where
                                 Self: Sized,
                             {
-                                for m in self {
-                                    crate::persistable::ResolvablePersistable::save(&m, base_dir);
-                                }
+                                self.try_for_each(|m| {
+                                    crate::persistable::ResolvablePersistable::save(&m, base_dir)
+                                })
                             }
 
                             fn persist_sortables(self, base_dir: &str) -> Result<(), String>
@@ -129,7 +129,7 @@ pub fn persistable(input: TokenStream) -> TokenStream {
     };
 
     let expanded = quote! {
-        impl crate::persistable::SelfPersistable for #model_ident {}
+        impl crate::persistable::MsgPackSerializable for #model_ident {}
 
         impl crate::path::ToPath for #model_ident {
             type Id = #model_id;
