@@ -97,7 +97,7 @@ pub fn persistable(input: TokenStream) -> TokenStream {
                             where
                                 Self: Sized,
                             {
-                                let prefix = <Self::Item as crate::path::ToPath>::prefix();
+                        let prefix = <Self::Item as crate::path::Prefix>::prefix();
                                 let prefixed_dir = format!("{}/{}", base_dir, prefix);
                                 #( let mut #heap_fields = crate::utils::FieldBinaryHeap::<#model_id, #heap_types>::new(); )*
 
@@ -131,21 +131,25 @@ pub fn persistable(input: TokenStream) -> TokenStream {
     let expanded = quote! {
         impl crate::persistable::MsgPackSerializable for #model_ident {}
 
-        impl crate::path::ToPath for #model_ident {
-            type Id = #model_id;
-
+        impl crate::path::Prefix for #model_ident {
             fn prefix() -> String {
                 String::from(#prefix)
             }
+        }
+
+        impl crate::path::ToPath for #model_ident {
+            type Id = #model_id;
 
             fn to_path(base: &str, id: &#model_id) -> String {
-                #to_path
+                format!("{}/{}/{}.msg", base, #prefix, id)
+            }
             }
 
+        impl crate::path::Dirs for #model_ident {
             fn dirs(base_dir: &str) -> Vec<std::path::PathBuf> {
                 vec![
-                    std::path::PathBuf::from(format!("{}{}", base_dir, Self::prefix())),
-                    #( std::path::PathBuf::from(format!("{}{}", base_dir, Self::sortable_field_prefix(#field_names))), )*
+                    std::path::PathBuf::from(format!("{}{}", base_dir, <Self as crate::path::Prefix>::prefix())),
+                    #( std::path::PathBuf::from(format!("{}{}", base_dir, <Self as crate::path::Prefix>::sortable_field_prefix(#field_names))), )*
                 ]
             }
         }

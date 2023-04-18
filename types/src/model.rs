@@ -1,14 +1,13 @@
 use std::{
     fs,
     hash::{Hash, Hasher},
-    path::PathBuf,
     str::FromStr,
 };
 
 use serde::de::DeserializeOwned;
 
 use crate::{
-    path::{FromPath, ToPath},
+    path::{FromPath, Prefix, ToPath},
     persistable::{Persistable, ResolvablePersistable},
 };
 
@@ -35,7 +34,7 @@ where
 
 impl<Id, M> ModelWithId<Id, M>
 where
-    M: DeserializeOwned + ToPath<Id = Id> + FromPath,
+    M: DeserializeOwned + Prefix + FromPath<Id = Id>,
     Id: FromStr + Clone,
 {
     pub fn iter(base_path: &str) -> Result<impl Iterator<Item = ModelWithId<Id, M>> + '_, String> {
@@ -59,22 +58,23 @@ where
     }
 }
 
+impl<Id, M> Prefix for ModelWithId<Id, M>
+where
+    M: Prefix,
+{
+    fn prefix() -> String {
+        M::prefix()
+    }
+}
+
 impl<Id, M> ToPath for ModelWithId<Id, M>
 where
     M: ToPath,
 {
     type Id = M::Id;
 
-    fn prefix() -> String {
-        M::prefix()
-    }
-
     fn to_path(base_dir: &str, id: &Self::Id) -> String {
         M::to_path(base_dir, id)
-    }
-
-    fn dirs(base_dir: &str) -> Vec<PathBuf> {
-        M::dirs(base_dir)
     }
 }
 

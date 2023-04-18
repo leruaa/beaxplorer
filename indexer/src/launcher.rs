@@ -19,7 +19,7 @@ use types::{
     committee::CommitteeModel,
     epoch::{EpochExtendedModel, EpochModel, EpochModelWithId, PersistIteratorEpochModel},
     good_peer::{GoodPeerModel, GoodPeerModelWithId, PersistIteratorGoodPeerModel},
-    path::ToPath,
+    path::Dirs,
     validator::ValidatorModel,
     vote::VoteModel,
 };
