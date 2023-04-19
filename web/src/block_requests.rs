@@ -1,10 +1,14 @@
 use types::{
-    block_request::{BlockRequestModel, BlockRequestModelWithId, BlockRequestsMeta},
+    block_request::{BlockRequestModel, BlockRequestModelWithId},
     path::ToPath,
 };
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
-use crate::{app::App, fetcher::fetch, views::block_requests::BlockRequestView};
+use crate::{
+    app::App,
+    fetcher::{fetch, fetch_meta},
+    views::{block_requests::BlockRequestView, meta::MetaView},
+};
 
 #[wasm_bindgen(js_name = "getBlockRequest")]
 pub async fn get_block_request(app: &App, root: String) -> Result<BlockRequestView, JsValue> {
@@ -15,10 +19,6 @@ pub async fn get_block_request(app: &App, root: String) -> Result<BlockRequestVi
 }
 
 #[wasm_bindgen(js_name = "getBlockRequestMeta")]
-pub async fn get_block_request_meta(app: &App) -> Result<BlockRequestsMeta, JsValue> {
-    let meta_url = BlockRequestsMeta::to_path(&app.base_url(), &());
-
-    fetch::<BlockRequestsMeta>(meta_url)
-        .await
-        .map_err(Into::into)
+pub async fn get_block_request_meta(app: &App) -> Result<MetaView, JsValue> {
+    fetch_meta::<BlockRequestModel>(app).await
 }

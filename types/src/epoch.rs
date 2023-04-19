@@ -1,8 +1,5 @@
 use std::ops::Div;
 
-use crate::meta::Meta;
-use crate::meta::WithMeta;
-use crate::model::ModelWithId;
 use crate::utils::Orderable;
 use indexer_macro::Persistable;
 use ordered_float::OrderedFloat;
@@ -45,10 +42,6 @@ fn get_global_participation_rate(value: &EpochModelWithId) -> Orderable<u64, Ord
     (value.id, OrderedFloat(global_participation_rate)).into()
 }
 
-impl WithMeta for EpochModel {
-    type MetaType = EpochsMeta;
-}
-
 #[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
 #[cfg_attr(feature = "wasm", derive(Tsify))]
 #[persistable(model = "default")]
@@ -59,23 +52,4 @@ pub struct EpochExtendedModel {
     pub validators_count: usize,
     pub average_validator_balance: u64,
     pub total_validator_balance: u64,
-}
-
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/epochs/meta")]
-pub struct EpochsMeta {
-    pub count: usize,
-}
-
-impl EpochsMeta {
-    pub fn new(count: usize) -> Self {
-        EpochsMeta { count }
-    }
-}
-
-impl Meta for EpochsMeta {
-    fn count(&self) -> usize {
-        self.count
-    }
 }

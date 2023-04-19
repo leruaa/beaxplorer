@@ -1,10 +1,9 @@
 use crate::app::App;
-use crate::fetcher::fetch;
+use crate::fetcher::{fetch, fetch_meta};
 use crate::views::epochs::{EpochExtendedView, EpochView};
+use crate::views::meta::MetaView;
 
-use types::epoch::{
-    EpochExtendedModel, EpochExtendedModelWithId, EpochModel, EpochModelWithId, EpochsMeta,
-};
+use types::epoch::{EpochExtendedModel, EpochExtendedModelWithId, EpochModel, EpochModelWithId};
 use types::path::ToPath;
 use wasm_bindgen::prelude::*;
 
@@ -27,8 +26,6 @@ pub async fn get_epoch_extended(app: &App, epoch: u64) -> Result<EpochExtendedVi
 }
 
 #[wasm_bindgen(js_name = "getEpochMeta")]
-pub async fn get_epoch_meta(app: &App) -> Result<EpochsMeta, JsValue> {
-    let meta_url = EpochsMeta::to_path(&app.base_url(), &());
-
-    fetch::<EpochsMeta>(meta_url).await.map_err(Into::into)
+pub async fn get_epoch_meta(app: &App) -> Result<MetaView, JsValue> {
+    fetch_meta::<EpochModel>(app).await
 }

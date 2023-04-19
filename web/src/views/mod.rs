@@ -4,5 +4,6 @@ pub mod blocks;
 pub mod committees;
 pub mod epochs;
 pub mod good_peers;
+pub mod meta;
 pub mod validators;
 pub mod votes;

@@ -1,6 +1,3 @@
-use crate::meta::Meta;
-use crate::meta::WithMeta;
-use crate::model::ModelWithId;
 use indexer_macro::Persistable;
 use serde::Deserialize;
 use serde::Serialize;
@@ -25,10 +22,6 @@ pub struct BlockModel {
     pub status: String,
 }
 
-impl WithMeta for BlockModel {
-    type MetaType = BlocksMeta;
-}
-
 #[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
 #[cfg_attr(feature = "wasm", derive(Tsify))]
 #[persistable(model = "option")]
@@ -46,24 +39,4 @@ pub struct BlockExtendedModel {
     pub eth1data_deposit_root: Vec<u8>,
     pub eth1data_deposit_count: u64,
     pub eth1data_block_hash: Vec<u8>,
-}
-
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[cfg_attr(feature = "wasm", derive(Tsify))]
-#[persistable(prefix = "/blocks/meta")]
-pub struct BlocksMeta {
-    pub count: usize,
-}
-
-impl BlocksMeta {
-    pub fn new(count: usize) -> Self {
-        BlocksMeta { count }
-    }
-}
-
-impl Meta for BlocksMeta {
-    fn count(&self) -> usize {
-        self.count
-    }
 }

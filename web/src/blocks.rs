@@ -1,17 +1,17 @@
 use js_sys::Array;
 use types::attestation::{AttestationModel, AttestationModelsWithId};
-use types::block::{
-    BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId, BlocksMeta,
-};
+use types::block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId};
 use types::committee::{CommitteeModel, CommitteeModelsWithId};
 use types::path::ToPath;
 use types::vote::{VoteModel, VoteModelsWithId};
 use wasm_bindgen::prelude::*;
 
 use crate::app::App;
+use crate::fetcher::fetch_meta;
 use crate::views::attestations::AttestationView;
 use crate::views::blocks::{BlockExtendedView, BlockView};
 use crate::views::committees::CommitteeView;
+use crate::views::meta::MetaView;
 use crate::views::votes::VoteView;
 use crate::{AttestationArray, CommitteeArray, VoteArray};
 
@@ -78,8 +78,6 @@ pub async fn get_attestations(app: &App, block: u64) -> Result<AttestationArray,
 }
 
 #[wasm_bindgen(js_name = "getBlockMeta")]
-pub async fn get_block_meta(app: &App) -> Result<BlocksMeta, JsValue> {
-    let meta_url = BlocksMeta::to_path(&app.base_url(), &());
-
-    fetch::<BlocksMeta>(meta_url).await.map_err(Into::into)
+pub async fn get_block_meta(app: &App) -> Result<MetaView, JsValue> {
+    fetch_meta::<BlockModel>(app).await
 }

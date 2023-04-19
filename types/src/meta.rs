@@ -1,26 +1,26 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
-    path::{FromPath, ToPath},
-    persistable::{MsgPackSerializable, ResolvablePersistable},
+    path::Prefix,
+    persistable::{MsgPackDeserializable, MsgPackSerializable},
 };
 
-pub trait Meta {
-    fn count(&self) -> usize;
+#[cfg(feature = "wasm")]
+use tsify::Tsify;
+
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[cfg_attr(feature = "wasm", derive(Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
+pub struct Meta {
+    pub count: usize,
 }
 
-impl<T: Meta + MsgPackSerializable + ToPath<Id = ()>> ResolvablePersistable for T {
-    fn save(&self, base_path: &str) -> Result<(), String> {
-        let full_path = T::to_path(base_path, &());
-        self.serialize_to_file(&full_path)
+impl Meta {
+    pub fn to_path<M: Prefix>(base_path: &str) -> String {
+        format!("{}{}/meta.msg", base_path, M::prefix())
     }
 }
 
-pub trait WithMeta
-where
-    Self: Sized,
-{
-    type MetaType: FromPath<Id = ()>;
+impl MsgPackSerializable for Meta {}
 
-    fn meta(base_dir: &str) -> Result<Self::MetaType, String> {
-        Self::MetaType::from_path(base_dir, &())
-    }
-}
+impl MsgPackDeserializable for Meta {}

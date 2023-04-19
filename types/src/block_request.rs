@@ -5,11 +5,7 @@ use tsify::Tsify;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
-use crate::{
-    meta::{Meta, WithMeta},
-    model::ModelWithId,
-    utils::Orderable,
-};
+use crate::utils::Orderable;
 
 #[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
 #[cfg_attr(feature = "wasm", derive(Tsify))]
@@ -39,27 +35,4 @@ fn get_possible_slot(value: &BlockRequestModelWithId) -> Orderable<String, u64> 
         value.model.possible_slots.first().cloned().unwrap_or(0),
     )
         .into()
-}
-
-impl WithMeta for BlockRequestModel {
-    type MetaType = BlockRequestsMeta;
-}
-
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
-#[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
-#[persistable(prefix = "/block_requests/meta")]
-pub struct BlockRequestsMeta {
-    pub count: usize,
-}
-
-impl BlockRequestsMeta {
-    pub fn new(count: usize) -> Self {
-        BlockRequestsMeta { count }
-    }
-}
-
-impl Meta for BlockRequestsMeta {
-    fn count(&self) -> usize {
-        self.count
-    }
 }
