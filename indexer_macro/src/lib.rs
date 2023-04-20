@@ -15,16 +15,7 @@ pub fn persistable(input: TokenStream) -> TokenStream {
 
     let model_id = match &opts.id {
         Some(id) => quote! { #id },
-        None => match &opts.model {
-            Some(_) => quote! { u64 },
-            None => quote! { () },
-        },
-    };
-
-    let to_path = if opts.id.is_some() || opts.model.is_some() {
-        quote! { format!("{}/{}/{}.msg", base, #prefix, id) }
-    } else {
-        quote! { format!("{}/{}.msg", base, #prefix) }
+        None => quote! { u64 },
     };
 
     opts.sortable_fields.extend(
@@ -65,67 +56,60 @@ pub fn persistable(input: TokenStream) -> TokenStream {
         .map(|f| f.ty.clone())
         .collect::<Vec<_>>();
 
-    let persistable_related = match opts.model {
-        Some(model) => {
-            let model_with_id = match model {
-                Model::Collection => format_ident!("{}sWithId", model_ident),
-                _ => format_ident!("{}WithId", model_ident),
-            };
+    let model_with_id = match opts.model {
+        Model::Collection => format_ident!("{}sWithId", model_ident),
+        _ => format_ident!("{}WithId", model_ident),
+    };
 
-            let model_ty = match model {
-                Model::Default => quote! { #model_id, #model_ident },
-                Model::Option => quote! { #model_id, Option<#model_ident> },
-                Model::Collection => quote! { #model_id, Vec<#model_ident> },
-            };
+    let model_ty = match opts.model {
+        Model::Default => quote! { #model_id, #model_ident },
+        Model::Option => quote! { #model_id, Option<#model_ident> },
+        Model::Collection => quote! { #model_id, Vec<#model_ident> },
+    };
 
-            let persist_iterator = match model {
-                Model::Default => {
-                    let persist_iterator = format_ident!("PersistIterator{}", model_ident);
-                    Some(quote! {
-                        pub trait #persist_iterator: Iterator<Item = #model_with_id> {
+    let persist_iterator = match opts.model {
+        Model::Default => {
+            let persist_iterator = format_ident!("PersistIterator{}", model_ident);
+            Some(quote! {
+                pub trait #persist_iterator: Iterator<Item = #model_with_id> {
 
-                            fn persist(mut self, base_dir: &str) -> Result<(), String>
-                            where
-                                Self: Sized,
-                            {
-                                self.try_for_each(|m| {
-                                    crate::persistable::ResolvablePersistable::save(&m, base_dir)
-                                })
-                            }
+                    fn persist(mut self, base_dir: &str) -> Result<(), String>
+                    where
+                        Self: Sized,
+                    {
+                        self.try_for_each(|m| {
+                            crate::persistable::ResolvablePersistable::save(&m, base_dir)
+                        })
+                    }
 
-                            fn persist_sortables(self, base_dir: &str) -> Result<(), String>
-                            where
-                                Self: Sized,
-                            {
+                    fn persist_sortables(self, base_dir: &str) -> Result<(), String>
+                    where
+                        Self: Sized,
+                    {
                         let prefix = <Self::Item as crate::path::Prefix>::prefix();
-                                let prefixed_dir = format!("{}/{}", base_dir, prefix);
-                                #( let mut #heap_fields = crate::utils::FieldBinaryHeap::<#model_id, #heap_types>::new(); )*
+                        let prefixed_dir = format!("{}/{}", base_dir, prefix);
+                        #( let mut #heap_fields = crate::utils::FieldBinaryHeap::<#model_id, #heap_types>::new(); )*
 
-                                for m in self {
-                                    #( #heap_fields.push(#orderables); )*
-                                }
-
-                                #( #heap_fields.persist(&prefixed_dir, #field_names)?; )*
-
-                                Ok(())
-                            }
+                        for m in self {
+                            #( #heap_fields.push(#orderables); )*
                         }
 
-                        impl<T: ?Sized> #persist_iterator for T where T: Iterator<Item = #model_with_id> { }
-                    })
+                        #( #heap_fields.persist(&prefixed_dir, #field_names)?; )*
+
+                        Ok(())
+                    }
                 }
-                _ => None,
-            };
 
-            quote! {
-                pub type #model_with_id = ModelWithId<#model_ty>;
+                impl<T: ?Sized> #persist_iterator for T where T: Iterator<Item = #model_with_id> { }
+            })
+        }
+        _ => None,
+    };
 
-                #persist_iterator
-            }
-        }
-        None => {
-            quote! {}
-        }
+    let persistable_related = quote! {
+        pub type #model_with_id = crate::model::ModelWithId<#model_ty>;
+
+        #persist_iterator
     };
 
     let expanded = quote! {
@@ -143,7 +127,7 @@ pub fn persistable(input: TokenStream) -> TokenStream {
             fn to_path(base: &str, id: &#model_id) -> String {
                 format!("{}/{}/{}.msg", base, #prefix, id)
             }
-            }
+        }
 
         impl crate::path::Dirs for #model_ident {
             fn dirs(base_dir: &str) -> Vec<std::path::PathBuf> {

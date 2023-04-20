@@ -6,7 +6,7 @@ use syn::{Ident, Path, Type};
 pub struct PersistableOpts {
     pub ident: Ident,
     pub id: Option<Type>,
-    pub model: Option<Model>,
+    pub model: Model,
     pub prefix: String,
     #[darling(multiple)]
     #[darling(rename = "sortable_field")]
