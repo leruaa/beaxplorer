@@ -17,6 +17,7 @@ use types::{
     block_request::{BlockRequestModel, BlockRequestModelWithId, PersistIteratorBlockRequestModel},
     block_root::BlockRootModel,
     committee::CommitteeModel,
+    deposit::DepositModel,
     epoch::{EpochExtendedModel, EpochModel, EpochModelWithId, PersistIteratorEpochModel},
     good_peer::{GoodPeerModel, GoodPeerModelWithId, PersistIteratorGoodPeerModel},
     path::Dirs,
@@ -86,6 +87,7 @@ fn create_dirs(base_dir: &str) -> Result<(), String> {
     CommitteeModel::create_dirs(base_dir)?;
     VoteModel::create_dirs(base_dir)?;
     ValidatorModel::create_dirs(base_dir)?;
+    DepositModel::create_dirs(base_dir)?;
     BlockRequestModel::create_dirs(base_dir)?;
     GoodPeerModel::create_dirs(base_dir)?;
 
@@ -102,6 +104,7 @@ fn remove_dirs(base_dir: &str) -> Result<(), String> {
     CommitteeModel::remove_dirs(base_dir)?;
     VoteModel::remove_dirs(base_dir)?;
     ValidatorModel::remove_dirs(base_dir)?;
+    DepositModel::remove_dirs(base_dir)?;
     BlockRequestModel::remove_dirs(base_dir)?;
 
     Ok(())
