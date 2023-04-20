@@ -3,6 +3,7 @@ pub mod block;
 pub mod block_request;
 pub mod block_root;
 pub mod committee;
+pub mod deposit;
 pub mod epoch;
 pub mod good_peer;
 pub mod meta;

@@ -17,3 +17,4 @@ pub struct DepositModel {
     pub amount: u64,
     pub signature: String,
 }
+

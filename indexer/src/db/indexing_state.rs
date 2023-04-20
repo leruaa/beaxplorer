@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use lighthouse_types::{BeaconState, ChainSpec, EthSpec, RelativeEpoch, Slot};
+use genesis::{bls_withdrawal_credentials, generate_deterministic_keypairs};
+use lighthouse_types::{
+    BeaconState, ChainSpec, DepositData, EthSpec, RelativeEpoch, Signature, Slot, Validator,
+};
 use state_processing::{
     per_block_processing, per_epoch_processing, per_slot_processing, BlockSignatureStrategy,
     ConsensusContext, VerifyBlockRoot,
@@ -109,12 +112,19 @@ impl<E: EthSpec> IndexingState<E> {
                 .collect()
         };
 
+        let deposits = if slot == 0 {
+            get_genesis_deposits(beacon_state.validators().to_vec(), &self.spec)
+        } else {
+            vec![]
+        };
+
         let consolidated_block = ConsolidatedBlock::new(
             block,
             consensus_context
                 .get_proposer_index(&beacon_state, &self.spec)
                 .map_err(|err| format!("Error while processing proposer: {err:?}"))?,
             committees,
+            deposits,
         );
 
         self.beacon_state = beacon_state;
@@ -122,6 +132,30 @@ impl<E: EthSpec> IndexingState<E> {
 
         Ok((consolidated_block, consolidated_epoch))
     }
+}
+
+fn get_genesis_deposits(validators: Vec<Validator>, spec: &ChainSpec) -> Vec<DepositData> {
+    let keypairs = generate_deterministic_keypairs(validators.len());
+    let withdrawal_credentials = keypairs
+        .iter()
+        .map(|keypair| bls_withdrawal_credentials(&keypair.pk, spec));
+
+    keypairs
+        .iter()
+        .zip(withdrawal_credentials)
+        .map(|(keypair, withdrawal_credentials)| {
+            let mut data = DepositData {
+                withdrawal_credentials,
+                pubkey: keypair.pk.clone().into(),
+                amount: 32,
+                signature: Signature::empty().into(),
+            };
+
+            data.signature = data.create_signature(&keypair.sk, spec);
+
+            data
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -134,6 +168,13 @@ mod tests {
         beacon_chain::beacon_context::BeaconContext, db::indexing_state::IndexingState,
         test_utils::BeaconChainHarness, types::block_state::BlockState,
     };
+
+    #[tokio::test]
+    async fn test_genesis_deposits() {
+        let harness = BeaconChainHarness::new();
+
+        assert_eq!(harness.state().validators().len(), 2);
+    }
 
     #[tokio::test]
     async fn test_contains_block_root() {

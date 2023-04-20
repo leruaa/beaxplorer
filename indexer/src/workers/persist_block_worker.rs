@@ -19,7 +19,10 @@ use types::{
     vote::VoteModel,
 };
 
-use crate::{db::Stores, types::consolidated_block::ConsolidatedBlock};
+use crate::{
+    db::Stores,
+    types::{consolidated_block::ConsolidatedBlock, consolidated_deposits::ConsolidatedDeposits},
+};
 
 pub fn spawn_persist_block_worker<E: EthSpec>(
     base_dir: String,
@@ -81,6 +84,10 @@ fn persist_block<E: EthSpec>(
         .unwrap();
     CommitteeModelsWithId::from(&block).save(base_dir).unwrap();
     Option::<BlockRootModelWithId>::from(&block)
+        .save(base_dir)
+        .unwrap();
+
+    ConsolidatedDeposits::from((&block, stores.meta_cache()))
         .save(base_dir)
         .unwrap();
 

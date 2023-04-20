@@ -1,12 +1,13 @@
-use std::{convert::TryFrom, sync::Arc};
+use std::sync::Arc;
 
-use lighthouse_types::{Attestation, Epoch, EthSpec, OwnedBeaconCommittee, Slot};
+use lighthouse_types::{Attestation, DepositData, Epoch, EthSpec, OwnedBeaconCommittee, Slot};
 use store::SignedBeaconBlock;
 use types::{
     attestation::{AttestationModel, AttestationModelsWithId},
     block::{BlockExtendedModelWithId, BlockModel, BlockModelWithId},
     block_root::{BlockRootModel, BlockRootModelWithId},
     committee::{CommitteeModel, CommitteeModelsWithId},
+    deposit::DepositModel,
 };
 
 use super::block_state::BlockState;
@@ -18,6 +19,7 @@ pub struct ConsolidatedBlock<E: EthSpec> {
     slot: Slot,
     proposer_index: u64,
     committees: Vec<OwnedBeaconCommittee>,
+    pub deposits: Vec<DepositData>,
 }
 
 impl<E: EthSpec> ConsolidatedBlock<E> {
@@ -25,6 +27,7 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
         block: BlockState<E>,
         proposer_index: u64,
         committees: Vec<OwnedBeaconCommittee>,
+        deposits: Vec<DepositData>,
     ) -> Self {
         let slot = block.slot();
 
@@ -34,6 +37,7 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
             slot,
             proposer_index,
             committees,
+            deposits,
         }
     }
 
@@ -154,5 +158,21 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for CommitteeModelsWithId {
             id: value.slot.as_u64(),
             model: committees,
         }
+    }
+}
+
+impl<E: EthSpec> From<&ConsolidatedBlock<E>> for Vec<DepositModel> {
+    fn from(value: &ConsolidatedBlock<E>) -> Self {
+        value
+            .deposits
+            .iter()
+            .map(|d| DepositModel {
+                slot: value.slot.as_u64(),
+                public_key: d.pubkey.to_string(),
+                withdrawal_credentials: d.withdrawal_credentials.as_bytes().to_vec(),
+                amount: d.amount,
+                signature: d.signature.to_string(),
+            })
+            .collect()
     }
 }

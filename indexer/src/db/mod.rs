@@ -4,8 +4,10 @@ use lighthouse_network::{Multiaddr, NetworkGlobals, PeerId};
 use lighthouse_types::{BeaconState, ChainSpec, EthSpec};
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use types::{
-    block_request::BlockRequestModelWithId, block_root::BlockRootModel, committee::CommitteeModel,
-    utils::ModelCache,
+    block_request::BlockRequestModelWithId,
+    block_root::BlockRootModel,
+    committee::CommitteeModel,
+    utils::{MetaCache, ModelCache},
 };
 
 use crate::beacon_chain::beacon_context::BeaconContext;
@@ -27,6 +29,7 @@ pub struct Stores<E: EthSpec> {
     peer_db: RwLock<PeerDb<E>>,
     block_roots_cache: Arc<RwLock<ModelCache<BlockRootModel>>>,
     committees_cache: Arc<RwLock<ModelCache<Vec<CommitteeModel>>>>,
+    meta_cache: Arc<RwLock<MetaCache>>,
 }
 
 impl<E: EthSpec> Stores<E> {
@@ -48,7 +51,8 @@ impl<E: EthSpec> Stores<E> {
                 good_peers.into_iter().collect(),
             )),
             block_roots_cache: Arc::new(RwLock::new(ModelCache::new(base_dir.clone()))),
-            committees_cache: Arc::new(RwLock::new(ModelCache::new(base_dir))),
+            committees_cache: Arc::new(RwLock::new(ModelCache::new(base_dir.clone()))),
+            meta_cache: Arc::new(RwLock::new(MetaCache::new(base_dir))),
         }
     }
 
@@ -84,12 +88,16 @@ impl<E: EthSpec> Stores<E> {
         self.peer_db.write()
     }
 
-    pub fn block_roots_cache(&self) -> Arc<RwLock<ModelCache<BlockRootModel>>> {
-        self.block_roots_cache.clone()
+    pub fn block_roots_cache(&self) -> &RwLock<ModelCache<BlockRootModel>> {
+        self.block_roots_cache.as_ref()
     }
 
-    pub fn committees_cache(&self) -> Arc<RwLock<ModelCache<Vec<CommitteeModel>>>> {
-        self.committees_cache.clone()
+    pub fn committees_cache(&self) -> &RwLock<ModelCache<Vec<CommitteeModel>>> {
+        self.committees_cache.as_ref()
+    }
+
+    pub fn meta_cache(&self) -> &RwLock<MetaCache> {
+        self.meta_cache.as_ref()
     }
 
     pub fn beacon_state(&self) -> MappedRwLockReadGuard<BeaconState<E>> {

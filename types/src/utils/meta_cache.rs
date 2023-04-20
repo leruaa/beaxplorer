@@ -37,6 +37,21 @@ impl MetaCache {
             .ok_or(String::from("Should not happen"))
     }
 
+    pub fn count<M>(&self) -> usize
+    where
+        M: Prefix,
+    {
+        let full_path = Meta::to_path::<M>(&self.base_path);
+        self.cache.get(&full_path).map_or(0, |m|m.count)
+    }
+
+    pub fn get<M>(&mut self) -> Result<&Meta, String>
+    where
+        M: Prefix,
+    {
+        self.get_mut::<M>().map(|m| &*m)
+    }
+
     pub fn update_and_save<M, F>(&mut self, f: F) -> Result<(), String>
     where
         M: Prefix,
