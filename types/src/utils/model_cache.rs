@@ -85,7 +85,7 @@ where
     P: FromPath + Persistable,
     P::Id: Hash + Eq + Clone,
 {
-    pub fn update_and_persist<F>(&mut self, id: P::Id, f: F) -> Result<(), String>
+    pub fn update_and_save<F>(&mut self, id: P::Id, f: F) -> Result<(), String>
     where
         F: FnOnce(&mut ModelWithId<P::Id, P>),
     {

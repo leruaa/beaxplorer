@@ -2,6 +2,8 @@
 mod block_by_root_request_state;
 mod field_binary_heap;
 #[cfg(feature = "indexing")]
+mod meta_cache;
+#[cfg(feature = "indexing")]
 mod model_cache;
 mod orderable;
 #[cfg(feature = "indexing")]
@@ -12,6 +14,8 @@ mod request_attempts;
 #[cfg(feature = "indexing")]
 pub use block_by_root_request_state::BlockByRootRequestState;
 pub use field_binary_heap::FieldBinaryHeap;
+#[cfg(feature = "indexing")]
+pub use meta_cache::MetaCache;
 #[cfg(feature = "indexing")]
 pub use model_cache::ModelCache;
 pub use orderable::Orderable;

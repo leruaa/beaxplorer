@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use lighthouse_types::EthSpec;
-use parking_lot::RwLock;
 use state_processing::common::get_attesting_indices;
 use task_executor::TaskExecutor;
 
@@ -12,9 +11,9 @@ use tokio::sync::{
 use tracing::{debug, error, info, instrument};
 use types::{
     attestation::AttestationModelsWithId,
-    block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModelWithId, BlocksMeta},
-    block_root::{BlockRootModel, BlockRootModelWithId},
-    committee::{CommitteeModel, CommitteeModelsWithId},
+    block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId},
+    block_root::BlockRootModelWithId,
+    committee::CommitteeModelsWithId,
     persistable::ResolvablePersistable,
     utils::{ModelCache, PersistableCache},
     vote::VoteModel,
@@ -40,8 +39,7 @@ pub fn spawn_persist_block_worker<E: EthSpec>(
                     Some(block) = new_block_recv.recv() => {
                         if let Err(err) = persist_block::<E>(
                             &base_dir, block,
-                            stores.block_roots_cache(),
-                            stores.committees_cache(),
+                            &stores,
                             &mut extended_blocks_cache,
                             &mut votes_cache)
                         {
@@ -66,14 +64,13 @@ pub fn spawn_persist_block_worker<E: EthSpec>(
 fn persist_block<E: EthSpec>(
     base_dir: &str,
     block: ConsolidatedBlock<E>,
-    block_roots_cache: Arc<RwLock<ModelCache<BlockRootModel>>>,
-    committees_cache: Arc<RwLock<ModelCache<Vec<CommitteeModel>>>>,
+    stores: &Arc<Stores<E>>,
     extended_blocks_cache: &mut ModelCache<Option<BlockExtendedModel>>,
     votes_cache: &mut PersistableCache<Vec<VoteModel>>,
 ) -> Result<(), String> {
     debug!(slot = %block.slot(), "Persisting block");
-    let mut block_roots_cache = block_roots_cache.write();
-    let mut committees_cache = committees_cache.write();
+    let mut block_roots_cache = stores.block_roots_cache().write();
+    let mut committees_cache = stores.committees_cache().write();
 
     BlockModelWithId::from(&block).save(base_dir).unwrap();
     BlockExtendedModelWithId::from(&block)
@@ -127,7 +124,7 @@ fn persist_block<E: EthSpec>(
     })?;
 
     votes_cache.dirty_iter().for_each(|votes| {
-        if let Err(err) = extended_blocks_cache.update_and_persist(votes.id, |block_extended| {
+        if let Err(err) = extended_blocks_cache.update_and_save(votes.id, |block_extended| {
             if let Some(model) = &mut block_extended.model {
                 model.votes_count = votes.model.iter().map(|v| v.validators.len()).sum()
             }
@@ -141,9 +138,10 @@ fn persist_block<E: EthSpec>(
 
     votes_cache.persist_dirty();
 
-    BlocksMeta::new(block.slot().as_usize() + 1)
-        .save(base_dir)
-        .unwrap();
+    stores
+        .meta_cache()
+        .write()
+        .update_and_save::<BlockModel, _>(|m| m.count = block.slot().as_usize() + 1)?;
 
     Ok(())
 }

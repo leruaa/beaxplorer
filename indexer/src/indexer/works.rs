@@ -9,13 +9,13 @@ use task_executor::TaskExecutor;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{debug, warn};
 use types::{
-    block_request::{BlockRequestModelWithId, BlockRequestsMeta},
-    good_peer::{GoodPeerModelWithId, GoodPeersMeta},
+    block_request::{BlockRequestModel, BlockRequestModelWithId},
+    good_peer::{GoodPeerModel, GoodPeerModelWithId},
     persistable::ResolvablePersistable,
 };
 
 use crate::{
-    db::{BlockByRootRequests, PeerDb, Stores},
+    db::Stores,
     network::augmented_network_service::{NetworkCommand, RequestId},
     types::consolidated_block::ConsolidatedBlock,
     work::Work,
@@ -33,7 +33,7 @@ pub fn handle<E: EthSpec>(
     match work {
         Work::PersistBlock(block) => new_block_send.send(block).unwrap(),
 
-        Work::PersistEpoch(epoch) => spawn_persist_epoch_worker(base_dir, epoch, executor),
+        Work::PersistEpoch(epoch) => spawn_persist_epoch_worker(base_dir, epoch, stores, executor),
 
         Work::PersistBlockRequest(root, attempts) => {
             let block_request = BlockRequestModelWithId::from((&root, &attempts));
@@ -41,11 +41,9 @@ pub fn handle<E: EthSpec>(
             block_request.save(&base_dir).unwrap();
         }
 
-        Work::PersistAllBlockRequests => {
-            persist_block_requests(&base_dir, &stores.block_by_root_requests())
-        }
+        Work::PersistAllBlockRequests => persist_block_requests(&base_dir, stores),
 
-        Work::PersistAllGoodPeers => persist_good_peers(&base_dir, &stores.peer_db()),
+        Work::PersistAllGoodPeers => persist_good_peers(&base_dir, stores),
 
         Work::SendRangeRequest(to) => {
             match to.or_else(|| stores.peer_db().get_best_connected_peer()) {
@@ -89,19 +87,26 @@ pub fn handle<E: EthSpec>(
     }
 }
 
-pub fn persist_block_requests(base_dir: &str, block_by_root_requests: &BlockByRootRequests) {
-    let block_requests = Vec::<BlockRequestModelWithId>::from(block_by_root_requests);
-    let meta = BlockRequestsMeta::new(block_requests.len());
+pub fn persist_block_requests<E: EthSpec>(base_dir: &str, stores: &Arc<Stores<E>>) {
+    let block_requests = Vec::<BlockRequestModelWithId>::from(&*stores.block_by_root_requests());
 
     block_requests.save(base_dir).unwrap();
-    meta.save(base_dir).unwrap();
+
+    stores
+        .meta_cache()
+        .write()
+        .update_and_save::<BlockRequestModel, _>(|m| m.count = block_requests.len())
+        .unwrap();
 }
 
-pub fn persist_good_peers<E: EthSpec>(base_dir: &str, peer_db: &PeerDb<E>) {
-    let good_peers = Vec::<GoodPeerModelWithId>::from(peer_db);
-    let meta = GoodPeersMeta::new(good_peers.len());
+pub fn persist_good_peers<E: EthSpec>(base_dir: &str, stores: &Arc<Stores<E>>) {
+    let good_peers = Vec::<GoodPeerModelWithId>::from(&*stores.peer_db());
 
     good_peers.save(base_dir).unwrap();
-    meta.save(base_dir).unwrap();
-    //info_span!(self.log, "Good peers persisted");
+
+    stores
+        .meta_cache()
+        .write()
+        .update_and_save::<GoodPeerModel, _>(|m| m.count = good_peers.len())
+        .unwrap();
 }

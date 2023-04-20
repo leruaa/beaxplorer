@@ -101,8 +101,8 @@ impl Indexer {
                         
                         _ = shutdown_trigger.changed() => {
                             info!("Shutting down indexer...");
-                            works::persist_block_requests(&base_dir, &stores.block_by_root_requests());
-                            works::persist_good_peers(&base_dir, &stores.peer_db());
+                            works::persist_block_requests(&base_dir, &stores);
+                            works::persist_good_peers(&base_dir, &stores);
                             return;
                         }
                     }
