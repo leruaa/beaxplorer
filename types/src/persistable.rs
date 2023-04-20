@@ -1,5 +1,5 @@
 use rmp_serde::Serializer;
-use serde::Serialize;
+use serde::{de::DeserializeOwned, Serialize};
 use std::{fs::File, io::BufWriter};
 
 pub trait MsgPackSerializable: Serialize {
@@ -13,6 +13,15 @@ pub trait MsgPackSerializable: Serialize {
 }
 
 impl<T> MsgPackSerializable for Vec<T> where T: MsgPackSerializable {}
+
+pub trait MsgPackDeserializable: DeserializeOwned {
+    fn deserialize_from_file(full_path: &str) -> Result<Self, String> {
+        let file = std::fs::File::open(full_path)
+            .map_err(|err| format!("Can't open '{full_path}': {err}"))?;
+        rmp_serde::from_read::<_, Self>(file)
+            .map_err(|err| format!("Can't deserialize {full_path}: {err}"))
+    }
+}
 
 pub trait Persistable {
     fn persist(&self, full_path: &str) -> Result<(), String>;
