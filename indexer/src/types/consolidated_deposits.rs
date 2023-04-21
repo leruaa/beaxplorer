@@ -23,28 +23,24 @@ impl<'a> ConsolidatedDeposits<'a> {
             .into_iter()
             .enumerate()
             .map(|(i, d)| DepositModelWithId {
-                id: (init_count + i + 1) as u64,
+                id: (init_count + i) as u64,
                 model: d,
             })
             .try_fold(0_usize, |acc, deposit| {
                 deposit
                     .save(base_path)
+                    .map(|_| acc + 1)
                     .map_err(|err| (err, acc))
-                    .and_then(|_| Ok(acc + 1))
             });
 
         match saved_count {
             Ok(count) => {
-                meta_cache.update_and_save::<DepositModel, _>(|m| {
-                    m.count += count
-                })?;
+                meta_cache.update_and_save::<DepositModel, _>(|m| m.count += count)?;
 
                 Ok(())
-            },
+            }
             Err((err, count)) => {
-                meta_cache.update_and_save::<DepositModel, _>(|m| {
-                    m.count += count
-                })?;
+                meta_cache.update_and_save::<DepositModel, _>(|m| m.count += count)?;
 
                 Err(err)
             }
