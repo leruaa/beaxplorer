@@ -6,6 +6,7 @@ use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 pub mod app;
 pub mod block_requests;
 pub mod blocks;
+pub mod deposits;
 pub mod epochs;
 mod fetcher;
 pub mod good_peers;

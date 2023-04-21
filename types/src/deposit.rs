@@ -10,6 +10,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 #[persistable(model = "default")]
 #[persistable(prefix = "/deposits")]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
+#[serde(rename_all = "camelCase")]
 pub struct DepositModel {
     pub slot: u64,
     pub public_key: String,
