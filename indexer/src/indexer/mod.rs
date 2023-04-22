@@ -17,7 +17,7 @@ use crate::{
     beacon_chain::beacon_context::BeaconContext,
     db::Stores,
     network::{
-        augmented_network_service::AugmentedNetworkService,
+        consensus_service::ConsensusService,
     }, workers::spawn_persist_block_worker,
 };
 
@@ -63,7 +63,7 @@ impl Indexer {
                     .collect::<Vec<(PeerId, Multiaddr)>>();
 
                 let (network_command_send, mut internal_network_event_recv, network_globals) =
-                    AugmentedNetworkService::start(executor.clone(), beacon_context.clone(), good_peers.iter().map(|(_, a)| a.clone()).collect::<Vec<_>>())
+                    ConsensusService::start(executor.clone(), beacon_context.clone(), good_peers.iter().map(|(_, a)| a.clone()).collect::<Vec<_>>())
                         .await
                         .unwrap();
 

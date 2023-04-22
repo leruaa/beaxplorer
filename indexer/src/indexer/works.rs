@@ -16,7 +16,7 @@ use types::{
 
 use crate::{
     db::Stores,
-    network::augmented_network_service::{NetworkCommand, RequestId},
+    network::consensus_service::{NetworkCommand, RequestId},
     types::consolidated_block::ConsolidatedBlock,
     work::Work,
     workers::spawn_persist_epoch_worker,

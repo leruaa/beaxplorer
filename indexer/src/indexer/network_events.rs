@@ -6,7 +6,7 @@ use tracing::{debug, info, instrument, warn};
 
 use crate::{
     db::Stores,
-    network::{augmented_network_service::NetworkCommand, event::NetworkEvent},
+    network::{consensus_service::NetworkCommand, event::NetworkEvent},
     types::block_state::BlockState,
     work::Work,
 };

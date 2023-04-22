@@ -9,7 +9,7 @@ use types::block_root::{BlockRootModel, BlockRootModelWithId};
 
 use crate::{
     db::Stores,
-    network::{augmented_network_service::RequestId, event::NetworkEvent},
+    network::{consensus_service::RequestId, event::NetworkEvent},
     types::block_state::BlockState,
     work::Work,
 };
@@ -173,7 +173,7 @@ mod tests {
 
     use crate::{
         db::Stores,
-        network::{augmented_network_service::RequestId, event::NetworkEvent},
+        network::{consensus_service::RequestId, event::NetworkEvent},
         test_utils::{build_stores, BeaconChainHarness},
         work::Work,
     };

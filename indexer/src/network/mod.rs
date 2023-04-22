@@ -1,2 +1,2 @@
-pub mod augmented_network_service;
+pub mod consensus_service;
 pub mod event;

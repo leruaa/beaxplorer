@@ -13,7 +13,7 @@ use tracing_slog::TracingSlogDrain;
 
 use crate::beacon_chain::beacon_context::BeaconContext;
 
-pub struct AugmentedNetworkService<E: EthSpec> {
+pub struct ConsensusService<E: EthSpec> {
     command_recv: UnboundedReceiver<NetworkCommand>,
     event_send: UnboundedSender<NetworkEvent<RequestId, E>>,
     enr_fork_id: EnrForkId,
@@ -36,7 +36,7 @@ pub enum NetworkCommand {
     ReportPeer(PeerId, &'static str),
 }
 
-impl<E: EthSpec> AugmentedNetworkService<E> {
+impl<E: EthSpec> ConsensusService<E> {
     pub async fn start(
         executor: TaskExecutor,
         beacon_context: Arc<BeaconContext<E>>,
