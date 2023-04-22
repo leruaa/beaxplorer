@@ -1,7 +1,5 @@
 import { useMemo, useCallback, useState } from "react";
 import { useRouter } from 'next/router'
-import moment from "moment";
-import Moment from 'react-moment';
 import DataTable from "../components/data-table";
 import Number from "../components/number";
 import Ethers from "../components/ethers";

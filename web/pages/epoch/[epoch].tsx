@@ -1,11 +1,11 @@
-import moment from "moment";
-import Moment from 'react-moment';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router'
+import { DateTime } from "luxon";
 import Breadcrumb from "../../components/breadcrumb";
 import Percentage from "../../components/percentage";
 import Ethers from "../../components/ethers";
 import { App, getEpochExtended } from '../../pkg/web';
+import RelativeDatetime from '../../components/relative-datetime';
 
 
 export default (props) => {
@@ -37,9 +37,7 @@ export default (props) => {
               </dd>
               <dt>Time</dt>
               <dd>
-                <span title={moment.unix(epoch.timestamp).format("L LTS")}>
-                  <Moment unix fromNow date={epoch.timestamp} />
-                </span>
+                <RelativeDatetime timestamp={epoch.timestamp} />
               </dd>
               <dt>Attestations</dt>
               <dd>{epoch.attestations_count}</dd>
@@ -48,7 +46,7 @@ export default (props) => {
               <dt>Slashings P / A</dt>
               <dd>{epoch.proposer_slashings_count} / {epoch.attester_slashings_count}</dd>
               <dt>Voting Participation</dt>
-              <dd><Ethers value={epoch.eligible_ether} /> of <Ethers value={epoch.voted_ether} /> (<Percentage value={epoch.global_participation_rate} />)</dd>
+              <dd><Ethers value={epoch.voted_ether} /> of <Ethers value={epoch.eligible_ether} /> (<Percentage value={epoch.global_participation_rate} />)</dd>
             </dl>
           </div>
         </section>

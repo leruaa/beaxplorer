@@ -1,6 +1,3 @@
-import { useRouter } from 'next/router'
-import moment from "moment";
-import Moment from 'react-moment';
 import DataTable from "../components/data-table";
 import Number from "../components/number";
 import Ethers from "../components/ethers";
@@ -10,6 +7,7 @@ import useDataTable from "../hooks/data-table";
 import { App, getEpochMeta, getEpoch, EpochView } from "../pkg";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from 'next/link';
+import RelativeDatetime from "../components/relative-datetime";
 
 
 export async function getStaticProps() {
@@ -37,9 +35,7 @@ export default (props) => {
     columnHelper.accessor("timestamp", {
       header: "Time",
       cell: props =>
-        <span title={moment.unix(props.getValue()).format("L LTS")}>
-          <Moment unix fromNow date={props.getValue()} />
-        </span>
+        <RelativeDatetime timestamp={props.getValue()} />
     }),
     columnHelper.accessor("attestations_count", {
       header: "Attestations",
