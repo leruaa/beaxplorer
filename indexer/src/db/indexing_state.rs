@@ -87,12 +87,16 @@ impl<E: EthSpec> IndexingState<E> {
 
         let consolidated_epoch = summary.map(|s| {
             ConsolidatedEpoch::new(
-                block.epoch(),
-                self.aggregated_epoch_data.clone(),
+                beacon_state.previous_epoch(),
+                self.aggregated_epoch_data.aggregate(),
                 &s,
                 beacon_state.balances().to_owned().into(),
             )
         });
+
+        if let Some(beacon_block) = block.canonical_block() {
+            self.aggregated_epoch_data.consolidate(beacon_block);
+        }
 
         let committees = if slot == 0 {
             beacon_state

@@ -17,12 +17,19 @@ impl<E: EthSpec> BlockState<E> {
     pub fn slot(&self) -> Slot {
         match self {
             BlockState::Proposed(block) | BlockState::Orphaned(block) => block.slot(),
-            BlockState::Missed(s) => s.clone(),
+            BlockState::Missed(s) => *s,
         }
     }
 
     pub fn epoch(&self) -> Epoch {
         self.slot().epoch(E::slots_per_epoch())
+    }
+
+    pub fn canonical_block(&self) -> Option<&Arc<SignedBeaconBlock<E>>> {
+        match self {
+            BlockState::Proposed(block) => Some(block),
+            _ => None,
+        }
     }
 
     pub fn root(&self) -> Option<Hash256> {

@@ -1,8 +1,8 @@
-use std::{fmt::Display, marker::PhantomData, ops::Div};
+use std::{fmt::Display, marker::PhantomData, ops::Div, sync::Arc};
 
 use eth2::lighthouse::GlobalValidatorInclusionData;
 
-use lighthouse_types::{Epoch, EthSpec};
+use lighthouse_types::{Epoch, EthSpec, SignedBeaconBlock};
 use shared::utils::clock::Clock;
 use state_processing::per_epoch_processing::EpochProcessingSummary;
 
@@ -113,4 +113,26 @@ pub struct AggregatedEpochData {
     pub voluntary_exits_count: usize,
     pub proposer_slashings_count: usize,
     pub attester_slashings_count: usize,
+}
+
+impl AggregatedEpochData {
+    pub fn consolidate<E: EthSpec>(&mut self, block: &Arc<SignedBeaconBlock<E>>) {
+        self.attestations_count += block.message().body().attestations().len();
+        self.deposits_count += block.message().body().deposits().len();
+        self.voluntary_exits_count += block.message().body().voluntary_exits().len();
+        self.proposer_slashings_count += block.message().body().proposer_slashings().len();
+        self.attester_slashings_count += block.message().body().attester_slashings().len();
+    }
+
+    pub fn aggregate(&mut self) -> Self {
+        let aggregated = self.clone();
+
+        self.attestations_count = 0;
+        self.deposits_count = 0;
+        self.voluntary_exits_count = 0;
+        self.proposer_slashings_count = 0;
+        self.attester_slashings_count = 0;
+
+        aggregated
+    }
 }
