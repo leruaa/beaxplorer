@@ -29,6 +29,7 @@ slot_clock = { path = "../lighthouse/common/slot_clock" }
 state_processing = { path = "../lighthouse/consensus/state_processing" }
 genesis = { path = "../lighthouse/beacon_node/genesis" }
 lru_cache = { path = "../lighthouse/common/lru_cache" }
+execution_layer = { path = "../lighthouse/beacon_node/execution_layer" }
 
 [patch."https://github.com/ralexstokes/mev-rs"]
 mev-rs = { git = "https://github.com/ralexstokes//mev-rs", rev = "7813d4a4a564e0754e9aaab2d95520ba437c3889" }

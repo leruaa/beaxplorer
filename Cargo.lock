@@ -3286,6 +3286,7 @@ dependencies = [
  "environment",
  "eth2",
  "eth2_network_config",
+ "execution_layer",
  "flate2",
  "futures",
  "genesis",
