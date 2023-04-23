@@ -1,13 +1,9 @@
 use std::sync::Arc;
 
-use lighthouse_network::{
-    rpc::{BlocksByRangeRequest, BlocksByRootRequest},
-    Request,
-};
 use lighthouse_types::EthSpec;
 use task_executor::TaskExecutor;
 use tokio::sync::mpsc::UnboundedSender;
-use tracing::{debug, warn};
+
 use types::{
     block_request::{BlockRequestModel, BlockRequestModelWithId},
     good_peer::{GoodPeerModel, GoodPeerModelWithId},
@@ -15,8 +11,8 @@ use types::{
 };
 
 use crate::{
-    db::Stores, network::consensus_network::NetworkCommand,
-    types::consolidated_block::ConsolidatedBlock, work::Work, workers::spawn_persist_epoch_worker,
+    db::Stores, types::consolidated_block::ConsolidatedBlock, work::Work,
+    workers::spawn_persist_epoch_worker,
 };
 
 pub fn handle<E: EthSpec>(

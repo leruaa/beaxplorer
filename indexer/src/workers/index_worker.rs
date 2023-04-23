@@ -33,7 +33,13 @@ pub fn spawn_index_worker<E: EthSpec>(
                 .unwrap();
 
             loop {
-                handle_next_event(&mut consensus_network, &stores, &work_send).await;
+                if handle_next_event(&mut consensus_network, &stores, &work_send)
+                    .await
+                    .is_err()
+                {
+                    info!("Shutting down index worker");
+                    return;
+                }
             }
         },
         "index worker",
@@ -46,7 +52,7 @@ async fn handle_next_event<E: EthSpec>(
     consensus_network: &mut ConsensusNetwork<E>,
     stores: &Arc<Stores<E>>,
     work_send: &UnboundedSender<Work<E>>,
-) {
+) -> Result<(), String> {
     match consensus_network.next_event().await {
         LighthouseNetworkEvent::PeerConnectedOutgoing(peer_id) => {
             if consensus_network.peer_db().is_good_peer(&peer_id) {
@@ -54,7 +60,7 @@ async fn handle_next_event<E: EthSpec>(
             }
 
             if !stores.block_range_requests().is_requesting() {
-                send_range_request(Some(peer_id), consensus_network, &stores);
+                send_range_request(Some(peer_id), consensus_network, stores);
             }
 
             stores
@@ -133,10 +139,14 @@ async fn handle_next_event<E: EthSpec>(
                         new_blocks(block.clone(), stores).try_for_each(|block| {
                             match stores.indexing_state_mut().process_block(block) {
                                 Ok((block, epoch)) => {
-                                    work_send.send(Work::PersistBlock(block)).unwrap();
+                                    work_send
+                                        .send(Work::PersistBlock(block))
+                                        .map_err(|err| err.to_string())?;
 
                                     if let Some(epoch) = epoch {
-                                        work_send.send(Work::PersistEpoch(epoch)).unwrap();
+                                        work_send
+                                            .send(Work::PersistEpoch(epoch))
+                                            .map_err(|err| err.to_string())?;
                                     }
                                     Ok(())
                                 }
@@ -208,13 +218,15 @@ async fn handle_next_event<E: EthSpec>(
                             // Persist the found block request
                             work_send
                                 .send(Work::PersistBlockRequest(root, attempt.clone()))
-                                .unwrap();
+                                .map_err(|err| err.to_string())?;
                         }
 
                         consensus_network.peer_db_mut().add_good_peer(peer_id);
 
                         // Persist good peers
-                        work_send.send(Work::PersistAllGoodPeers).unwrap();
+                        work_send
+                            .send(Work::PersistAllGoodPeers)
+                            .map_err(|err| err.to_string())?;
                     }
                 } else {
                     stores
@@ -228,6 +240,8 @@ async fn handle_next_event<E: EthSpec>(
 
         _ => {}
     };
+
+    Ok(())
 }
 
 fn new_blocks<E: EthSpec>(

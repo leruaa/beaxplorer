@@ -9,7 +9,6 @@ use lighthouse_network::{
 use slog::{o, Logger};
 use store::{EnrForkId, Epoch, EthSpec, ForkContext, Hash256, Slot};
 use task_executor::TaskExecutor;
-use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 use tracing::{debug, warn};
 use tracing_slog::TracingSlogDrain;
 
@@ -18,8 +17,6 @@ use crate::{beacon_chain::beacon_context::BeaconContext, db::PeerDb};
 pub struct ConsensusNetwork<E: EthSpec> {
     service: Network<RequestId, E>,
     peer_db: PeerDb<E>,
-    command_recv: UnboundedReceiver<NetworkCommand>,
-    event_send: UnboundedSender<NetworkEvent<RequestId, E>>,
     enr_fork_id: EnrForkId,
 }
 
@@ -27,16 +24,6 @@ pub struct ConsensusNetwork<E: EthSpec> {
 pub enum RequestId {
     Range,
     Block(Hash256),
-}
-
-#[derive(Debug, Clone)]
-pub enum NetworkCommand {
-    SendRequest {
-        peer_id: PeerId,
-        request_id: RequestId,
-        request: Box<Request>,
-    },
-    ReportPeer(PeerId, &'static str),
 }
 
 impl<E: EthSpec> ConsensusNetwork<E> {
@@ -74,9 +61,6 @@ impl<E: EthSpec> ConsensusNetwork<E> {
             gossipsub_registry: None,
         };
 
-        let (command_send, command_recv) = mpsc::unbounded_channel::<NetworkCommand>();
-        let (event_send, event_recv) = mpsc::unbounded_channel::<NetworkEvent<RequestId, E>>();
-
         // launch libp2p service
         let (libp2p, network_globals) =
             Network::new(executor.clone(), service_context, &network_log)
@@ -86,8 +70,6 @@ impl<E: EthSpec> ConsensusNetwork<E> {
         let consensus_network = Self {
             service: libp2p,
             peer_db: PeerDb::new(network_globals, good_peers),
-            command_recv,
-            event_send,
             enr_fork_id: beacon_context.current_fork_id(),
         };
 

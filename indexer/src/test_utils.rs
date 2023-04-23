@@ -5,7 +5,6 @@ use beacon_node::beacon_chain::{
     test_utils::BeaconChainHarness as LighthouseBeaconChainHarness,
 };
 use genesis::generate_deterministic_keypairs;
-use lighthouse_network::NetworkGlobals;
 use lighthouse_types::{
     BeaconBlock, BeaconState, ChainSpec, MainnetEthSpec, Signature, SignedBeaconBlock, Slot,
 };

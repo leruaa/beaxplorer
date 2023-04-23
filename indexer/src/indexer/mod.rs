@@ -1,16 +1,10 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc};
 
 use lighthouse_network::{Multiaddr, PeerId};
 use store::EthSpec;
 use task_executor::TaskExecutor;
-use tokio::{
-    sync::{
-        mpsc::{self, Sender},
-        watch::Receiver,
-    },
-    time::{interval_at, Instant},
-};
-use tracing::{info, warn};
+use tokio::sync::{mpsc::Sender, watch::Receiver};
+use tracing::info;
 use types::{block_request::BlockRequestModelWithId, good_peer::GoodPeerModelWithId};
 
 use crate::{
@@ -62,15 +56,21 @@ impl Indexer {
 
                 loop {
                     tokio::select! {
-                        Some(work) = work_recv.recv() => {
-                            works::handle(base_dir.clone(), work, &stores, &new_block_send, &executor);
+                        work = work_recv.recv() => {
+                            match work {
+                                Some(work) => works::handle(base_dir.clone(), work, &stores, &new_block_send, &executor),
+                                None => {
+                                    works::persist_block_requests(&base_dir, &stores);
+                                    works::persist_good_peers(&base_dir, &stores);
+                                    return
+                                },
+                            }
                         },
 
                         _ = shutdown_trigger.changed() => {
                             info!("Shutting down indexer...");
-                            works::persist_block_requests(&base_dir, &stores);
-                            works::persist_good_peers(&base_dir, &stores);
-                            return;
+                            work_recv.close();
+
                         }
                     }
                 }

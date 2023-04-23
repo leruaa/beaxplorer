@@ -1,4 +1,3 @@
-use lighthouse_network::PeerId;
 use lighthouse_types::{EthSpec, Hash256};
 use types::utils::RequestAttempts;
 
