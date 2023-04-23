@@ -40,13 +40,13 @@ export default (props) => {
                 <RelativeDatetime timestamp={epoch.timestamp} />
               </dd>
               <dt>Attestations</dt>
-              <dd>{epoch.attestations_count}</dd>
+              <dd>{epoch.attestationsCount}</dd>
               <dt>Deposits</dt>
-              <dd>{epoch.deposits_count}</dd>
+              <dd>{epoch.depositsCount}</dd>
               <dt>Slashings P / A</dt>
-              <dd>{epoch.proposer_slashings_count} / {epoch.attester_slashings_count}</dd>
+              <dd>{epoch.proposerSlashingsCount} / {epoch.attesterSlashingsCount}</dd>
               <dt>Voting Participation</dt>
-              <dd><Ethers value={epoch.voted_ether} /> of <Ethers value={epoch.eligible_ether} /> (<Percentage value={epoch.global_participation_rate} />)</dd>
+              <dd><Ethers value={epoch.votedEther} /> of <Ethers value={epoch.eligibleEther} /> (<Percentage value={epoch.global_participation_rate} />)</dd>
             </dl>
           </div>
         </section>

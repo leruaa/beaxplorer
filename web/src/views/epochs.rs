@@ -9,6 +9,7 @@ use crate::to_js;
 
 #[derive(Serialize, Tsify, Debug, Clone)]
 #[tsify(into_wasm_abi)]
+#[serde(rename_all = "camelCase")]
 pub struct EpochView {
     pub epoch: u64,
     #[serde(flatten)]
@@ -32,6 +33,7 @@ impl From<(u64, EpochModel)> for EpochView {
 
 #[derive(Serialize, Tsify, Debug, Clone)]
 #[tsify(into_wasm_abi)]
+#[serde(rename_all = "camelCase")]
 pub struct EpochExtendedView {
     pub epoch: u64,
     #[serde(flatten)]

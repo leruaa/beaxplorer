@@ -37,16 +37,16 @@ export default (props) => {
       cell: props =>
         <RelativeDatetime timestamp={props.getValue()} />
     }),
-    columnHelper.accessor("attestations_count", {
+    columnHelper.accessor("attestationsCount", {
       header: "Attestations",
       cell: props => <Number value={props.getValue()} />
     }),
-    columnHelper.accessor("deposits_count", {
+    columnHelper.accessor("depositsCount", {
       header: "Deposits",
       cell: props => <Number value={props.getValue()} />
     }),
     columnHelper.accessor(
-      (row, rowIndex) => ({ p: row.proposer_slashings_count, a: row.attester_slashings_count }),
+      (row, rowIndex) => ({ p: row.proposerSlashingsCount, a: row.attesterSlashingsCount }),
       {
         header: "Slashings P / A",
         cell: props =>
@@ -58,15 +58,15 @@ export default (props) => {
       header: "Finalized",
       cell: props => props.getValue() ? "Yes" : "No"
     }),
-    columnHelper.accessor("eligible_ether", {
+    columnHelper.accessor("eligibleEther", {
       header: "Eligible",
       cell: props => <Ethers value={props.getValue()} />
     }),
-    columnHelper.accessor("voted_ether", {
+    columnHelper.accessor("votedEther", {
       header: "Voted",
       cell: props => <Ethers value={props.getValue()} />
     }),
-    columnHelper.accessor("global_participation_rate", {
+    columnHelper.accessor("globalParticipationRate", {
       header: "Rate",
       cell: props => <Percentage value={props.getValue()} />
     })

@@ -20,6 +20,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 ))]
 #[persistable(prefix = "/epochs")]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
+#[serde(rename_all = "camelCase")]
 pub struct EpochModel {
     pub timestamp: u64,
     #[persistable(sortable)]
