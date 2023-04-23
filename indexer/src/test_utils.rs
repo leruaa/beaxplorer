@@ -17,14 +17,11 @@ use crate::{beacon_chain::beacon_context::BeaconContext, db::Stores};
 
 pub fn build_stores(spec: ChainSpec) -> Arc<Stores<MainnetEthSpec>> {
     let logger = Logger::root(TracingSlogDrain, o!());
-    let network_globals = NetworkGlobals::new_test_globals(&logger);
     let beacon_context = BeaconContext::build(spec).unwrap();
 
     Arc::new(Stores::new(
         String::from(""),
-        Arc::new(network_globals),
         Arc::new(beacon_context),
-        vec![],
         vec![],
     ))
 }

@@ -26,7 +26,6 @@ pub struct Stores<E: EthSpec> {
     indexing_state: RwLock<IndexingState<E>>,
     block_range_requests: RwLock<BlockRangeRequests<E>>,
     block_by_root_requests: RwLock<BlockByRootRequests>,
-    peer_db: RwLock<PeerDb<E>>,
     block_roots_cache: Arc<RwLock<ModelCache<BlockRootModel>>>,
     committees_cache: Arc<RwLock<ModelCache<Vec<CommitteeModel>>>>,
     meta_cache: Arc<RwLock<MetaCache>>,
@@ -35,20 +34,14 @@ pub struct Stores<E: EthSpec> {
 impl<E: EthSpec> Stores<E> {
     pub fn new(
         base_dir: String,
-        network_globals: Arc<NetworkGlobals<E>>,
         beacon_context: Arc<BeaconContext<E>>,
         block_requests: Vec<BlockRequestModelWithId>,
-        good_peers: Vec<(PeerId, Multiaddr)>,
     ) -> Self {
         Self {
             indexing_state: RwLock::new(IndexingState::new(beacon_context)),
             block_range_requests: RwLock::default(),
             block_by_root_requests: RwLock::new(BlockByRootRequests::from_block_requests(
                 block_requests,
-            )),
-            peer_db: RwLock::new(PeerDb::new(
-                network_globals,
-                good_peers.into_iter().collect(),
             )),
             block_roots_cache: Arc::new(RwLock::new(ModelCache::new(base_dir.clone()))),
             committees_cache: Arc::new(RwLock::new(ModelCache::new(base_dir.clone()))),
@@ -78,14 +71,6 @@ impl<E: EthSpec> Stores<E> {
 
     pub fn block_by_root_requests_mut(&self) -> RwLockWriteGuard<BlockByRootRequests> {
         self.block_by_root_requests.write()
-    }
-
-    pub fn peer_db(&self) -> RwLockReadGuard<PeerDb<E>> {
-        self.peer_db.read()
-    }
-
-    pub fn peer_db_mut(&self) -> RwLockWriteGuard<PeerDb<E>> {
-        self.peer_db.write()
     }
 
     pub fn block_roots_cache(&self) -> &RwLock<ModelCache<BlockRootModel>> {

@@ -15,18 +15,14 @@ use types::{
 };
 
 use crate::{
-    db::Stores,
-    network::consensus_service::{NetworkCommand, RequestId},
-    types::consolidated_block::ConsolidatedBlock,
-    work::Work,
-    workers::spawn_persist_epoch_worker,
+    db::Stores, network::consensus_network::NetworkCommand,
+    types::consolidated_block::ConsolidatedBlock, work::Work, workers::spawn_persist_epoch_worker,
 };
 
 pub fn handle<E: EthSpec>(
     base_dir: String,
     work: Work<E>,
     stores: &Arc<Stores<E>>,
-    network_command_send: &UnboundedSender<NetworkCommand>,
     new_block_send: &UnboundedSender<ConsolidatedBlock<E>>,
     executor: &TaskExecutor,
 ) {
@@ -44,46 +40,6 @@ pub fn handle<E: EthSpec>(
         Work::PersistAllBlockRequests => persist_block_requests(&base_dir, stores),
 
         Work::PersistAllGoodPeers => persist_good_peers(&base_dir, stores),
-
-        Work::SendRangeRequest(to) => {
-            match to.or_else(|| stores.peer_db().get_best_connected_peer()) {
-                Some(to) => {
-                    let start_slot = stores
-                        .indexing_state()
-                        .latest_slot()
-                        .map(|s| s.as_u64() + 1)
-                        .unwrap_or_default();
-
-                    debug!(start_slot, "Send range request");
-
-                    network_command_send
-                        .send(NetworkCommand::SendRequest {
-                            peer_id: to,
-                            request_id: RequestId::Range,
-                            request: Box::new(Request::BlocksByRange(BlocksByRangeRequest {
-                                start_slot,
-                                count: 32,
-                            })),
-                        })
-                        .unwrap();
-                }
-                None => {
-                    warn!("No peer available for a new range request");
-                }
-            }
-        }
-
-        Work::SendBlockByRootRequest(root, to) => {
-            network_command_send
-                .send(NetworkCommand::SendRequest {
-                    peer_id: to,
-                    request_id: RequestId::Block(root),
-                    request: Box::new(Request::BlocksByRoot(BlocksByRootRequest {
-                        block_roots: vec![root].into(),
-                    })),
-                })
-                .unwrap();
-        }
     }
 }
 
@@ -100,7 +56,7 @@ pub fn persist_block_requests<E: EthSpec>(base_dir: &str, stores: &Arc<Stores<E>
 }
 
 pub fn persist_good_peers<E: EthSpec>(base_dir: &str, stores: &Arc<Stores<E>>) {
-    let good_peers = Vec::<GoodPeerModelWithId>::from(&*stores.peer_db());
+    let good_peers: Vec<GoodPeerModelWithId> = vec![]; //Vec::<GoodPeerModelWithId>::from(&*stores.peer_db());
 
     good_peers.save(base_dir).unwrap();
 
