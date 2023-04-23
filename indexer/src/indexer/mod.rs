@@ -22,7 +22,6 @@ use crate::{
 };
 
 mod eth_events;
-mod network_events;
 mod works;
 
 #[derive(Default)]
@@ -68,8 +67,7 @@ impl Indexer {
                         .unwrap();
 
                 let (work_send, mut work_recv) = mpsc::unbounded_channel();
-                let (network_event_send, mut network_event_recv) = mpsc::unbounded_channel();
-
+ 
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
                 let stores = Arc::new(Stores::new(base_dir.clone(), network_globals.clone(), beacon_context, block_requests.collect(), good_peers));
 
@@ -82,11 +80,7 @@ impl Indexer {
                 loop {
                     tokio::select! {
                         Some(event) = internal_network_event_recv.recv() => {
-                            eth_events::handle(event, &network_event_send, &work_send, &stores);
-                        },
-
-                        Some(event) = network_event_recv.recv() => {
-                            network_events::handle(event, &network_command_send, &work_send, &stores);
+                            eth_events::handle(event, &network_command_send, &work_send, &stores);
                         },
 
                         Some(work) = work_recv.recv() => {

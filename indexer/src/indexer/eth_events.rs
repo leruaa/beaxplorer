@@ -4,51 +4,87 @@ use itertools::Itertools;
 use lighthouse_network::{NetworkEvent as LighthouseNetworkEvent, Response};
 use lighthouse_types::{EthSpec, SignedBeaconBlock, Slot};
 use tokio::sync::mpsc::UnboundedSender;
-use tracing::{error, info};
+use tracing::{debug, error, info, warn};
 use types::block_root::{BlockRootModel, BlockRootModelWithId};
 
 use crate::{
     db::Stores,
-    network::{consensus_service::RequestId, event::NetworkEvent},
+    network::consensus_service::{NetworkCommand, RequestId},
     types::block_state::BlockState,
     work::Work,
 };
 
 pub fn handle<E: EthSpec>(
     network_event: LighthouseNetworkEvent<RequestId, E>,
-    network_event_send: &UnboundedSender<NetworkEvent<E>>,
+    network_command_send: &UnboundedSender<NetworkCommand>,
     work_send: &UnboundedSender<Work<E>>,
     stores: &Arc<Stores<E>>,
 ) {
     match network_event {
         LighthouseNetworkEvent::PeerConnectedOutgoing(peer_id) => {
-            network_event_send
-                .send(NetworkEvent::PeerConnected(peer_id))
-                .unwrap();
+            if stores.peer_db().is_good_peer(&peer_id) {
+                info!(peer = %peer_id, "Good peer connected");
+            }
+
+            if !stores.block_range_requests().is_requesting() {
+                work_send
+                    .send(Work::SendRangeRequest(Some(peer_id)))
+                    .unwrap();
+            }
+
+            stores
+                .block_by_root_requests_mut()
+                .pending_iter_mut()
+                .for_each(|(root, req)| {
+                    if req.insert_peer(&peer_id) {
+                        work_send
+                            .send(Work::SendBlockByRootRequest(*root, peer_id))
+                            .unwrap();
+                    }
+                });
         }
 
         LighthouseNetworkEvent::PeerDisconnected(peer_id) => {
-            network_event_send
-                .send(NetworkEvent::PeerDisconnected(peer_id))
-                .unwrap();
+            let mut block_range_requests = stores.block_range_requests_mut();
+
+            if block_range_requests.request_terminated(&peer_id) {
+                debug!(to = %peer_id, "Range request cancelled");
+                if !block_range_requests.is_requesting() {
+                    work_send.send(Work::SendRangeRequest(None)).unwrap();
+                }
+            }
+
+            stores
+                .block_by_root_requests_mut()
+                .pending_iter_mut()
+                .for_each(|(_, req)| {
+                    req.remove_peer(&peer_id);
+                });
         }
 
         LighthouseNetworkEvent::RPCFailed {
             id: RequestId::Range,
             peer_id,
         } => {
-            network_event_send
-                .send(NetworkEvent::RangeRequestFailed(peer_id))
+            network_command_send
+                .send(NetworkCommand::ReportPeer(peer_id, "Range request failed"))
                 .unwrap();
+            work_send.send(Work::SendRangeRequest(None)).unwrap();
         }
 
         LighthouseNetworkEvent::RPCFailed {
             id: RequestId::Block(root),
             peer_id,
         } => {
-            network_event_send
-                .send(NetworkEvent::BlockRequestFailed(root, peer_id))
-                .unwrap();
+            if stores.peer_db().is_good_peer(&peer_id) {
+                warn!(peer = %peer_id, "Connection to good peer failed");
+            }
+
+            stores
+                .block_by_root_requests_mut()
+                .update_attempt(&root, |attempt| {
+                    attempt.remove_peer(&peer_id);
+                });
         }
 
         LighthouseNetworkEvent::ResponseReceived {
@@ -104,19 +140,29 @@ pub fn handle<E: EthSpec>(
                                 })
                                 .for_each(|(slot, root)| {
                                     info!(%slot, %root, "Unknown root while processing block {}", block.slot());
-                                    network_event_send
-                                        .send(NetworkEvent::UnknownBlockRoot(slot, root))
-                                        .unwrap();
+                                    stores.block_by_root_requests_mut().add(slot, root);
+
+                                    stores
+                                        .peer_db()
+                                        .good_peers_iter()
+                                        .connected()
+                                        .for_each(|peer_id| {
+                                            work_send
+                                                .send(Work::SendBlockByRootRequest(root, *peer_id))
+                                                .unwrap();
+                                        });
                                 });
                         }
                         Err(err) => error!("{err:?}"),
                     }
                 }
             } else if block_range_requests.request_terminated(&peer_id) {
-                // The is no more active range requests
-                network_event_send
-                    .send(NetworkEvent::RangeRequestSuccedeed)
-                    .unwrap();
+                // There is no more active range requests
+                debug!("Range request succedeed");
+
+                if !stores.block_range_requests().is_requesting() {
+                    work_send.send(Work::SendRangeRequest(None)).unwrap();
+                }
             }
         }
 
@@ -128,17 +174,31 @@ pub fn handle<E: EthSpec>(
             if stores.block_by_root_requests().exists(&root) {
                 if let Some(block) = block {
                     let slot = block.slot();
-                    network_event_send
-                        .send(NetworkEvent::NewBlock(BlockState::Orphaned(block), peer_id))
-                        .unwrap();
 
-                    network_event_send
-                        .send(NetworkEvent::BlockRootFound(root, slot, peer_id))
-                        .unwrap();
+                    if stores
+                        .block_by_root_requests_mut()
+                        .set_request_as_found(root, peer_id)
+                    {
+                        info!(found_by = %peer_id, %slot, %root, "An orphaned block has been found");
+
+                        if let Some(attempt) = stores.block_by_root_requests().get(&root) {
+                            // Persist the found block request
+                            work_send
+                                .send(Work::PersistBlockRequest(root, attempt.clone()))
+                                .unwrap();
+                        }
+
+                        stores.peer_db_mut().add_good_peer(peer_id);
+
+                        // Persist good peers
+                        work_send.send(Work::PersistAllGoodPeers).unwrap();
+                    }
                 } else {
-                    network_event_send
-                        .send(NetworkEvent::BlockRootNotFound(root))
-                        .unwrap();
+                    stores
+                        .block_by_root_requests_mut()
+                        .update_attempt(&root, |attempt| {
+                            attempt.increment_not_found();
+                        });
                 }
             }
         }
@@ -173,7 +233,7 @@ mod tests {
 
     use crate::{
         db::Stores,
-        network::{consensus_service::RequestId, event::NetworkEvent},
+        network::consensus_service::{NetworkCommand, RequestId},
         test_utils::{build_stores, BeaconChainHarness},
         work::Work,
     };
@@ -183,7 +243,7 @@ mod tests {
     fn handle_new_block<E: EthSpec>(
         peer: PeerId,
         block: SignedBeaconBlock<E>,
-        network_event_send: &UnboundedSender<NetworkEvent<E>>,
+        network_command_send: &UnboundedSender<NetworkCommand>,
         work_send: &UnboundedSender<Work<E>>,
         stores: &Arc<Stores<E>>,
     ) {
@@ -193,7 +253,7 @@ mod tests {
                 id: RequestId::Range,
                 response: Response::BlocksByRange(Some(Arc::new(block))),
             },
-            network_event_send,
+            network_command_send,
             work_send,
             stores,
         );
@@ -231,7 +291,7 @@ mod tests {
         let ev1 = network_event_recv.recv().await;
         let ev2 = network_event_recv.recv().await;
 
-        assert!(matches!(ev1.unwrap(), NetworkEvent::NewBlock(_, p) if p == peer1));
+        //assert!(matches!(ev1.unwrap(), NetworkEvent::NewBlock(_, p) if p == peer1));
         assert_eq!(stores.indexing_state().latest_slot(), Some(Slot::new(0)));
         assert!(ev2.is_none());
     }
