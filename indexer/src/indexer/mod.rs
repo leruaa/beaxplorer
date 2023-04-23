@@ -10,6 +10,7 @@ use types::{block_request::BlockRequestModelWithId, good_peer::GoodPeerModelWith
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
     db::Stores,
+    network::spawn_consensus_network,
     workers::{spawn_index_worker, spawn_persist_block_worker},
 };
 
@@ -50,9 +51,13 @@ impl Indexer {
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
                 let stores = Arc::new(Stores::new(base_dir.clone(), beacon_context.clone(), block_requests.collect()));
 
+                let (network_command_send, network_event_recv) = spawn_consensus_network(beacon_context, good_peers, &executor)
+                    .await
+                    .unwrap();
+
                 let new_block_send = spawn_persist_block_worker(base_dir.clone(), stores.clone(), shutdown_trigger.clone(), &executor);
 
-                let mut work_recv = spawn_index_worker(beacon_context, stores.clone(), good_peers, &executor);
+                let mut work_recv = spawn_index_worker(network_event_recv, network_command_send, stores.clone(), &executor);
 
                 loop {
                     tokio::select! {
