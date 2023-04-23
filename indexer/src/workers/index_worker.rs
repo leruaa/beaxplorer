@@ -14,7 +14,7 @@ use tracing::{debug, error, info};
 use types::block_root::{BlockRootModel, BlockRootModelWithId};
 
 use crate::{
-    db::{Stores, BlockByRootRequests},
+    db::Stores,
     network::{NetworkCommand, RequestId},
     types::block_state::BlockState,
     work::Work,
@@ -63,9 +63,14 @@ impl<E: EthSpec> IndexWorker<E> {
                 loop {
                     match self.network_event_recv.recv().await {
                         Some(event) => {
-                            if self.handle_next_event(event).is_err() {
-                                info!("Shutting down index worker");
-                                return;
+                            if let Err(err) = self.handle_next_event(event) {
+                                match err {
+                                    IndexError::SendMessage => {
+                                        info!("Shutting down index worker");
+                                        return;
+                                    },
+                                    IndexError::BlockProcessing(err) => error!("{err}"),
+                                }
                             }
                         },
                         None => {
@@ -79,7 +84,7 @@ impl<E: EthSpec> IndexWorker<E> {
         );
     }
 
-    fn handle_next_event(&self, event: NetworkEvent<RequestId, E>) -> Result<(), String> {
+    fn handle_next_event(&self, event: NetworkEvent<RequestId, E>) -> Result<(), IndexError> {
         match event {
             NetworkEvent::PeerConnectedOutgoing(peer_id) => {
                 if !self.block_range_requests.read().is_requesting() {
@@ -93,12 +98,12 @@ impl<E: EthSpec> IndexWorker<E> {
                             self
                                 .network_command_send
                                 .send(NetworkCommand::SendBlockByRootRequest { peer_id: Some(peer_id), root: *root })
+                                .map_err(|_| IndexError::SendMessage)
                         }
                         else {
                             Ok(())
                         }
-                    })
-                    .map_err(|err| err.to_string())?;
+                    })?;
             }
     
             NetworkEvent::PeerDisconnected(peer_id) => {
@@ -157,50 +162,46 @@ impl<E: EthSpec> IndexWorker<E> {
                     let block = block_range_requests.next_or(block);
     
                     if Some(block.slot()) > self.stores.indexing_state().latest_slot() {
-                        let processing_result =
-                            new_blocks(block.clone(), &self.stores).try_for_each(|block| {
-                                match self.stores.indexing_state_mut().process_block(block) {
-                                    Ok((block, epoch)) => {
+                        new_blocks(block.clone(), &self.stores).try_for_each(|block| {
+                            match self.stores.indexing_state_mut().process_block(block) {
+                                Ok((block, epoch)) => {
+                                    self.work_send
+                                        .send(Work::PersistBlock(block))
+                                        .map_err(|_| IndexError::SendMessage)?;
+    
+                                    if let Some(epoch) = epoch {
                                         self.work_send
-                                            .send(Work::PersistBlock(block))
-                                            .map_err(|err| err.to_string())?;
-    
-                                        if let Some(epoch) = epoch {
-                                            self.work_send
-                                                .send(Work::PersistEpoch(epoch))
-                                                .map_err(|err| err.to_string())?;
-                                        }
-                                        Ok(())
+                                            .send(Work::PersistEpoch(epoch))
+                                            .map_err(|_| IndexError::SendMessage)?;
                                     }
-                                    Err(err) => Err(err),
-                                }
-                            });
-    
-                        match processing_result {
-                            Ok(_) => {
-                                block
-                                    .message()
-                                    .body()
-                                    .attestations()
-                                    .iter()
-                                    .map(|a| (a.data.slot, a.data.beacon_block_root))
-                                    .dedup()
-                                    .filter(|(_, r)| {
-                                        !self.stores
-                                            .block_roots_cache()
-                                            .write()
-                                            .contains(format!("{r:?}"))
-                                    })
-                                    .try_for_each(|(slot, root)| {
-                                        info!(%slot, %root, "Unknown root while processing block {}", block.slot());
-                                        self.stores.block_by_root_requests_mut().add(slot, root);
-    
-                                        self.network_command_send.send(NetworkCommand::SendBlockByRootRequest { peer_id: None, root })
-                                    })
-                                    .map_err(|err| err.to_string())?;
+                                    Ok(())
+                                },
+                                Err(err) => Err(IndexError::BlockProcessing(err)),
                             }
-                            Err(err) => error!("{err:?}"),
-                        }
+                        })?;
+    
+                        block
+                            .message()
+                            .body()
+                            .attestations()
+                            .iter()
+                            .map(|a| (a.data.slot, a.data.beacon_block_root))
+                            .dedup()
+                            .filter(|(_, r)| {
+                                !self.stores
+                                    .block_roots_cache()
+                                    .write()
+                                    .contains(format!("{r:?}"))
+                            })
+                            .try_for_each(|(slot, root)| {
+                                info!(%slot, %root, "Unknown root while processing block {}", block.slot());
+                                self.stores.block_by_root_requests_mut().add(slot, root);
+    
+                                self
+                                    .network_command_send
+                                    .send(NetworkCommand::SendBlockByRootRequest { peer_id: None, root })
+                                    .map_err(|_| IndexError::SendMessage)
+                            })?;
                     }
                 } else if block_range_requests.request_terminated(&peer_id) {
                     // There is no more active range requests
@@ -232,7 +233,7 @@ impl<E: EthSpec> IndexWorker<E> {
                                 // Persist the found block request
                                 self.work_send
                                     .send(Work::PersistBlockRequest(root, attempt.clone()))
-                                    .map_err(|err| err.to_string())?;
+                                    .map_err(|_| IndexError::SendMessage)?;
                             }
     
                             //consensus_network.peer_db_mut().add_good_peer(peer_id);
@@ -240,7 +241,7 @@ impl<E: EthSpec> IndexWorker<E> {
                             // Persist good peers
                             self.work_send
                                 .send(Work::PersistAllGoodPeers)
-                                .map_err(|err| err.to_string())?;
+                                .map_err(|_| IndexError::SendMessage)?;
                         }
                     } else {
                         block_by_root_requests
@@ -260,14 +261,17 @@ impl<E: EthSpec> IndexWorker<E> {
     fn send_range_request(
         &self,
         to: Option<PeerId>,
-    ) -> Result<(), String> {
+    ) -> Result<(), IndexError> {
         let start_slot = self.stores
             .indexing_state()
             .latest_slot()
             .map(|s| s.as_u64() + 1)
             .unwrap_or_default();
     
-        self.network_command_send.send(NetworkCommand::SendRangeRequest { peer_id: to, start_slot }).map_err(|err| err.to_string())
+        self
+            .network_command_send
+            .send(NetworkCommand::SendRangeRequest { peer_id: to, start_slot })
+            .map_err(|_| IndexError::SendMessage)
     }
 }
 
@@ -288,6 +292,10 @@ fn new_blocks<E: EthSpec>(
         .chain(once(BlockState::Proposed(block)))
 }
 
+enum IndexError {
+    SendMessage,
+    BlockProcessing(String),
+}
 
 
 #[derive(Debug, Default)]
