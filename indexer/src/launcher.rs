@@ -13,7 +13,7 @@ use tokio::{
 use tracing::warn;
 use types::{
     attestation::AttestationModel,
-    block::{BlockExtendedModel, BlockModel},
+    block::{BlockExtendedModel, BlockModel, BlockModelWithId, PersistIteratorBlockModel},
     block_request::{BlockRequestModel, BlockRequestModelWithId, PersistIteratorBlockRequestModel},
     block_root::BlockRootModel,
     committee::CommitteeModel,
@@ -71,6 +71,7 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
 
 pub fn update_indexes(base_dir: String) -> Result<(), String> {
     EpochModelWithId::iter(&base_dir)?.persist_sortables(&base_dir)?;
+    BlockModelWithId::iter(&base_dir)?.persist_sortables(&base_dir)?;
     BlockRequestModelWithId::iter(&base_dir)?.persist_sortables(&base_dir)?;
     GoodPeerModelWithId::iter(&base_dir)?.persist_sortables(&base_dir)?;
 

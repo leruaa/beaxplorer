@@ -15,8 +15,11 @@ pub struct BlockModel {
     pub epoch: u64,
     pub proposer_slashings_count: usize,
     pub attester_slashings_count: usize,
+    #[persistable(sortable)]
     pub attestations_count: usize,
+    #[persistable(sortable)]
     pub deposits_count: usize,
+    #[persistable(sortable)]
     pub voluntary_exits_count: usize,
     pub proposer: u64,
     pub status: String,
