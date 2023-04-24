@@ -75,7 +75,8 @@ export default function useDataTable<T>(app: App, plural: string, fetcher: Fetch
       onPaginationChange: setPagination,
       getCoreRowModel: getCoreRowModel(),
       getSortedRowModel: getSortedRowModel(),
-      manualPagination: true
+      manualPagination: true,
+      manualSorting: true
     }
   );
 }
