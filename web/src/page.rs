@@ -1,5 +1,6 @@
 use std::cmp::min;
 
+use convert_case::{Case, Casing};
 use futures::future::try_join_all;
 use js_sys::{Array, BigUint64Array};
 use types::DeserializeOwned;
@@ -102,7 +103,7 @@ pub async fn get_range<Id: DeserializeOwned>(
             "{}/{}/s/{}/{}.msg",
             app.base_url(),
             model_plural.clone(),
-            sort_by.clone().id,
+            sort_by.clone().id.to_case(Case::Snake),
             page_number
         );
         futures.push(fetch::<Vec<Id>>(url));
