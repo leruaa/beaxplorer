@@ -94,9 +94,7 @@ impl<E: EthSpec> IndexingState<E> {
             )
         });
 
-        if let Some(beacon_block) = block.canonical_block() {
-            self.aggregated_epoch_data.consolidate(beacon_block);
-        }
+        self.aggregated_epoch_data.consolidate(&block);
 
         let committees = if slot == 0 {
             beacon_state

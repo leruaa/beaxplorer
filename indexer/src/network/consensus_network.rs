@@ -127,7 +127,7 @@ impl<E: EthSpec> ConsensusNetwork<E> {
         if let NetworkEvent::RPCFailed { id, peer_id } = event {
             let reason = match id {
                 RequestId::Range => "Range request failed",
-                RequestId::Block(_) => "Block by root request",
+                RequestId::Block(_) => "Block by root request failed",
             };
             if self.peer_db.is_good_peer(&peer_id) {
                 warn!(peer = %peer_id, "Connection to good peer failed");

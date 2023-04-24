@@ -37,6 +37,15 @@ export default (props) => {
       cell: props =>
         <RelativeDatetime timestamp={props.getValue()} />
     }),
+    columnHelper.accessor(
+      row => ({ p: row.proposedBlocksCount, m: row.missedBlocksCount, o: row.orphanedBlocksCount }),
+      {
+        header: "Blocks",
+        cell: props =>
+          <>
+            <Number value={props.getValue().p} /> / <Number value={props.getValue().m} /> / <Number value={props.getValue().o} />
+          </>
+      }),
     columnHelper.accessor("attestationsCount", {
       header: "Attestations",
       cell: props => <Number value={props.getValue()} />
@@ -46,7 +55,7 @@ export default (props) => {
       cell: props => <Number value={props.getValue()} />
     }),
     columnHelper.accessor(
-      (row, rowIndex) => ({ p: row.proposerSlashingsCount, a: row.attesterSlashingsCount }),
+      row => ({ p: row.proposerSlashingsCount, a: row.attesterSlashingsCount }),
       {
         header: "Slashings P / A",
         cell: props =>

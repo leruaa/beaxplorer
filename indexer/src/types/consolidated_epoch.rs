@@ -1,12 +1,14 @@
-use std::{fmt::Display, marker::PhantomData, ops::Div, sync::Arc};
+use std::{fmt::Display, marker::PhantomData, ops::Div};
 
 use eth2::lighthouse::GlobalValidatorInclusionData;
 
-use lighthouse_types::{Epoch, EthSpec, SignedBeaconBlock};
+use lighthouse_types::{Epoch, EthSpec};
 use shared::utils::clock::Clock;
 use state_processing::per_epoch_processing::EpochProcessingSummary;
 
 use types::epoch::{EpochExtendedModel, EpochExtendedModelWithId, EpochModel, EpochModelWithId};
+
+use super::block_state::BlockState;
 
 #[derive(Debug)]
 pub struct ConsolidatedEpoch<E: EthSpec> {
@@ -67,6 +69,9 @@ impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochModelWithId {
 
         let model = EpochModel {
             timestamp: clock.timestamp(start_slot).unwrap_or(0),
+            proposed_blocks_count: value.aggregated_data.proposed_blocks_count,
+            missed_blocks_count: value.aggregated_data.missed_blocks_count,
+            orphaned_blocks_count: value.aggregated_data.orphaned_blocks_count,
             proposer_slashings_count: value.aggregated_data.proposer_slashings_count,
             attester_slashings_count: value.aggregated_data.attester_slashings_count,
             attestations_count: value.aggregated_data.attestations_count,
@@ -108,6 +113,9 @@ impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochExtendedModelWithId {
 
 #[derive(Debug, Clone, Default)]
 pub struct AggregatedEpochData {
+    pub proposed_blocks_count: usize,
+    pub missed_blocks_count: usize,
+    pub orphaned_blocks_count: usize,
     pub attestations_count: usize,
     pub deposits_count: usize,
     pub voluntary_exits_count: usize,
@@ -116,17 +124,28 @@ pub struct AggregatedEpochData {
 }
 
 impl AggregatedEpochData {
-    pub fn consolidate<E: EthSpec>(&mut self, block: &Arc<SignedBeaconBlock<E>>) {
-        self.attestations_count += block.message().body().attestations().len();
-        self.deposits_count += block.message().body().deposits().len();
-        self.voluntary_exits_count += block.message().body().voluntary_exits().len();
-        self.proposer_slashings_count += block.message().body().proposer_slashings().len();
-        self.attester_slashings_count += block.message().body().attester_slashings().len();
+    pub fn consolidate<E: EthSpec>(&mut self, block: &BlockState<E>) {
+        match block {
+            BlockState::Proposed(_) => self.proposed_blocks_count += 1,
+            BlockState::Missed(_) => self.missed_blocks_count += 1,
+            BlockState::Orphaned(_) => self.orphaned_blocks_count += 1,
+        }
+
+        if let Some(block) = block.canonical_block() {
+            self.attestations_count += block.message().body().attestations().len();
+            self.deposits_count += block.message().body().deposits().len();
+            self.voluntary_exits_count += block.message().body().voluntary_exits().len();
+            self.proposer_slashings_count += block.message().body().proposer_slashings().len();
+            self.attester_slashings_count += block.message().body().attester_slashings().len();
+        }
     }
 
     pub fn aggregate(&mut self) -> Self {
         let aggregated = self.clone();
 
+        self.proposed_blocks_count = 0;
+        self.missed_blocks_count = 0;
+        self.orphaned_blocks_count = 0;
         self.attestations_count = 0;
         self.deposits_count = 0;
         self.voluntary_exits_count = 0;

@@ -23,6 +23,9 @@ use wasm_bindgen::prelude::wasm_bindgen;
 #[serde(rename_all = "camelCase")]
 pub struct EpochModel {
     pub timestamp: u64,
+    pub proposed_blocks_count: usize,
+    pub missed_blocks_count: usize,
+    pub orphaned_blocks_count: usize,
     #[persistable(sortable)]
     pub proposer_slashings_count: usize,
     #[persistable(sortable)]
