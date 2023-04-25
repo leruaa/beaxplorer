@@ -11,6 +11,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 #[persistable(model = "default")]
 #[persistable(prefix = "/blocks")]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
+#[serde(rename_all = "camelCase")]
 pub struct BlockModel {
     pub epoch: u64,
     pub proposer_slashings_count: usize,
@@ -30,6 +31,7 @@ pub struct BlockModel {
 #[persistable(model = "option")]
 #[persistable(prefix = "/blocks/e")]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
+#[serde(rename_all = "camelCase")]
 pub struct BlockExtendedModel {
     pub block_root: Vec<u8>,
     pub parent_root: Vec<u8>,

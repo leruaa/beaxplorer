@@ -1,9 +1,6 @@
-import { useMemo, useCallback, useState } from "react";
-import { useRouter } from 'next/router'
+
 import DataTable from "../components/data-table";
 import Number from "../components/number";
-import Ethers from "../components/ethers";
-import Percentage from "../components/percentage";
 import Breadcrumb from "../components/breadcrumb";
 import { App, BlockView, getBlock, getBlockMeta } from "../pkg";
 import { createColumnHelper } from "@tanstack/react-table";
@@ -39,16 +36,16 @@ export default (props) => {
     columnHelper.accessor("proposer", {
       header: "Proposer"
     }),
-    columnHelper.accessor("attestations_count", {
+    columnHelper.accessor("attestationsCount", {
       header: "Attestations",
       cell: props => <Number value={props.getValue()} />
     }),
-    columnHelper.accessor("deposits_count", {
+    columnHelper.accessor("depositsCount", {
       header: "Deposits",
       cell: props => <Number value={props.getValue()} />
     }),
     columnHelper.accessor(
-      (row, rowIndex) => { return { p: row.proposer_slashings_count, a: row.attester_slashings_count } },
+      (row, rowIndex) => { return { p: row.proposerSlashingsCount, a: row.attesterSlashingsCount } },
       {
         header: "Slashings P / A",
         cell: props => <>
@@ -56,7 +53,7 @@ export default (props) => {
         </>
       }
     ),
-    columnHelper.accessor("voluntary_exits_count", {
+    columnHelper.accessor("voluntaryExitsCount", {
       header: "Exits",
       cell: props => <Number value={props.getValue()} />
     })

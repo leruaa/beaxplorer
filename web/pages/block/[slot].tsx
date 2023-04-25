@@ -200,8 +200,8 @@ export default () => {
             <Tabs.List>
               <Tabs.Trigger value="overview">Overview</Tabs.Trigger >
               <Tabs.Trigger value="committees">Committees</Tabs.Trigger >
-              <Tabs.Trigger value="votes">Votes ({block && block.votes_count})</Tabs.Trigger >
-              <Tabs.Trigger value="attestations">Attestations ({block && block.attestations_count})</Tabs.Trigger >
+              <Tabs.Trigger value="votes">Votes ({block && block.votesCount})</Tabs.Trigger >
+              <Tabs.Trigger value="attestations">Attestations ({block && block.attestationsCount})</Tabs.Trigger >
             </Tabs.List>
             <Tabs.Content value="overview">
               <dl>
