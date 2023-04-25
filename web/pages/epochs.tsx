@@ -8,6 +8,7 @@ import { App, getEpochMeta, getEpoch, EpochView } from "../pkg";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from 'next/link';
 import RelativeDatetime from "../components/relative-datetime";
+import Badge from "../components/badge";
 
 
 export async function getStaticProps() {
@@ -43,7 +44,17 @@ export default (props) => {
         header: "Blocks",
         cell: props =>
           <>
-            <Number value={props.getValue().p} /> / <Number value={props.getValue().m} /> / <Number value={props.getValue().o} />
+            <Badge className="bg-green-100 text-white">
+              <Number className="text-green-500" value={props.getValue().p} />
+            </Badge>
+            &nbsp;
+            <Badge className="bg-amber-100 text-white">
+              <Number className="text-amber-500" value={props.getValue().m} />
+            </Badge>
+            &nbsp;
+            <Badge className="bg-slate-100 text-white">
+              <Number className="text-slate-500" value={props.getValue().o} />
+            </Badge>
           </>
       }),
     columnHelper.accessor("attestationsCount", {

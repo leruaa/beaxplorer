@@ -1,9 +1,12 @@
 import { BigNumber } from "bignumber.js";
 
-export default ({ value }) => {
+type Props = { className?: string, value: number };
+
+
+export default ({ value, className }: Props) => {
   const formatted = new BigNumber(value).toFormat();
 
   return (
-    <span>{formatted}</span>
+    <span className={className}>{formatted}</span>
   )
 }
