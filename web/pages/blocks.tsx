@@ -5,6 +5,7 @@ import Breadcrumb from "../components/breadcrumb";
 import { App, BlockView, getBlock, getBlockMeta } from "../pkg";
 import { createColumnHelper } from "@tanstack/react-table";
 import useDataTable from "../hooks/data-table";
+import Badge from "../components/badge";
 
 export async function getStaticProps() {
   const app = new App("http://localhost:3000");
@@ -31,7 +32,23 @@ export default (props) => {
       cell: props => <a href={`/block/${props.getValue()}`}><Number value={props.getValue()} /></a>
     }),
     columnHelper.accessor("status", {
-      header: "Status"
+      header: "Status",
+      cell: props => {
+        switch (props.getValue()) {
+          case "Proposed":
+            return (
+              <Badge className="bg-green-50 text-green-500">Proposed</Badge>
+            )
+          case "Missed":
+            return (
+              <Badge className="bg-amber-50 text-amber-500">Missed</Badge>
+            )
+          case "Orphaned":
+            return (
+              <Badge className="bg-slate-50 text-slate-500">Orphaned</Badge>
+            )
+        }
+      }
     }),
     columnHelper.accessor("proposer", {
       header: "Proposer"
