@@ -56,3 +56,14 @@ pub fn to_js<T: Serialize + ?Sized>(value: &T) -> Result<JsValue, DeserializeErr
         .serialize(&serde_wasm_bindgen::Serializer::json_compatible())
         .map_err(Into::into)
 }
+
+pub fn to_js_with_large_numbers_as_bigints<T: Serialize + ?Sized>(
+    value: &T,
+) -> Result<JsValue, DeserializeError> {
+    value
+        .serialize(
+            &serde_wasm_bindgen::Serializer::json_compatible()
+                .serialize_large_number_types_as_bigints(true),
+        )
+        .map_err(Into::into)
+}

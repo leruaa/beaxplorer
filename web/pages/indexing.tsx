@@ -8,13 +8,11 @@ import { App, BlockRequestView, getBlockRequest, getBlockRequestMeta, getGoodPee
 
 
 export async function getStaticProps() {
-  const host = process.env.HOST;
   const app = new App("http://localhost:3000");
   const blockRequestsMeta = await getBlockRequestMeta(app);
   const goodPeersMeta = await getGoodPeerMeta(app);
   return {
     props: {
-      host,
       blockRequests: [],//await getEpochs(app, 0, 10, "default", false, meta.count),
       blockRequestsCount: blockRequestsMeta.count,
       goodPeersCount: goodPeersMeta.count
@@ -23,7 +21,7 @@ export async function getStaticProps() {
 }
 
 export default (props) => {
-  const app = new App(props.host);
+  const app = new App(process.env.NEXT_PUBLIC_HOST);
   const blockRequestsColumnHelper = createColumnHelper<BlockRequestView>();
   const goodPeersColumnHelper = createColumnHelper<GoodPeerView>();
 
@@ -63,8 +61,8 @@ export default (props) => {
     goodPeersColumnHelper.accessor("address", { header: "Address" }),
   ]
 
-  const blockRequestsTable = useDataTable(app, "block_requests", getBlockRequest, blockRequestsColumns, props.blockRequestsCount, "root");
-  const goodPeersTable = useDataTable(app, "good_peers", getGoodPeer, goodPeersColumns, props.goodPeersCount, "id");
+  const blockRequestsTable = useDataTable(app, "block_requests", { kind: "strings" }, getBlockRequest, blockRequestsColumns, props.blockRequestsCount, "root");
+  const goodPeersTable = useDataTable(app, "good_peers", { kind: "strings" }, getGoodPeer, goodPeersColumns, props.goodPeersCount, "id");
 
   return (
     <>

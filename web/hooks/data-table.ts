@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
 import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, Table, useReactTable } from "@tanstack/react-table";
 import { useQuery } from "@tanstack/react-query";
-import { App, getRangeAsNumbers, getRangeAsStrings, getDefaultRange } from "../pkg/web";
+import { App, RangeKind, getRange as fetchRange } from "../pkg/web";
 
 type Fetcher<T> = (app: App, id: bigint | string) => Promise<T>
 
-async function fetchAll<T>(app: App, fetcher: Fetcher<T>, range: BigUint64Array | string[]): Promise<T[]> {
+async function fetchAll<T>(app: App, fetcher: Fetcher<T>, range: bigint[] | string[]): Promise<T[]> {
   let promises = [];
 
   for (let id of range) {
@@ -15,7 +15,7 @@ async function fetchAll<T>(app: App, fetcher: Fetcher<T>, range: BigUint64Array 
   return Promise.all(promises);
 }
 
-export default function useDataTable<T>(app: App, plural: string, fetcher: Fetcher<T>, columns, totalCount: number, defaultSort = "default"): Table<T> {
+export default function useDataTable<T>(app: App, plural: string, kind: RangeKind, fetcher: Fetcher<T>, columns, totalCount: number, defaultSort = "default"): Table<T> {
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -47,14 +47,24 @@ export default function useDataTable<T>(app: App, plural: string, fetcher: Fetch
 
   const range = useQuery(
     ["range", plural, pageIndex, pageSize, sortId, sortDesc],
-    () => getRange(app, plural, pageIndex, pageSize, sortId, sortDesc, totalCount)
+    () => fetchRange(app, {
+      settings: {
+        pageIndex,
+        pageSize,
+        sortId,
+        sortDesc
+      },
+      plural,
+      kind
+    },
+      totalCount)
   );
 
-  const rangeKey = useMemo(() => range.data?.join("|"), [range]);
+  const rangeKey = useMemo(() => range.data?.range.join("|"), [range]);
 
   const query = useQuery(
     ["models", plural, rangeKey],
-    () => fetchAll(app, fetcher, range.data),
+    () => fetchAll(app, fetcher, range.data.range),
     {
       enabled: !!rangeKey,
       keepPreviousData: true
@@ -79,27 +89,4 @@ export default function useDataTable<T>(app: App, plural: string, fetcher: Fetch
       manualSorting: true
     }
   );
-}
-
-async function getRange(
-  app: App,
-  modelPlural: string,
-  pageIndex: number,
-  pageSize: number,
-  sortId: string,
-  sortDesc: boolean,
-  totalCount: number
-): Promise<BigUint64Array | string[]> {
-  if (sortId === "default") {
-    return getDefaultRange(pageIndex, pageSize, sortDesc, totalCount);
-  }
-  else {
-    switch (modelPlural) {
-      case "block_requests":
-      case "good_peers":
-        return getRangeAsStrings(app, modelPlural, pageIndex, pageSize, sortId, sortDesc, totalCount);
-      default:
-        return getRangeAsNumbers(app, modelPlural, pageIndex, pageSize, sortId, sortDesc, totalCount);
-    }
-  }
 }

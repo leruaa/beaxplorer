@@ -92,7 +92,7 @@ export default (props) => {
     })
   ];
 
-  const table = useDataTable(app, "epochs", getEpoch, columns, props.epochsCount);
+  const table = useDataTable(app, "epochs", { kind: "integers" }, getEpoch, columns, props.epochsCount);
 
   return (
     <>

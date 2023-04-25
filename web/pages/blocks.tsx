@@ -76,7 +76,7 @@ export default (props) => {
     })
   ];
 
-  const table = useDataTable(app, "blocks", getBlock, columns, props.blocksCount);
+  const table = useDataTable(app, "blocks", { kind: "integers" }, getBlock, columns, props.blocksCount);
 
   return (
     <>

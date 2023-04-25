@@ -2,107 +2,128 @@ use std::cmp::min;
 
 use convert_case::{Case, Casing};
 use futures::future::try_join_all;
-use js_sys::{Array, BigUint64Array};
+use serde::{Deserialize, Serialize};
+use tsify::Tsify;
 use types::DeserializeOwned;
-use wasm_bindgen::{prelude::wasm_bindgen, JsCast, JsValue};
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 use crate::{
     app::App,
     fetcher::fetch,
     sort::{Paginate, SortBy},
-    StringArray,
+    to_js_with_large_numbers_as_bigints,
 };
 
-#[wasm_bindgen(js_name = "getRangeAsNumbers")]
-pub async fn get_range_as_numbers(
-    app: &App,
-    model_plural: String,
-    page_index: usize,
-    page_size: usize,
-    sort_id: String,
-    sort_desc: bool,
-    total_count: usize,
-) -> Result<BigUint64Array, JsValue> {
-    get_range::<u64>(
-        app,
-        model_plural,
-        page_index,
-        page_size,
-        sort_id,
-        sort_desc,
-        total_count,
-    )
-    .await
-    .map(|a| BigUint64Array::from(a.as_slice()))
+#[derive(Tsify, Deserialize)]
+#[tsify(from_wasm_abi)]
+#[serde(rename_all = "camelCase")]
+pub struct RangeSettings {
+    pub page_index: usize,
+    pub page_size: usize,
+    pub sort_id: String,
+    pub sort_desc: bool,
 }
 
-#[wasm_bindgen(js_name = "getRangeAsStrings")]
-pub async fn get_range_as_strings(
-    app: &App,
-    model_plural: String,
-    page_index: usize,
-    page_size: usize,
-    sort_id: String,
-    sort_desc: bool,
-    total_count: usize,
-) -> Result<StringArray, JsValue> {
-    get_range::<String>(
-        app,
-        model_plural,
-        page_index,
-        page_size,
-        sort_id,
-        sort_desc,
-        total_count,
-    )
-    .await
-    .map(|a| a.into_iter().map(JsValue::from).collect::<Array>())
-    .map(|a| a.unchecked_into())
+#[derive(Tsify, Deserialize)]
+#[tsify(from_wasm_abi)]
+pub struct RangeInput {
+    pub settings: RangeSettings,
+    pub plural: String,
+    pub kind: RangeKind,
 }
 
-#[wasm_bindgen(js_name = "getDefaultRange")]
-pub async fn get_default_range(
-    page_index: usize,
-    page_size: usize,
-    sort_desc: bool,
-    total_count: usize,
-) -> BigUint64Array {
-    let range = if sort_desc {
-        let end = total_count - page_index * page_size;
-        let start = end.saturating_sub(page_size);
+#[derive(Tsify, Deserialize)]
+#[tsify(from_wasm_abi)]
+#[serde(tag = "kind")]
+#[serde(rename_all = "camelCase")]
+pub enum RangeKind {
+    Integers,
+    Strings,
+    Epoch { number: u64 },
+}
+
+#[derive(Tsify, Serialize)]
+#[tsify(into_wasm_abi)]
+#[serde(untagged)]
+pub enum Range {
+    Integers {
+        #[tsify(type = "bigint[]")]
+        range: Vec<u64>,
+    },
+    Strings {
+        range: Vec<String>,
+    },
+}
+
+impl From<Range> for JsValue {
+    fn from(val: Range) -> Self {
+        to_js_with_large_numbers_as_bigints(&val).unwrap()
+    }
+}
+
+#[wasm_bindgen(js_name = "getRange")]
+pub async fn get_range(app: &App, input: RangeInput, total_count: usize) -> Result<Range, JsValue> {
+    if input.settings.sort_id == "default" {
+        Ok(get_default_range(&input, total_count))
+    } else {
+        match &input.kind {
+            RangeKind::Integers => fetch_range::<u64>(app, input, total_count)
+                .await
+                .map(|r| Range::Integers { range: r }),
+            RangeKind::Strings => fetch_range::<String>(app, input, total_count)
+                .await
+                .map(|r| Range::Strings { range: r }),
+            RangeKind::Epoch { number } => Ok(get_epoch_range(*number)),
+        }
+    }
+}
+
+pub fn get_default_range(input: &RangeInput, total_count: usize) -> Range {
+    let range = if input.settings.sort_desc {
+        let end = total_count - input.settings.page_index * input.settings.page_size;
+        let start = end.saturating_sub(input.settings.page_size);
         start..end
     } else {
-        let start = page_index * page_size;
-        let end = min(start + page_size, total_count);
+        let start = input.settings.page_index * input.settings.page_size;
+        let end = min(start + input.settings.page_size, total_count);
         start..end
     };
 
-    let result = if sort_desc {
+    let result = if input.settings.sort_desc {
         range.map(|x| x as u64).rev().collect::<Vec<_>>()
     } else {
         range.map(|x| x as u64).collect::<Vec<_>>()
     };
 
-    BigUint64Array::from(result.as_slice())
+    Range::Integers { range: result }
 }
 
-pub async fn get_range<Id: DeserializeOwned>(
+pub fn get_epoch_range(epoch: u64) -> Range {
+    let range = epoch * 32..(epoch + 1) * 32;
+
+    Range::Integers {
+        range: range.collect(),
+    }
+}
+
+async fn fetch_range<Id: DeserializeOwned>(
     app: &App,
-    model_plural: String,
-    page_index: usize,
-    page_size: usize,
-    sort_id: String,
-    sort_desc: bool,
+    input: RangeInput,
     total_count: usize,
 ) -> Result<Vec<Id>, JsValue> {
-    let sort_by = SortBy::new(sort_id, sort_desc);
+    let sort_by = SortBy::new(input.settings.sort_id, input.settings.sort_desc);
 
     let mut futures = vec![];
-    for page_number in Paginate::new(total_count, page_index + 1, page_size, &sort_by) {
+    for page_number in Paginate::new(
+        total_count,
+        input.settings.page_index + 1,
+        input.settings.page_size,
+        &sort_by,
+    ) {
         let url = format!(
             "{}/{}/s/{}/{}.msg",
             app.base_url(),
-            model_plural.clone(),
+            input.plural,
             sort_by.clone().id.to_case(Case::Snake),
             page_number
         );
@@ -114,11 +135,12 @@ pub async fn get_range<Id: DeserializeOwned>(
         .map(|x| x.into_iter().flatten().collect());
 
     if sort_by.desc {
-        let skip = if page_index == 0 {
+        let skip = if input.settings.page_index == 0 {
             0_usize
         } else {
             10 - total_count % 10
         };
+        let page_size = input.settings.page_size;
         range = range.map(|x: Vec<Id>| x.into_iter().rev().skip(skip).take(page_size).collect())
     }
 
