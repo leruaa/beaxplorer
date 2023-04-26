@@ -10,11 +10,19 @@ type Props = { app: App, blocksCount: number, kind: RangeKind };
 export default ({ app, blocksCount, kind }: Props) => {
     const columnHelper = createColumnHelper<BlockView>()
 
-    const columns = [
-        columnHelper.accessor("epoch", {
-            header: "Epoch",
-            cell: props => <a href={`/block/${props.getValue()}`}><Number value={props.getValue()} /></a>
-        }),
+    let columns = [];
+
+    if (kind.kind != "epoch") {
+        columns.push(
+            columnHelper.accessor("epoch", {
+                header: "Epoch",
+                cell: props => <a href={`/block/${props.getValue()}`}><Number value={props.getValue()} /></a>
+            })
+        );
+    }
+
+    columns = [
+        ...columns,
         columnHelper.accessor("slot", {
             header: "Block",
             cell: props => <a href={`/block/${props.getValue()}`}><Number value={props.getValue()} /></a>
