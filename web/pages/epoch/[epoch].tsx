@@ -5,6 +5,7 @@ import Percentage from "../../components/percentage";
 import Ethers from "../../components/ethers";
 import { App, getEpochExtended } from '../../pkg/web';
 import RelativeDatetime from '../../components/relative-datetime';
+import BlocksTable from '../../components/blocks/blocks-table';
 
 
 export default (props) => {
@@ -47,6 +48,9 @@ export default (props) => {
               <dt>Voting Participation</dt>
               <dd><Ethers value={epoch.votedEther} /> of <Ethers value={epoch.eligibleEther} /> (<Percentage value={epoch.globalParticipationRate} />)</dd>
             </dl>
+          </div>
+          <div className="tabular-data">
+            <BlocksTable app={app} blocksCount={32} kind={{ kind: "epoch", number: epoch.epoch }} />
           </div>
         </section>
       }

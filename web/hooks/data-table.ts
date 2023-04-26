@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { getCoreRowModel, getSortedRowModel, PaginationState, SortingState, Table, useReactTable } from "@tanstack/react-table";
+import { useState, useMemo, useEffect } from "react";
+import { getCoreRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, Table, useReactTable } from "@tanstack/react-table";
 import { useQuery } from "@tanstack/react-query";
 import { App, RangeKind, getRange as fetchRange } from "../pkg/web";
 
@@ -46,7 +46,7 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
     [sorting]);
 
   const range = useQuery(
-    ["range", plural, pageIndex, pageSize, sortId, sortDesc],
+    ["range", plural, kind, pageIndex, pageSize, sortId, sortDesc],
     () => fetchRange(app, {
       settings: {
         pageIndex,
@@ -79,14 +79,15 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
       data: query.data ?? defaultData,
       pageCount,
       state: {
-        sorting, pagination,
+        sorting, pagination
       },
       onSortingChange: setSorting,
       onPaginationChange: setPagination,
       getCoreRowModel: getCoreRowModel(),
       getSortedRowModel: getSortedRowModel(),
-      manualPagination: true,
-      manualSorting: true
+      getPaginationRowModel: getPaginationRowModel(),
+      manualPagination: kind.kind != "epoch",
+      manualSorting: kind.kind != "epoch"
     }
   );
 }

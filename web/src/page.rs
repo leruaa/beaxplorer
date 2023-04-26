@@ -63,7 +63,7 @@ impl From<Range> for JsValue {
 
 #[wasm_bindgen(js_name = "getRange")]
 pub async fn get_range(app: &App, input: RangeInput, total_count: usize) -> Result<Range, JsValue> {
-    if input.settings.sort_id == "default" {
+    if input.settings.sort_id == "default" && !matches!(input.kind, RangeKind::Epoch { .. }) {
         Ok(get_default_range(&input, total_count))
     } else {
         match &input.kind {
