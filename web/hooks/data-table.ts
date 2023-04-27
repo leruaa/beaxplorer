@@ -37,9 +37,9 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
     }),
     [sorting]);
 
-  const paths = useQuery(
-    ["paths", plural, kind, pageIndex, pageSize, sortId, sortDesc],
-    () => pathRetriever(app, {
+  const paths = useQuery({
+    queryKey: ["paths", plural, kind, pageIndex, pageSize, sortId, sortDesc],
+    queryFn: () => pathRetriever(app, {
       settings: {
         pageIndex,
         pageSize,
@@ -49,8 +49,9 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
       plural,
       kind
     },
-      totalCount)
-  );
+      totalCount),
+    keepPreviousData: true
+  });
 
   const queries = useQueries({
     queries: paths.data ? paths.data.map((path) => {
@@ -60,8 +61,9 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
           .then(r => r.blob())
           .then(b => b.arrayBuffer())
           .then(a => deserializer(a, path[0])),
+        keepPreviousData: true
       }
-    }) : [],
+    }) : []
   });
 
   const defaultData = useMemo(() => [], [])
