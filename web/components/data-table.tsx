@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import cx from 'classnames';
 import { Table, flexRender } from "@tanstack/react-table";
 
@@ -60,14 +59,14 @@ export default ({ table }: DataTableProps) => {
         <tbody>
           {// Loop over the table rows
             table.getRowModel().rows.map(row => (
-              <tr key={row.id}>
-                {table.options.data[row.index] ?
+              <tr key={row.id} className={cx(isStalled(table, row.index) ? "text-gray-400" : "text-gray-800")}>
+                {table.options.data[row.index].isLoaded ?
                   row.getVisibleCells().map(cell => (
                     <td key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))
-                  : "loading"
+                  : (<td colSpan={table.options.columns.length}>loading</td>)
                 }
               </tr>
             )
@@ -108,4 +107,8 @@ export default ({ table }: DataTableProps) => {
       </div>
     </>
   )
+}
+
+function isStalled(table: Table<any>, rowIndex: number): boolean {
+  return table.options.data[rowIndex]?.isPreviousData;
 }

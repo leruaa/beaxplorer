@@ -1,13 +1,20 @@
 import { useState, useMemo, useEffect } from "react";
 import { getCoreRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, Table, useReactTable } from "@tanstack/react-table";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery, UseQueryResult } from "@tanstack/react-query";
 import { App, RangeInput, RangeKind } from "../pkg/web";
 
 type Deserializer<T> = (buffer: ArrayBuffer, id: bigint | string) => T;
 
 type PathRetriever = (app: App, input: RangeInput, totalCount: number) => Promise<[bigint | string, string][]>;
 
-export default function useDataTable<T>(app: App, plural: string, kind: RangeKind, deserializer: Deserializer<T>, pathRetriever: PathRetriever, columns, totalCount: number, defaultSort = "default"): Table<T> {
+interface Updatable {
+  isLoaded: boolean,
+  isPreviousData: boolean
+}
+
+type Data<T> = T & Updatable;
+
+export default function useDataTable<T>(app: App, plural: string, kind: RangeKind, deserializer: Deserializer<T>, pathRetriever: PathRetriever, columns, totalCount: number, defaultSort = "default"): Table<Data<T>> {
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -71,7 +78,7 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
   return useReactTable(
     {
       columns: useMemo(() => columns, []),
-      data: queries.map((q => q.data)),
+      data: queries.map(q => buildData(q)),
       pageCount,
       state: {
         sorting, pagination
@@ -85,4 +92,9 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
       manualSorting: kind.kind != "epoch"
     }
   );
+}
+
+function buildData<T>(query: UseQueryResult<T, unknown>): Data<T> {
+  let updatable = { isLoaded: !!query.data, isPreviousData: query.isPreviousData };
+  return { ...query.data, ...updatable }
 }

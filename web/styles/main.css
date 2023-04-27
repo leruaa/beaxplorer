@@ -6,6 +6,7 @@
 @import url("solid/icons.css");
 
 @layer base {
+
   h1,
   h2 {
     @apply py-1;
@@ -78,6 +79,7 @@
     }
 
     dl {
+
       dt,
       dd {
         @apply p-2;
@@ -122,7 +124,7 @@
       }
 
       td {
-        @apply text-right text-gray-800 tabular-nums py-1.5 pr-4 border-b rounded border-gray-200;
+        @apply text-right tabular-nums py-1.5 pr-4 border-b rounded border-gray-200;
 
         &.sorting {
           @apply bg-gray-50;
