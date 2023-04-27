@@ -1,21 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { getCoreRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, Table, useReactTable } from "@tanstack/react-table";
-import { useQuery } from "@tanstack/react-query";
-import { App, RangeKind, getRange as fetchRange } from "../pkg/web";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { App, RangeInput, RangeKind } from "../pkg/web";
 
-type Fetcher<T> = (app: App, id: bigint | string) => Promise<T>
+type Deserializer<T> = (buffer: ArrayBuffer, id: bigint | string) => T;
 
-async function fetchAll<T>(app: App, fetcher: Fetcher<T>, range: bigint[] | string[]): Promise<T[]> {
-  let promises = [];
+type PathRetriever = (app: App, input: RangeInput, totalCount: number) => Promise<[bigint | string, string][]>;
 
-  for (let id of range) {
-    promises.push(fetcher(app, id));
-  }
-
-  return Promise.all(promises);
-}
-
-export default function useDataTable<T>(app: App, plural: string, kind: RangeKind, fetcher: Fetcher<T>, columns, totalCount: number, defaultSort = "default"): Table<T> {
+export default function useDataTable<T>(app: App, plural: string, kind: RangeKind, deserializer: Deserializer<T>, pathRetriever: PathRetriever, columns, totalCount: number, defaultSort = "default"): Table<T> {
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -45,9 +37,9 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
     }),
     [sorting]);
 
-  const range = useQuery(
-    ["range", plural, kind, pageIndex, pageSize, sortId, sortDesc],
-    () => fetchRange(app, {
+  const paths = useQuery(
+    ["paths", plural, kind, pageIndex, pageSize, sortId, sortDesc],
+    () => pathRetriever(app, {
       settings: {
         pageIndex,
         pageSize,
@@ -60,23 +52,24 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
       totalCount)
   );
 
-  const rangeKey = useMemo(() => range.data?.range.join("|"), [range]);
-
-  const query = useQuery(
-    ["models", plural, rangeKey],
-    () => fetchAll(app, fetcher, range.data.range),
-    {
-      enabled: !!rangeKey,
-      keepPreviousData: true
-    }
-  );
+  const queries = useQueries({
+    queries: paths.data ? paths.data.map((path) => {
+      return {
+        queryKey: [path[1]],
+        queryFn: () => fetch(path[1])
+          .then(r => r.blob())
+          .then(b => b.arrayBuffer())
+          .then(a => deserializer(a, path[0])),
+      }
+    }) : [],
+  });
 
   const defaultData = useMemo(() => [], [])
 
   return useReactTable(
     {
       columns: useMemo(() => columns, []),
-      data: query.data ?? defaultData,
+      data: queries.map((q => q.data)),
       pageCount,
       state: {
         sorting, pagination

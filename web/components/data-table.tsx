@@ -61,12 +61,14 @@ export default ({ table }: DataTableProps) => {
           {// Loop over the table rows
             table.getRowModel().rows.map(row => (
               <tr key={row.id}>
-                {row.getVisibleCells().map(cell => (
-                  <td key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                )
-                )}
+                {table.options.data[row.index] ?
+                  row.getVisibleCells().map(cell => (
+                    <td key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))
+                  : "loading"
+                }
               </tr>
             )
             )
