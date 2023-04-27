@@ -1,31 +1,40 @@
 use crate::app::App;
-use crate::fetcher::{fetch, fetch_meta};
+use crate::page::{get_paths, RangeInput};
 use crate::views::epochs::{EpochExtendedView, EpochView};
-use crate::views::meta::MetaView;
+use crate::{deserialize, PathArray};
 
-use types::epoch::{EpochExtendedModel, EpochExtendedModelWithId, EpochModel, EpochModelWithId};
-use types::path::ToPath;
+use js_sys::ArrayBuffer;
+use types::epoch::{EpochExtendedModel, EpochModel};
+use types::meta::Meta;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(js_name = "getEpoch")]
-pub async fn get_epoch(app: &App, epoch: u64) -> Result<EpochView, JsValue> {
-    let epoch_url = EpochModelWithId::to_path(&app.base_url(), &epoch);
-
-    let model = fetch::<EpochModel>(epoch_url).await?;
+pub fn get_epoch(buffer: ArrayBuffer, epoch: u64) -> Result<EpochView, JsValue> {
+    let model = deserialize::<EpochModel>(buffer)?;
     Ok(EpochView::from((epoch, model)))
 }
 
-#[wasm_bindgen(js_name = "getEpochExtended")]
-pub async fn get_epoch_extended(app: &App, epoch: u64) -> Result<EpochExtendedView, JsValue> {
-    let epoch_url = EpochModelWithId::to_path(&app.base_url(), &epoch);
-    let extended_epoch_url = EpochExtendedModelWithId::to_path(&app.base_url(), &epoch);
+#[wasm_bindgen(js_name = "getEpochPaths")]
+pub async fn get_epoch_paths(
+    app: &App,
+    input: RangeInput,
+    total_count: usize,
+) -> Result<PathArray, JsValue> {
+    get_paths::<EpochModel>(app, input, total_count).await
+}
 
-    let model = fetch::<EpochModel>(epoch_url).await?;
-    let extended_model = fetch::<EpochExtendedModel>(extended_epoch_url).await?;
+#[wasm_bindgen(js_name = "getEpochExtended")]
+pub fn get_epoch_extended(
+    model_buffer: ArrayBuffer,
+    extended_model_buffer: ArrayBuffer,
+    epoch: u64,
+) -> Result<EpochExtendedView, JsValue> {
+    let model = deserialize::<EpochModel>(model_buffer)?;
+    let extended_model = deserialize::<EpochExtendedModel>(extended_model_buffer)?;
     Ok(EpochExtendedView::from((epoch, model, extended_model)))
 }
 
-#[wasm_bindgen(js_name = "getEpochMeta")]
-pub async fn get_epoch_meta(app: &App) -> Result<MetaView, JsValue> {
-    fetch_meta::<EpochModel>(app).await
+#[wasm_bindgen(js_name = "getEpochMetaPath")]
+pub fn get_epoch_meta_path(app: &App) -> JsValue {
+    Meta::to_path::<EpochModel>(&app.base_url()).into()
 }

@@ -4,7 +4,7 @@ import Ethers from "../components/ethers";
 import Percentage from "../components/percentage";
 import Breadcrumb from "../components/breadcrumb";
 import useDataTable from "../hooks/data-table";
-import { App, getEpochMeta, getEpoch, EpochView } from "../pkg";
+import { App, getEpochMetaPath, getEpoch, getEpochPaths, getMeta, EpochView } from "../pkg";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from 'next/link';
 import RelativeDatetime from "../components/relative-datetime";
@@ -13,7 +13,11 @@ import Badge from "../components/badge";
 
 export async function getStaticProps() {
   const app = new App("http://localhost:3000");
-  const meta = await getEpochMeta(app);
+  const metaPath = getEpochMetaPath(app);
+  const meta = await fetch(metaPath)
+    .then(r => r.blob())
+    .then(b => b.arrayBuffer())
+    .then(a => getMeta(a));
   return {
     props: {
       epochs: [],//await getEpochs(app, 0, 10, "default", false, meta.count),
@@ -92,7 +96,7 @@ export default (props) => {
     })
   ];
 
-  const table = useDataTable(app, "epochs", { kind: "integers" }, getEpoch, columns, props.epochsCount);
+  const table = useDataTable(app, "epochs", { kind: "integers" }, getEpoch, getEpochPaths, columns, props.epochsCount);
 
   return (
     <>
