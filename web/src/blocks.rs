@@ -1,37 +1,45 @@
-use js_sys::Array;
+use js_sys::{Array, ArrayBuffer};
 use types::attestation::{AttestationModel, AttestationModelsWithId};
-use types::block::{BlockExtendedModel, BlockExtendedModelWithId, BlockModel, BlockModelWithId};
+use types::block::{BlockExtendedModel, BlockModel};
 use types::committee::{CommitteeModel, CommitteeModelsWithId};
+use types::meta::Meta;
 use types::path::ToPath;
 use types::vote::{VoteModel, VoteModelsWithId};
 use wasm_bindgen::prelude::*;
 
 use crate::app::App;
-use crate::fetcher::fetch_meta;
+use crate::page::{get_paths, RangeInput};
 use crate::views::attestations::AttestationView;
 use crate::views::blocks::{BlockExtendedView, BlockView};
 use crate::views::committees::CommitteeView;
-use crate::views::meta::MetaView;
 use crate::views::votes::VoteView;
-use crate::{AttestationArray, CommitteeArray, VoteArray};
+use crate::{deserialize, AttestationArray, CommitteeArray, PathArray, VoteArray};
 
 use crate::{fetcher::fetch, to_js};
 
 #[wasm_bindgen(js_name = "getBlock")]
-pub async fn get_block(app: &App, block: u64) -> Result<BlockView, JsValue> {
-    let block_url = BlockModelWithId::to_path(&app.base_url(), &block);
-
-    let model = fetch::<BlockModel>(block_url).await?;
+pub fn get_block(buffer: ArrayBuffer, block: u64) -> Result<BlockView, JsValue> {
+    let model = deserialize::<BlockModel>(buffer)?;
     Ok(BlockView::from((block, model)))
 }
 
-#[wasm_bindgen(js_name = "getBlockExtended")]
-pub async fn get_block_extended(app: &App, block: u64) -> Result<BlockExtendedView, JsValue> {
-    let block_url = BlockModelWithId::to_path(&app.base_url(), &block);
-    let extended_block_url = BlockExtendedModelWithId::to_path(&app.base_url(), &block);
+#[wasm_bindgen(js_name = "getBlockPaths")]
+pub async fn get_epoch_paths(
+    app: &App,
+    input: RangeInput,
+    total_count: usize,
+) -> Result<PathArray, JsValue> {
+    get_paths::<BlockModel>(app, input, total_count).await
+}
 
-    let model = fetch::<BlockModel>(block_url).await?;
-    let extended_model = fetch::<BlockExtendedModel>(extended_block_url).await?;
+#[wasm_bindgen(js_name = "getBlockExtended")]
+pub fn get_block_extended(
+    model_buffer: ArrayBuffer,
+    extended_model_buffer: ArrayBuffer,
+    block: u64,
+) -> Result<BlockExtendedView, JsValue> {
+    let model = deserialize::<BlockModel>(model_buffer)?;
+    let extended_model = deserialize::<BlockExtendedModel>(extended_model_buffer)?;
     Ok(BlockExtendedView::from((block, model, extended_model)))
 }
 
@@ -77,7 +85,7 @@ pub async fn get_attestations(app: &App, block: u64) -> Result<AttestationArray,
         .map_err(Into::into)
 }
 
-#[wasm_bindgen(js_name = "getBlockMeta")]
-pub async fn get_block_meta(app: &App) -> Result<MetaView, JsValue> {
-    fetch_meta::<BlockModel>(app).await
+#[wasm_bindgen(js_name = "getBlockMetaPath")]
+pub fn get_block_meta_path(app: &App) -> JsValue {
+    Meta::to_path::<BlockModel>(&app.base_url()).into()
 }

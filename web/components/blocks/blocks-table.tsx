@@ -1,6 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import useDataTable from "../../hooks/data-table";
-import { App, BlockView, RangeKind, getBlock } from "../../pkg/web";
+import { App, BlockView, RangeKind, getBlock, getBlockPaths } from "../../pkg/web";
 import DataTable from "../data-table";
 import Badge from "../badge";
 import Number from "../number";
@@ -72,7 +72,7 @@ export default ({ app, blocksCount, kind }: Props) => {
         })
     ];
 
-    const table = useDataTable(app, "blocks", kind, getBlock, columns, blocksCount);
+    const table = useDataTable(app, "blocks", kind, getBlock, getBlockPaths, columns, blocksCount);
 
     return (
         <DataTable table={table} />
