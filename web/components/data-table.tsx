@@ -63,13 +63,15 @@ export default ({ table }: DataTableProps) => {
               <tr key={row.id} className={cx(isStalled(table, row.index) ? "text-gray-400" : "text-gray-800")}>
                 {table.options.data[row.index].isLoaded ?
                   row.getVisibleCells().map(cell => (
-                    <td key={cell.id} className={cx("text-right tabular-nums py-1.5 pr-4 border-b rounded border-gray-200", { "bg-gray-50": cell.column.getIsSorted() })}>
+                    <td key={cell.id} className={cx("text-right tabular-nums py-1.5 pr-4 border-b border-gray-200", { "bg-gray-50": cell.column.getIsSorted() })}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))
                   : (
-                    <td colSpan={table.options.columns.length}>
-                      <span className="flex bg-slate-50">&nbsp;</span>
+                    <td className="p-1.5 border-b border-gray-200" colSpan={table.options.columns.length}>
+                      <div className="flex">
+                        <span className="bg-slate-50 w-full rounded">&nbsp;</span>
+                      </div>
                     </td>
                   )
                 }
