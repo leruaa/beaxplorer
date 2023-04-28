@@ -192,23 +192,16 @@ where
         futures.push(fetch::<Vec<Id>>(url));
     }
 
-    let range = try_join_all(futures)
+    let mut ids = try_join_all(futures)
         .await?
         .into_iter()
         .flatten()
-        .map(|id| id.into());
+        .map(|id| id.into())
+        .collect::<Vec<_>>();
 
-    let vec = if sort_by.desc {
-        let skip = if input.settings.page_index == 0 {
-            0_usize
-        } else {
-            10 - total_count % 10
-        };
-        let page_size = input.settings.page_size;
-        range.rev().skip(skip).take(page_size).collect()
-    } else {
-        range.collect()
-    };
+    if sort_by.desc {
+        ids.reverse()
+    }
 
-    Ok(vec)
+    Ok(ids)
 }
