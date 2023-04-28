@@ -44,7 +44,8 @@ export default ({ app, blocksCount, kind }: Props) => {
                             <Badge className="bg-slate-50 text-slate-500">Orphaned</Badge>
                         )
                 }
-            }
+            },
+            enableSorting: false,
         }),
         columnHelper.accessor("proposer", {
             header: "Proposer"

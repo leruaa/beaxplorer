@@ -44,13 +44,15 @@ export default ({ table }: DataTableProps) => {
                     <th
                       key={header.id}
                       colSpan={header.colSpan}
-                      className={cx("text-xs text-right px-1.5 py-2 text-gray-600 uppercase bg-gray-100", { "text-black": header.column.getIsSorted() })}
+                      className={cx("text-xs text-right px-1.5 py-2 text-gray-600 uppercase bg-gray-100", { "cursor-pointer": header.column.getCanSort() }, { "text-black": header.column.getIsSorted() })}
                       onClick={header.column.getToggleSortingHandler()}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
-                      <span className="inline-block align-bottom w-4 h-4 px-1">
-                        <SortIcon isSorted={header.column.getIsSorted()} />
-                      </span>
+                      {header.column.getCanSort() && (
+                        <span className="inline-block align-bottom w-4 h-4 px-1">
+                          <SortIcon isSorted={header.column.getIsSorted()} />
+                        </span>
+                      )}
                     </th>
                   ))}
               </tr>
