@@ -60,17 +60,27 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
     keepPreviousData: true
   });
 
-  const queries = useQueries({
+  const buffers = useQueries({
     queries: paths.data ? paths.data.map((path) => {
       return {
         queryKey: [path[1]],
         queryFn: () => fetch(path[1])
           .then(r => r.blob())
-          .then(b => b.arrayBuffer())
-          .then(a => deserializer(a, path[0])),
+          .then(b => { return { id: path[0], buf: b.arrayBuffer() } }),
         keepPreviousData: true
       }
     }) : []
+  });
+
+  const data = useQueries({
+    queries: buffers.map((b) => {
+      return {
+        queryKey: ["buf", plural, b.data?.id.toString()],
+        queryFn: () => b.data.buf.then((buffer) => deserializer(buffer, b.data.id)),
+        enabled: !!b.data,
+        keepPreviousData: true
+      }
+    })
   });
 
   const defaultData = useMemo(() => [], [])
@@ -78,7 +88,7 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
   return useReactTable(
     {
       columns: useMemo(() => columns, []),
-      data: queries.map(q => buildData(q)),
+      data: data.map(q => buildData(q)),
       pageCount,
       state: {
         sorting, pagination
