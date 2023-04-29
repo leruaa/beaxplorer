@@ -1,5 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import useDataTable from "../../hooks/data-table";
+import { useDataTable } from "../../hooks/data";
 import { App, BlockView, RangeKind, getBlock, getBlockPaths } from "../../pkg/web";
 import DataTable from "../data-table";
 import Badge from "../badge";

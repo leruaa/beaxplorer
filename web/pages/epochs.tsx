@@ -3,7 +3,7 @@ import Number from "../components/number";
 import Ethers from "../components/ethers";
 import Percentage from "../components/percentage";
 import Breadcrumb from "../components/breadcrumb";
-import useDataTable from "../hooks/data-table";
+import { useDataTable } from "../hooks/data";
 import { App, getEpochMetaPath, getEpoch, getEpochPaths, getMeta, EpochView } from "../pkg";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from 'next/link';

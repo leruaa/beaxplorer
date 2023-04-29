@@ -3,7 +3,7 @@ import Link from "next/link";
 import DataTable from "../components/data-table";
 import Root from "../components/root";
 import Peer from "../components/peer";
-import useDataTable from "../hooks/data-table";
+import { useDataTable } from "../hooks/data";
 import { App, BlockRequestView, getBlockRequest, getBlockRequestMeta, getGoodPeer, getGoodPeerMeta, GoodPeerView } from "../pkg/web";
 
 

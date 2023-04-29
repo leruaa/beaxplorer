@@ -14,7 +14,7 @@ interface Updatable {
 
 type Data<T> = T & Updatable;
 
-export default function useDataTable<T>(app: App, plural: string, kind: RangeKind, deserializer: Deserializer<T>, pathRetriever: PathRetriever, columns, totalCount: number, defaultSort = "default"): Table<Data<T>> {
+export function useDataTable<T>(app: App, plural: string, kind: RangeKind, deserializer: Deserializer<T>, pathRetriever: PathRetriever, columns, totalCount: number, defaultSort = "default"): Table<Data<T>> {
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -64,9 +64,7 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
     queries: paths.data ? paths.data.map((path) => {
       return {
         queryKey: [path[1]],
-        queryFn: () => fetch(path[1])
-          .then(r => r.blob())
-          .then(b => { return { id: path[0], buf: b.arrayBuffer() } }),
+        queryFn: () => useBuffer(path[0], path[1]),
         keepPreviousData: true
       }
     }) : []
@@ -76,7 +74,7 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
     queries: buffers.map((b) => {
       return {
         queryKey: ["buf", plural, b.data?.id.toString()],
-        queryFn: () => b.data.buf.then((buffer) => deserializer(buffer, b.data.id)),
+        queryFn: () => deserializer(b.data.buffer, b.data.id),
         enabled: !!b.data,
         keepPreviousData: true
       }
@@ -102,6 +100,18 @@ export default function useDataTable<T>(app: App, plural: string, kind: RangeKin
       manualSorting: kind.kind != "epoch"
     }
   );
+}
+
+export function useBuffer(id: bigint | string, path: string): Promise<ModelBuffer> {
+  return fetch(path)
+    .then(r => r.blob())
+    .then(b => b.arrayBuffer())
+    .then(b => { return { id: id, buffer: b } });
+}
+
+export interface ModelBuffer {
+  id: bigint | string,
+  buffer: ArrayBuffer
 }
 
 function buildData<T>(query: UseQueryResult<T, unknown>): Data<T> {

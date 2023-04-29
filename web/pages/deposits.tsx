@@ -1,7 +1,7 @@
 import DataTable from "../components/data-table";
 import Number from "../components/number";
 import Breadcrumb from "../components/breadcrumb";
-import useDataTable from "../hooks/data-table";
+import { useDataTable } from "../hooks/data";
 import { App, getDepositMeta, getDeposit, DepositView } from "../pkg";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from 'next/link';
