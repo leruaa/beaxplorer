@@ -39,8 +39,8 @@ export default (props) => {
     }),
     columnHelper.accessor("timestamp", {
       header: "Time",
-      cell: props =>
-        <RelativeDatetime timestamp={props.getValue()} />
+      cell: props => <><RelativeDatetime timestamp={props.getValue()} /> ago</>
+
     }),
     columnHelper.accessor(
       row => ({ p: row.proposedBlocksCount, m: row.missedBlocksCount, o: row.orphanedBlocksCount }),
