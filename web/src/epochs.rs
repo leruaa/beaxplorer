@@ -3,15 +3,21 @@ use crate::page::{get_paths, RangeInput};
 use crate::views::epochs::{EpochExtendedView, EpochView};
 use crate::{deserialize, PathArray};
 
-use js_sys::ArrayBuffer;
+use js_sys::{ArrayBuffer, JsString};
 use types::epoch::{EpochExtendedModel, EpochModel};
 use types::meta::Meta;
+use types::path::ToPath;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(js_name = "getEpoch")]
 pub fn get_epoch(buffer: ArrayBuffer, epoch: u64) -> Result<EpochView, JsValue> {
     let model = deserialize::<EpochModel>(buffer)?;
     Ok(EpochView::from((epoch, model)))
+}
+
+#[wasm_bindgen(js_name = "getEpochPath")]
+pub fn get_epoch_path(app: &App, epoch: u64) -> JsString {
+    EpochModel::to_path(&app.base_url(), &epoch).into()
 }
 
 #[wasm_bindgen(js_name = "getEpochPaths")]
@@ -34,7 +40,12 @@ pub fn get_epoch_extended(
     Ok(EpochExtendedView::from((epoch, model, extended_model)))
 }
 
+#[wasm_bindgen(js_name = "getEpochExtendedPath")]
+pub fn get_epoch_extended_path(app: &App, epoch: u64) -> JsString {
+    EpochExtendedModel::to_path(&app.base_url(), &epoch).into()
+}
+
 #[wasm_bindgen(js_name = "getEpochMetaPath")]
-pub fn get_epoch_meta_path(app: &App) -> JsValue {
+pub fn get_epoch_meta_path(app: &App) -> JsString {
     Meta::to_path::<EpochModel>(&app.base_url()).into()
 }
