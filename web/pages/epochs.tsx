@@ -48,15 +48,15 @@ export default (props) => {
         header: "Blocks",
         cell: props =>
           <>
-            <Badge className="bg-green-50 text-green-500">
+            <Badge className="text-sm" color="green">
               <Number value={props.getValue().p} />
             </Badge>
             &nbsp;
-            <Badge className="bg-amber-50 text-amber-500">
+            <Badge className="text-sm" color="amber">
               <Number value={props.getValue().m} />
             </Badge>
             &nbsp;
-            <Badge className="bg-slate-50 text-slate-500">
+            <Badge className="text-sm" color="slate">
               <Number value={props.getValue().o} />
             </Badge>
           </>

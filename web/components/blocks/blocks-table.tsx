@@ -33,15 +33,15 @@ export default ({ app, blocksCount, kind }: Props) => {
                 switch (props.getValue()) {
                     case "Proposed":
                         return (
-                            <Badge className="bg-green-50 text-green-500">Proposed</Badge>
+                            <Badge className="text-sm" color="green">Proposed</Badge>
                         )
                     case "Missed":
                         return (
-                            <Badge className="bg-amber-50 text-amber-500">Missed</Badge>
+                            <Badge className="text-sm" color="amber">Missed</Badge>
                         )
                     case "Orphaned":
                         return (
-                            <Badge className="bg-slate-50 text-slate-500">Orphaned</Badge>
+                            <Badge className="text-sm" color="slate">Orphaned</Badge>
                         )
                 }
             },
