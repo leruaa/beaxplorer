@@ -94,3 +94,21 @@
     @apply align-text-bottom;
   }
 }
+
+@layer utilities {
+  .highlight-blue {
+    @apply bg-blue-50 text-blue-500;
+  }
+
+  .highlight-green {
+    @apply bg-green-50 text-green-500;
+  }
+
+  .highlight-amber {
+    @apply bg-amber-50 text-amber-500
+  }
+
+  .highlight-slate {
+    @apply bg-slate-50 text-slate-500
+  }
+}
