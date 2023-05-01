@@ -9,8 +9,8 @@ export default ({ timestamp }: Props) => {
     let obj = {};
 
     if (duration.days > 0) obj = { days: duration.days };
-    else if (duration.hours > 0) obj = { hours: duration.hours };
-    else if (duration.minutes > 0) obj = { minutes: duration.minutes };
+    else if (duration.hours > 0) obj = { hours: duration.hours, minutes: duration.minutes };
+    else if (duration.minutes > 0) obj = { minutes: duration.minutes, seconds: duration.seconds };
     else obj = { seconds: duration.seconds };
 
     const relative = Duration.fromObject(obj, { locale: "en-US" }).toHuman();
