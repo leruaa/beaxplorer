@@ -3,7 +3,6 @@ import { useRouter } from 'next/router'
 import * as Tabs from '@radix-ui/react-tabs';
 import cx from 'classnames';
 import Breadcrumb from "../../components/breadcrumb";
-import TabSelector from '../../components/tab-selector';
 import { useQuery } from '@tanstack/react-query';
 import { App, AttestationView, VoteView, getAttestations, getBlockExtended, getCommittees, getVotes } from '../../pkg/web';
 import Root from '../../components/root';
