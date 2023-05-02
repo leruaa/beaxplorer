@@ -9,6 +9,7 @@ import BlocksTable from '../../components/blocks/blocks-table';
 import { useBuffer } from '../../hooks/data';
 import { Suspense } from 'react';
 import { ClockCountdown } from '@phosphor-icons/react';
+import Link from 'next/link';
 
 
 export default (props) => {
@@ -19,9 +20,10 @@ export default (props) => {
     <>
       <Breadcrumb.Root>
         <Breadcrumb.Part>
-          <>
-            <ClockCountdown />&nbsp;Epochs
-          </>
+          <Link href="/epochs"><ClockCountdown />&nbsp;Epochs</Link>
+        </Breadcrumb.Part>
+        <Breadcrumb.Part>
+          <span>{id}</span>
         </Breadcrumb.Part>
       </Breadcrumb.Root>
       {id ? (

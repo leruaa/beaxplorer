@@ -1,6 +1,6 @@
 import { CaretRight, House, Icon, IconContext } from "@phosphor-icons/react";
 
-type Props = { children: JSX.Element | JSX.Element[] }
+type Props = { children?: JSX.Element | JSX.Element[] }
 
 export const Part = ({ children }: Props) => {
   return (

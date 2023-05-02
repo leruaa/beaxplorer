@@ -194,9 +194,10 @@ export default () => {
     <>
       <Breadcrumb.Root>
         <Breadcrumb.Part>
-          <>
-            <Cube />&nbsp;Blocks
-          </>
+          <Link href="/blocks"><Cube />&nbsp;Blocks</Link>
+        </Breadcrumb.Part>
+        <Breadcrumb.Part>
+          <span>{block && block.slot}</span>
         </Breadcrumb.Part>
       </Breadcrumb.Root>
       <section className="container mx-auto">
