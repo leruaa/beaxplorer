@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router'
-import Breadcrumb from "../../components/breadcrumb";
+import * as Breadcrumb from "../../components/breadcrumb";
 import Percentage from "../../components/percentage";
 import Ethers from "../../components/ethers";
 import { App, getEpochExtended, getEpochExtendedPath, getEpochPath } from '../../pkg/web';
@@ -8,6 +8,7 @@ import RelativeDatetime from '../../components/relative-datetime';
 import BlocksTable from '../../components/blocks/blocks-table';
 import { useBuffer } from '../../hooks/data';
 import { Suspense } from 'react';
+import { ClockCountdown } from '@phosphor-icons/react';
 
 
 export default (props) => {
@@ -16,7 +17,13 @@ export default (props) => {
 
   return (
     <>
-      <Breadcrumb breadcrumb={{ parts: [{ text: "Epochs", icon: "clock" }] }} />
+      <Breadcrumb.Root>
+        <Breadcrumb.Part>
+          <>
+            <ClockCountdown />&nbsp;Epochs
+          </>
+        </Breadcrumb.Part>
+      </Breadcrumb.Root>
       {id ? (
         <Suspense fallback={<Loading />}>
           <Epoch id={BigInt(id)} />

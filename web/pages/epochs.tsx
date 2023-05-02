@@ -2,13 +2,14 @@ import DataTable from "../components/data-table";
 import Number from "../components/number";
 import Ethers from "../components/ethers";
 import Percentage from "../components/percentage";
-import Breadcrumb from "../components/breadcrumb";
+import * as Breadcrumb from "../components/breadcrumb";
 import { useDataTable } from "../hooks/data";
 import { App, getEpochMetaPath, getEpoch, getEpochPaths, getMeta, EpochView } from "../pkg";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from 'next/link';
 import RelativeDatetime from "../components/relative-datetime";
 import Badge from "../components/badge";
+import { ClockCountdown } from "@phosphor-icons/react";
 
 
 export async function getStaticProps() {
@@ -100,7 +101,13 @@ export default (props) => {
 
   return (
     <>
-      <Breadcrumb breadcrumb={{ parts: [{ text: "Epochs", icon: "clock" }] }} />
+      <Breadcrumb.Root>
+        <Breadcrumb.Part>
+          <>
+            <ClockCountdown />&nbsp;Epochs
+          </>
+        </Breadcrumb.Part>
+      </Breadcrumb.Root>
       <section className="container mx-auto">
         <DataTable table={table} />
       </section>

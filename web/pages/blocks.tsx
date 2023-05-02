@@ -1,7 +1,8 @@
 
 import { App, getBlockMetaPath, getMeta } from "../pkg";
-import Breadcrumb from "../components/breadcrumb";
+import * as Breadcrumb from "../components/breadcrumb";
 import BlocksTable from "../components/blocks/blocks-table";
+import { Cube } from "@phosphor-icons/react";
 
 export async function getStaticProps() {
   const app = new App("http://localhost:3000");
@@ -22,7 +23,13 @@ export default (props) => {
   const app = new App(process.env.NEXT_PUBLIC_HOST);
   return (
     <>
-      <Breadcrumb breadcrumb={{ parts: [{ text: "Blocks", icon: "cube" }] }} />
+      <Breadcrumb.Root>
+        <Breadcrumb.Part>
+          <>
+            <Cube />&nbsp;Blocks
+          </>
+        </Breadcrumb.Part>
+      </Breadcrumb.Root>
       <section className="container mx-auto">
         <div className="tabular-data">
           <BlocksTable app={app} blocksCount={props.blocksCount} kind={{ kind: "integers" }} />

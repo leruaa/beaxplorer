@@ -1,44 +1,31 @@
-const BreadcrumbPart = (props) => {
-  if (props.link) {
-    return (
-      <>
-        <i className="icon solid-chevron-right text-gray-500" />
-        <a href="{{link}}">
-          <i className={`icon outline-${props.icon}`} /> 
-          &nbsp;
-          {props.text}
-        </a>
-      </>
-    );
-  }
-  else {
-    return (
-      <>
-        <i className="icon solid-chevron-right text-gray-500" />
-        <i className={`icon outline-${props.icon}`} />
-        &nbsp;
-        {props.text}
-      </>
-    );
-  }
-  
+import { CaretRight, House, Icon, IconContext } from "@phosphor-icons/react";
+
+type Props = { children: JSX.Element | JSX.Element[] }
+
+export const Part = ({ children }: Props) => {
+  return (
+    <>
+      <CaretRight className="inline mb-1 text-gray-500" />
+      {children}
+    </>
+  );
 }
 
-export default (props) => {
-  if (props.breadcrumb) {
-    const parts = props.breadcrumb.parts.map((value, index) => {
-      return <BreadcrumbPart key={index} {...value} />
-    });
-
-    return (
+export const Root = ({ children }: Props) => {
+  return (
+    <IconContext.Provider
+      value={{
+        size: "1em",
+        weight: "bold",
+        className: "inline mb-1",
+      }}
+    >
       <h2 className="container mx-auto">
         <ul className="breadcrumb">
-          <a href="/"><i className="icon solid-home" /></a>
-          {parts}
+          <a href="/"><House /></a>
+          {children}
         </ul>
       </h2>
-    );
-  }
-
-  return null;
+    </IconContext.Provider>
+  );
 }

@@ -2,12 +2,13 @@ import React from 'react';
 import { useRouter } from 'next/router'
 import * as Tabs from '@radix-ui/react-tabs';
 import cx from 'classnames';
-import Breadcrumb from "../../components/breadcrumb";
+import * as Breadcrumb from "../../components/breadcrumb";
 import { useQuery } from '@tanstack/react-query';
 import { App, AttestationView, VoteView, getAttestations, getBlockExtended, getCommittees, getVotes } from '../../pkg/web';
 import Root from '../../components/root';
 import Link from 'next/link';
 import AggregationBits from '../../components/aggregation-bits';
+import { Cube } from '@phosphor-icons/react';
 
 const Validators = (props: { validators: number[], aggregationBits?: boolean[] }) => {
   if (!props.validators) {
@@ -191,7 +192,13 @@ export default () => {
 
   return (
     <>
-      <Breadcrumb breadcrumb={{ parts: [{ text: "Blocks", icon: "clock" }] }} />
+      <Breadcrumb.Root>
+        <Breadcrumb.Part>
+          <>
+            <Cube />&nbsp;Blocks
+          </>
+        </Breadcrumb.Part>
+      </Breadcrumb.Root>
       <section className="container mx-auto">
         <div className="tabular-data">
           <p>Showing block</p>
