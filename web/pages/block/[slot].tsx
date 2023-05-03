@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useRouter } from 'next/router'
 import * as Tabs from '@radix-ui/react-tabs';
 import cx from 'classnames';
 import * as Breadcrumb from "../../components/breadcrumb";
 import { useQuery } from '@tanstack/react-query';
-import { App, AttestationView, VoteView, getAttestations, getBlockExtended, getCommittees, getVotes } from '../../pkg/web';
+import { App, AttestationView, BlockPaths, VoteView, getAttestations, getBlockExtended, getBlockPaths, getCommittees, getVotes } from '../../pkg/web';
 import Root from '../../components/root';
 import Link from 'next/link';
 import AggregationBits from '../../components/aggregation-bits';
 import { Cube } from '@phosphor-icons/react';
+import { useBuffer } from '../../hooks/data';
 
 const Validators = (props: { validators: number[], aggregationBits?: boolean[] }) => {
   if (!props.validators) {
@@ -28,16 +29,14 @@ const Validators = (props: { validators: number[], aggregationBits?: boolean[] }
   return <>{validators}</>
 }
 
-const Committees = (props: { app: App, slot: string }) => {
-  const { isLoading, error, data: committees } = useQuery(
-    ["committees", props.slot],
-    () => getCommittees(props.app, BigInt(props.slot))
-  );
-  if (isLoading) {
-    return (
-      <p>Loading...</p>
-    );
-  }
+type ModelsProps = { slot: bigint, path: string };
+
+const Committees = ({ slot, path }: ModelsProps) => {
+  const { data: committees } = useQuery({
+    queryKey: [path],
+    queryFn: () => useBuffer(slot, path).then(committeesBuffer => getCommittees(committeesBuffer.buffer)),
+    suspense: true
+  });
 
   return <>
     {
@@ -51,17 +50,12 @@ const Committees = (props: { app: App, slot: string }) => {
   </>
 }
 
-const Votes = (props: { app: App, slot: string }) => {
-  const { isLoading, error, data: votes } = useQuery(
-    ["votes", props.slot],
-    () => getVotes(props.app, BigInt(props.slot))
-  );
-
-  if (isLoading) {
-    return (
-      <p>Loading...</p>
-    );
-  }
+const Votes = ({ slot, path }: ModelsProps) => {
+  const { data: votes } = useQuery({
+    queryKey: [path],
+    queryFn: () => useBuffer(slot, path).then(votesBuffer => getVotes(votesBuffer.buffer)),
+    suspense: true
+  });
 
   return <>
     {
@@ -73,7 +67,6 @@ const Votes = (props: { app: App, slot: string }) => {
 }
 
 const Vote = (props: { vote: VoteView }) => {
-
   return (
     <dl>
       <dt>Slot</dt>
@@ -91,104 +84,139 @@ const Vote = (props: { vote: VoteView }) => {
   );
 }
 
-const Attestations = (props: { app: App, slot: string }) => {
-  const { isLoading, error, data: attestations } = useQuery(
-    ["attestations", props.slot],
-    () => getAttestations(props.app, BigInt(props.slot))
-  );
+type AttestationsProps = { slot: bigint, paths: BlockPaths };
 
-  if (isLoading) {
-    return (
-      <p>Loading...</p>
-    );
-  }
+const Attestations = ({ slot, paths }: AttestationsProps) => {
+  const { data: attestations } = useQuery({
+    queryKey: [paths.attestations],
+    queryFn: () => useBuffer(slot, paths.attestations).then(attestationsBuffer => getAttestations(attestationsBuffer.buffer)),
+    suspense: true
+  });
 
   return <>
     {
       attestations.map((a, i) => (
         <div key={i}>
           <h3>Attestation {i}</h3>
-          <Attestation app={props.app} attestation={a} />
+          <Attestation slot={slot} attestation={a} committeesPath={paths.committees} />
         </div>
       ))
     }
   </>
 }
 
-const Attestation = (props: { app: App, attestation: AttestationView }) => {
-  const { isLoading, error, data: committees } = useQuery(
-    ["committees", props.attestation.slot],
-    () => getCommittees(props.app, BigInt(props.attestation.slot))
-  );
+type AttestationProps = { slot: bigint, attestation: AttestationView, committeesPath: string };
 
-  if (isLoading) {
-    return (
-      <p>Loading...</p>
-    );
-  }
+const Attestation = ({ slot, attestation, committeesPath }: AttestationProps) => {
+  const { data: committees } = useQuery({
+    queryKey: [committeesPath],
+    queryFn: () => useBuffer(slot, committeesPath).then(committeesBuffer => getCommittees(committeesBuffer.buffer)),
+    suspense: true
+  });
+
 
   return (
     <dl>
       <dt>Slot</dt>
-      <dd>{props.attestation.slot}</dd>
+      <dd>{attestation.slot}</dd>
 
       <dt>Committee index</dt>
-      <dd>{props.attestation.committeeIndex}</dd>
+      <dd>{attestation.committeeIndex}</dd>
 
       <dt>Aggregation bits</dt>
       <dd className="flex flex-wrap">
-        <AggregationBits bits={props.attestation.aggregationBits} />
+        <AggregationBits bits={attestation.aggregationBits} />
       </dd>
 
       <dt>Validators</dt>
       <dd className="flex flex-wrap">
         <Validators
-          validators={committees[props.attestation.committeeIndex].validators}
-          aggregationBits={props.attestation.aggregationBits} />
+          validators={committees[attestation.committeeIndex].validators}
+          aggregationBits={attestation.aggregationBits} />
       </dd>
 
       <dt>Beacon block root</dt>
-      <dd><span className="font-mono">{props.attestation.beaconBlockRoot}</span></dd>
+      <dd><span className="font-mono">{attestation.beaconBlockRoot}</span></dd>
 
       <dt>Source</dt>
       <dd>
-        Epoch <Link href={`/epoch/${props.attestation.sourceEpoch}`}>{props.attestation.sourceEpoch}</Link>
-        &nbsp;(<span className="font-mono">{props.attestation.sourceRoot}</span>)
+        Epoch <Link href={`/epoch/${attestation.sourceEpoch}`}>{attestation.sourceEpoch}</Link>
+        &nbsp;(<span className="font-mono">{attestation.sourceRoot}</span>)
       </dd>
 
       <dt>Target</dt>
       <dd>
-        Epoch <Link href={`/epoch/${props.attestation.targetEpoch}`}>{props.attestation.targetEpoch}</Link>
-        &nbsp;(<span className="font-mono">{props.attestation.targetRoot}</span>)
+        Epoch <Link href={`/epoch/${attestation.targetEpoch}`}>{attestation.targetEpoch}</Link>
+        &nbsp;(<span className="font-mono">{attestation.targetRoot}</span>)
       </dd>
 
       <dt>Signature</dt>
-      <dd><span className="font-mono break-words">{props.attestation.signature}</span></dd>
+      <dd><span className="font-mono break-words">{attestation.signature}</span></dd>
     </dl>
   );
 }
 
-export default () => {
+const Block = ({ slot }: { slot: bigint }) => {
   const app = new App(process.env.NEXT_PUBLIC_HOST);
+  const blockPaths = getBlockPaths(app, slot);
+
+  const { data: block } = useQuery({
+    queryKey: [blockPaths.block, blockPaths.blockExtended],
+    queryFn: () => {
+      return Promise.all([useBuffer(slot, blockPaths.block), useBuffer(slot, blockPaths.blockExtended)])
+        .then(([epochBuffer, epochExtendedBuffer]) =>
+          getBlockExtended(epochBuffer.buffer, epochExtendedBuffer.buffer, slot)
+        )
+    },
+    suspense: true
+  });
+
+  return (
+    <>
+      <section className="container mx-auto">
+        <div className="tabular-data">
+          <p>Showing block</p>
+          <Tabs.Root defaultValue="overview">
+            <Tabs.List>
+              <Tabs.Trigger value="overview">Overview</Tabs.Trigger >
+              <Tabs.Trigger value="committees">Committees</Tabs.Trigger >
+              <Tabs.Trigger value="votes">Votes ({block.votesCount})</Tabs.Trigger >
+              <Tabs.Trigger value="attestations">Attestations ({block.attestationsCount})</Tabs.Trigger >
+            </Tabs.List>
+            <Tabs.Content value="overview">
+              <dl>
+                <dt>Epoch</dt>
+                <dd>{block.epoch}</dd>
+                <dt>Slot</dt>
+                <dd>{block.slot}</dd>
+              </dl>
+            </Tabs.Content>
+            <Tabs.Content value="committees">
+              <Suspense fallback={<Loading />}>
+                <Committees slot={slot} path={blockPaths.committees} />
+              </Suspense>
+            </Tabs.Content>
+            <Tabs.Content value="votes">
+              <Suspense fallback={<Loading />}>
+                <Votes slot={slot} path={blockPaths.votes} />
+              </Suspense>
+            </Tabs.Content>
+            <Tabs.Content value="attestations">
+              <Suspense fallback={<Loading />}>
+                <Attestations slot={slot} paths={blockPaths} />
+              </Suspense>
+            </Tabs.Content>
+          </Tabs.Root>
+        </div>
+      </section>
+    </>
+  )
+}
+
+export default () => {
+
   const router = useRouter();
   const slot = router.query.slot as string;
-
-  if (!slot) {
-    return (
-      <p>Loading...</p>
-    )
-  }
-
-  const { isLoading, error, data: block } = useQuery(
-    ["block", slot],
-    () => getBlockExtended(app, BigInt(slot))
-  );
-
-  if (error) {
-    return (
-      <p>Failed to load {error}</p>
-    )
-  }
 
   return (
     <>
@@ -197,40 +225,20 @@ export default () => {
           <Link href="/blocks"><Cube />&nbsp;Blocks</Link>
         </Breadcrumb.Part>
         <Breadcrumb.Part>
-          <span>{block && block.slot}</span>
+          <span>{slot}</span>
         </Breadcrumb.Part>
       </Breadcrumb.Root>
-      <section className="container mx-auto">
-        <div className="tabular-data">
-          <p>Showing block</p>
-          <Tabs.Root defaultValue="overview">
-            <Tabs.List>
-              <Tabs.Trigger value="overview">Overview</Tabs.Trigger >
-              <Tabs.Trigger value="committees">Committees</Tabs.Trigger >
-              <Tabs.Trigger value="votes">Votes ({block && block.votesCount})</Tabs.Trigger >
-              <Tabs.Trigger value="attestations">Attestations ({block && block.attestationsCount})</Tabs.Trigger >
-            </Tabs.List>
-            <Tabs.Content value="overview">
-              <dl>
-                <dt>Epoch</dt>
-                <dd>{block && block.epoch}</dd>
-                <dt>Slot</dt>
-                <dd>{block && block.slot}</dd>
-              </dl>
-            </Tabs.Content>
-            <Tabs.Content value="committees">
-              <Committees app={app} slot={slot} />
-            </Tabs.Content>
-            <Tabs.Content value="votes">
-              <Votes app={app} slot={slot} />
-            </Tabs.Content>
-            <Tabs.Content value="attestations">
-              <Attestations app={app} slot={slot} />
-            </Tabs.Content>
-          </Tabs.Root>
-        </div>
-      </section>
+      {slot ? (
+        <Suspense fallback={<Loading />}>
+          <Block slot={BigInt(slot)} />
+        </Suspense>
+      ) : (
+        <Loading />
+      )}
     </>
   )
+}
 
+const Loading = () => {
+  return (<p>Loading...</p>)
 }

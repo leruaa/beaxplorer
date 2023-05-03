@@ -59,3 +59,14 @@ impl From<BlockExtendedView> for JsValue {
         to_js(&val).unwrap()
     }
 }
+
+#[derive(Serialize, Tsify, Debug, Clone)]
+#[tsify(into_wasm_abi)]
+#[serde(rename_all = "camelCase")]
+pub struct BlockPaths {
+    pub block: String,
+    pub block_extended: String,
+    pub committees: String,
+    pub votes: String,
+    pub attestations: String,
+}

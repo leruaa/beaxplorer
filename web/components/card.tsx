@@ -7,7 +7,7 @@ export default ({ className, title, icon, children }: RootProps) => {
 
   return (
     <div className={cx(className, "relative flex flex-col gap-1 px-2 h-24 rounded text-white")}>
-      <div className="absolute -right-6 -top -bottom opacity-20">
+      <div className="absolute -right-6 -top -bottom opacity-30">
         <IconContext.Provider
           value={{
             size: "6em",

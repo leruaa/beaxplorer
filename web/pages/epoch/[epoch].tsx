@@ -50,7 +50,7 @@ const Epoch = ({ id }: { id: bigint }) => {
     queryFn: () => {
       return Promise.all([useBuffer(id, epochPaths.epoch), useBuffer(id, epochPaths.epochExtended)])
         .then(([epochBuffer, epochExtendedBuffer]) =>
-          getEpochExtended(epochBuffer.buffer, epochExtendedBuffer.buffer, BigInt(id))
+          getEpochExtended(epochBuffer.buffer, epochExtendedBuffer.buffer, id)
         )
     },
     suspense: true
@@ -130,5 +130,5 @@ const Epoch = ({ id }: { id: bigint }) => {
 }
 
 const Loading = () => {
-  return (<p>"Loading..."</p>)
+  return (<p>Loading...</p>)
 }
