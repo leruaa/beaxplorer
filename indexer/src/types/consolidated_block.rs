@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use lighthouse_types::{Attestation, DepositData, Epoch, EthSpec, OwnedBeaconCommittee, Slot};
+use shared::utils::clock::Clock;
 use store::SignedBeaconBlock;
 use types::{
     attestation::{AttestationModel, AttestationModelsWithId},
@@ -90,8 +91,12 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
 
 impl<E: EthSpec> From<&ConsolidatedBlock<E>> for BlockModelWithId {
     fn from(value: &ConsolidatedBlock<E>) -> Self {
+        let spec = E::default_spec();
+        let clock = Clock::new(spec);
+
         let model = BlockModel {
             epoch: value.epoch.as_u64(),
+            timestamp: clock.timestamp(value.slot).unwrap_or(0),
             proposer_slashings_count: value.get_proposer_slashings_count(),
             attester_slashings_count: value.get_attester_slashings_count(),
             attestations_count: value.get_attestations_count(),

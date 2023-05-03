@@ -4,8 +4,6 @@ use serde::Serialize;
 #[cfg(feature = "wasm")]
 use tsify::Tsify;
 
-use crate::model::ModelWithId;
-
 #[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
 #[cfg_attr(feature = "wasm", derive(Tsify))]
 #[persistable(model = "collection")]

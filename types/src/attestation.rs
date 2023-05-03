@@ -1,4 +1,3 @@
-use crate::model::ModelWithId;
 use indexer_macro::Persistable;
 use serde::Deserialize;
 use serde::Serialize;

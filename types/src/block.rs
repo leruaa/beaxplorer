@@ -14,6 +14,7 @@ use wasm_bindgen::prelude::wasm_bindgen;
 #[serde(rename_all = "camelCase")]
 pub struct BlockModel {
     pub epoch: u64,
+    pub timestamp: u64,
     pub proposer_slashings_count: usize,
     pub attester_slashings_count: usize,
     #[persistable(sortable)]
