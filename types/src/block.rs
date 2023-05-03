@@ -34,15 +34,14 @@ pub struct BlockModel {
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 #[serde(rename_all = "camelCase")]
 pub struct BlockExtendedModel {
-    pub block_root: Vec<u8>,
-    pub parent_root: Vec<u8>,
-    pub state_root: Vec<u8>,
-    pub signature: Vec<u8>,
-    pub randao_reveal: Vec<u8>,
-    pub graffiti: Vec<u8>,
-    pub graffiti_text: String,
+    pub block_root: String,
+    pub parent_root: String,
+    pub state_root: String,
+    pub signature: String,
+    pub randao_reveal: String,
+    pub graffiti: String,
     pub votes_count: usize,
-    pub eth1data_deposit_root: Vec<u8>,
+    pub eth1data_deposit_root: String,
     pub eth1data_deposit_count: u64,
-    pub eth1data_block_hash: Vec<u8>,
+    pub eth1data_block_hash: String,
 }

@@ -67,41 +67,16 @@ impl<E: EthSpec> From<&BlockState<E>> for Option<BlockExtendedModel> {
         let block: Option<Arc<SignedBeaconBlock<E>>> = value.into();
 
         block.map(|block| BlockExtendedModel {
-            block_root: block.canonical_root().as_bytes().to_vec(),
-            parent_root: block.message().parent_root().as_bytes().to_vec(),
-            state_root: block.message().state_root().as_bytes().to_vec(),
-            randao_reveal: block
-                .message()
-                .body()
-                .randao_reveal()
-                .to_string()
-                .as_bytes()
-                .to_vec(),
-            signature: block.signature().to_string().as_bytes().to_vec(),
-            graffiti: block
-                .message()
-                .body()
-                .graffiti()
-                .to_string()
-                .as_bytes()
-                .to_vec(),
-            graffiti_text: block.message().body().graffiti().to_string(),
+            block_root: format!("{:?}", block.canonical_root()),
+            parent_root: format!("{:?}", block.message().parent_root()),
+            state_root: format!("{:?}", block.message().state_root()),
+            randao_reveal: block.message().body().randao_reveal().to_string(),
+            signature: block.signature().to_string(),
+            graffiti: block.message().body().graffiti().to_string(),
             votes_count: 0,
-            eth1data_deposit_root: block
-                .message()
-                .body()
-                .eth1_data()
-                .deposit_root
-                .as_bytes()
-                .to_vec(),
+            eth1data_deposit_root: format!("{:?}", block.message().body().eth1_data().deposit_root),
             eth1data_deposit_count: block.message().body().eth1_data().deposit_count,
-            eth1data_block_hash: block
-                .message()
-                .body()
-                .eth1_data()
-                .block_hash
-                .as_bytes()
-                .to_vec(),
+            eth1data_block_hash: format!("{:?}", block.message().body().eth1_data().block_hash),
         })
     }
 }
