@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import * as Breadcrumb from "../../components/breadcrumb";
 import Percentage from "../../components/percentage";
 import Ethers from "../../components/ethers";
-import { App, getEpochExtended, getEpochExtendedPath, getEpochPath } from '../../pkg/web';
+import { App, getEpochExtended, getEpochPaths } from '../../pkg/web';
 import RelativeDatetime from '../../components/relative-datetime';
 import BlocksTable from '../../components/blocks/blocks-table';
 import { useBuffer } from '../../hooks/data';
@@ -43,13 +43,12 @@ export default (props) => {
 
 const Epoch = ({ id }: { id: bigint }) => {
   const app = new App(process.env.NEXT_PUBLIC_HOST);
-  const epochPath = getEpochPath(app, id);
-  const epochExtendedPath = getEpochExtendedPath(app, id);
+  const epochPaths = getEpochPaths(app, id);
 
   const { data: epoch } = useQuery({
-    queryKey: [epochPath, epochExtendedPath],
+    queryKey: [epochPaths],
     queryFn: () => {
-      return Promise.all([useBuffer(id, epochPath), useBuffer(id, epochExtendedPath)])
+      return Promise.all([useBuffer(id, epochPaths.epoch), useBuffer(id, epochPaths.epochExtended)])
         .then(([epochBuffer, epochExtendedBuffer]) =>
           getEpochExtended(epochBuffer.buffer, epochExtendedBuffer.buffer, BigInt(id))
         )

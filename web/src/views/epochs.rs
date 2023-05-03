@@ -69,3 +69,11 @@ impl From<EpochExtendedView> for JsValue {
         to_js(&val).unwrap()
     }
 }
+
+#[derive(Serialize, Tsify, Debug, Clone)]
+#[tsify(into_wasm_abi)]
+#[serde(rename_all = "camelCase")]
+pub struct EpochPaths {
+    pub epoch: String,
+    pub epoch_extended: String,
+}

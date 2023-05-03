@@ -4,7 +4,7 @@ import Ethers from "../components/ethers";
 import Percentage from "../components/percentage";
 import * as Breadcrumb from "../components/breadcrumb";
 import { useDataTable } from "../hooks/data";
-import { App, getEpochMetaPath, getEpoch, getEpochPaths, getMeta, EpochView } from "../pkg";
+import { App, getEpochMetaPath, getEpoch, getMeta, EpochView, getEpochRangePaths } from "../pkg";
 import { createColumnHelper } from "@tanstack/react-table";
 import Link from 'next/link';
 import RelativeDatetime from "../components/relative-datetime";
@@ -97,7 +97,7 @@ export default (props) => {
     })
   ];
 
-  const table = useDataTable(app, "epochs", { kind: "integers" }, getEpoch, getEpochPaths, columns, props.epochsCount);
+  const table = useDataTable(app, "epochs", { kind: "integers" }, getEpoch, getEpochRangePaths, columns, props.epochsCount);
 
   return (
     <>
