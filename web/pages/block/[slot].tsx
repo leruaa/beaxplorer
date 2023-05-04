@@ -8,7 +8,7 @@ import { App, AttestationView, BlockPaths, VoteView, getAttestations, getBlockEx
 import Root from '../../components/root';
 import Link from 'next/link';
 import AggregationBits from '../../components/aggregation-bits';
-import { Calendar, Certificate, ClockCountdown, Cube, Database, Hash, Shuffle, Signature, TreeStructure, User } from '@phosphor-icons/react';
+import { Calendar, Certificate, ClockCountdown, Cube, Database, Hash, IdentificationBadge, ListChecks, Shuffle, Signature, TreeStructure, User } from '@phosphor-icons/react';
 import { useBuffer } from '../../hooks/data';
 import Card from '../../components/card';
 import RelativeDatetime from '../../components/relative-datetime';
@@ -202,6 +202,13 @@ const Block = ({ slot }: { slot: bigint }) => {
             </span>
           </Card>
           <Card
+            className="validator-primary-card"
+            titleClassName="opacity-70"
+            title="Proposer"
+            icon={<User />}>
+            <span className="text-5xl font-semibold">{block.proposer}</span>
+          </Card>
+          <Card
             className="block-secondary-card"
             titleClassName="opacity-50"
             title="Time"
@@ -214,45 +221,53 @@ const Block = ({ slot }: { slot: bigint }) => {
             </div>
           </Card>
           <Card
-            className="validator-primary-card"
-            titleClassName="opacity-70"
-            title="Proposer"
-            icon={<User />}>
-            <span className="text-5xl font-semibold">{block.proposer}</span>
+            className="block-secondary-card"
+            titleClassName="opacity-50"
+            title="Attestations"
+            icon={<ListChecks className="opacity-50" />}>
+            <div className="text-5xl">
+              {block.attestationsCount}
+            </div>
           </Card>
           <Card
-            className="block-tertiary-card col-span-5"
+            className="block-secondary-card"
             titleClassName="opacity-50"
+            title="Votes"
+            icon={<IdentificationBadge className="opacity-50" />}>
+            <div className="text-5xl">
+              {block.votesCount}
+            </div>
+          </Card>
+          <Card
+            className="block-tertiary-card col-span-5 gap-4"
+            titleClassName="opacity-50"
+            contentClassName="text-2xl"
             title="Block root"
             icon={<Hash className="opacity-50" />}>
-            <div className="text-3xl">
-              {block.blockRoot}
-            </div>
+            {block.blockRoot}
           </Card>
           <Card
-            className="block-tertiary-card col-span-5"
+            className="block-tertiary-card col-span-5 gap-4"
             titleClassName="opacity-50"
+            contentClassName="text-2xl"
             title="Parent root"
             icon={<TreeStructure className="opacity-50" />}>
-            <div className="text-3xl">
-              {block.parentRoot}
-            </div>
+            {block.parentRoot}
           </Card>
           <Card
-            className="block-tertiary-card col-span-5"
+            className="block-tertiary-card col-span-5 gap-4"
             titleClassName="opacity-50"
+            contentClassName="text-2xl"
             title="State root"
             icon={<Database className="opacity-50" />}>
-            <div className="text-3xl">
-              {block.stateRoot}
-            </div>
+            {block.stateRoot}
           </Card>
           <Card
             className="block-tertiary-card col-span-5"
             titleClassName="opacity-50"
             title="Signature"
             icon={<Signature className="opacity-50" />}>
-            <div className="text-2xl break-words mr-24">
+            <div className="text-xl break-words mr-24">
               {block.signature}
             </div>
           </Card>
@@ -261,7 +276,7 @@ const Block = ({ slot }: { slot: bigint }) => {
             titleClassName="opacity-50"
             title="RANDAO Reveal"
             icon={<Shuffle className="opacity-50" />}>
-            <div className="text-2xl break-words mr-24">
+            <div className="text-xl break-words mr-24">
               {block.randaoReveal}
             </div>
           </Card>

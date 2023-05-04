@@ -1,9 +1,9 @@
 import { ClockCountdown, Icon, IconContext } from '@phosphor-icons/react';
 import cx from 'classnames';
 
-type RootProps = { className?: string, titleClassName?: string, title: string, icon: JSX.Element, children: JSX.Element | JSX.Element[] };
+type RootProps = { className?: string, titleClassName?: string, contentClassName?: string, title: string, icon: JSX.Element, children: string | number | JSX.Element | JSX.Element[] };
 
-export default ({ className, titleClassName, title, icon, children }: RootProps) => {
+export default ({ className, titleClassName, contentClassName, title, icon, children }: RootProps) => {
 
   return (
     <div className={cx(className, "relative flex flex-col gap-1 px-2 h-24 rounded text-white overflow-hidden")}>
@@ -18,7 +18,7 @@ export default ({ className, titleClassName, title, icon, children }: RootProps)
         </IconContext.Provider>
       </div>
       <h3 className={cx(titleClassName, "uppercase font-bold")}>{title}</h3>
-      <div className="opacity-90">
+      <div className={cx(contentClassName, "opacity-90")}>
         {children}
       </div>
     </div>
