@@ -1,5 +1,6 @@
 import cx from "classnames";
 import { SortDirection, Table, flexRender } from "@tanstack/react-table";
+import { MouseEventHandler, ReactNode } from "react";
 
 interface DataTableProps {
   table: Table<any>;
@@ -84,13 +85,13 @@ export default ({ table }: DataTableProps) => {
       </table>
 
       <div className="flex p-4 justify-end">
-        <button onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
+        <PaginationButton onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
           First
-        </button>
+        </PaginationButton>
         &nbsp;
-        <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+        <PaginationButton onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
           {'<'}
-        </button>
+        </PaginationButton>
         &nbsp;
         <span>
           <input
@@ -105,15 +106,25 @@ export default ({ table }: DataTableProps) => {
           &nbsp;of {table.getPageCount()}
         </span>
         &nbsp;
-        <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+        <PaginationButton onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
           {'>'}
-        </button>
+        </PaginationButton>
         &nbsp;
-        <button onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
+        <PaginationButton onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
           Last
-        </button>
+        </PaginationButton>
       </div>
     </div>
+  )
+}
+
+type PaginationButtonProps = { disabled?: boolean, children: ReactNode, onClick?: MouseEventHandler<HTMLButtonElement> };
+
+const PaginationButton = ({ disabled, children, onClick }: PaginationButtonProps) => {
+  return (
+    <button className="text-blue-600 px-2 border border-blue-300 rounded hover:border-blue-600 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed" onClick={onClick} disabled={disabled}>
+      {children}
+    </button>
   )
 }
 
