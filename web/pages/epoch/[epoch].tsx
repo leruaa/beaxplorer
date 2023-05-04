@@ -60,14 +60,15 @@ const Epoch = ({ id }: { id: bigint }) => {
     <section className="container mx-auto">
       <div className="grid grid-flow-row grid-cols-5 gap-2">
         <Card
-          className="bg-gradient-to-r from-sky-500 to-blue-500"
+          className="epoch-primary-card"
+          titleClassName="opacity-70"
           title="Epoch"
           icon={<ClockCountdown />}>
           <span className="text-5xl font-semibold">{epoch.epoch}</span>
         </Card>
-
         <Card
-          className="bg-gradient-to-r from-green-500 to-emerald-500"
+          className="bg-gradient-to-b from-green-400 to-green-500"
+          titleClassName="opacity-70"
           title="State"
           icon={<Certificate />}>
           <span className="text-4xl">
@@ -75,9 +76,10 @@ const Epoch = ({ id }: { id: bigint }) => {
           </span>
         </Card>
         <Card
-          className="bg-gradient-to-r from-violet-500 to-purple-500"
+          className="epoch-secondary-card"
+          titleClassName="opacity-50"
           title="Time"
-          icon={<Calendar />}>
+          icon={<Calendar className="opacity-50" />}>
           <div className="text-3xl">
             <RelativeDatetime timestamp={epoch.timestamp} /> ago
           </div>
@@ -86,7 +88,8 @@ const Epoch = ({ id }: { id: bigint }) => {
           </div>
         </Card>
         <Card
-          className="bg-gradient-to-r from-green-500 to-emerald-500"
+          className="bg-gradient-to-b from-green-400 to-green-500"
+          titleClassName="opacity-70"
           title="Proposed blocks count"
           icon={<SealCheck />}>
           <span className="text-5xl font-semibold">
@@ -94,7 +97,8 @@ const Epoch = ({ id }: { id: bigint }) => {
           </span>
         </Card>
         <Card
-          className="bg-gradient-to-r from-amber-500 to-yellow-500"
+          className="bg-gradient-to-b from-yellow-400 to-yellow-500"
+          titleClassName="opacity-70"
           title="Missed blocks count"
           icon={<SealWarning />}>
           <span className="text-5xl font-semibold">
@@ -102,17 +106,19 @@ const Epoch = ({ id }: { id: bigint }) => {
           </span>
         </Card>
         <Card
-          className="bg-gradient-to-r from-violet-500 to-purple-500"
+          className="epoch-secondary-card"
+          titleClassName="opacity-50"
           title="Attestations"
-          icon={<ListChecks />}>
+          icon={<ListChecks className="opacity-50" />}>
           <div className="text-5xl font-semibold">
             {epoch.attestationsCount}
           </div>
         </Card>
         <Card
-          className="col-span-2 bg-gradient-to-r from-purple-500 to-fuchsia-500"
+          className="col-span-2 epoch-secondary-card"
+          titleClassName="opacity-50"
           title="Voting participation"
-          icon={<IdentificationBadge />}>
+          icon={<IdentificationBadge className="opacity-50" />}>
           <div className="text-3xl font-semibold">
             <Ethers value={epoch.votedEther} /> of <Ethers value={epoch.eligibleEther} />&nbsp;ETH{" "}
             (<Percentage value={epoch.globalParticipationRate} />)

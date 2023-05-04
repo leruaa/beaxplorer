@@ -8,8 +8,11 @@ import { App, AttestationView, BlockPaths, VoteView, getAttestations, getBlockEx
 import Root from '../../components/root';
 import Link from 'next/link';
 import AggregationBits from '../../components/aggregation-bits';
-import { Cube } from '@phosphor-icons/react';
+import { Calendar, Certificate, ClockCountdown, Cube, Database, Hash, Shuffle, Signature, TreeStructure, User } from '@phosphor-icons/react';
 import { useBuffer } from '../../hooks/data';
+import Card from '../../components/card';
+import RelativeDatetime from '../../components/relative-datetime';
+import Datetime from '../../components/datetime';
 
 const Validators = (props: { validators: number[], aggregationBits?: boolean[] }) => {
   if (!props.validators) {
@@ -174,6 +177,95 @@ const Block = ({ slot }: { slot: bigint }) => {
   return (
     <>
       <section className="container mx-auto">
+        <div className="grid grid-flow-row grid-cols-5 gap-2">
+          <Card
+            className="block-primary-card"
+            titleClassName="opacity-70"
+            title="Slot"
+            icon={<Cube />}>
+            <span className="text-5xl font-semibold">{block.slot}</span>
+          </Card>
+          <Card
+            className="epoch-primary-card"
+            titleClassName="opacity-70"
+            title="Epoch"
+            icon={<ClockCountdown />}>
+            <span className="text-5xl font-semibold">{block.epoch}</span>
+          </Card>
+          <Card
+            className="bg-gradient-to-b from-green-400 to-green-500"
+            titleClassName="opacity-70"
+            title="State"
+            icon={<Certificate />}>
+            <span className="text-4xl">
+              Finalized
+            </span>
+          </Card>
+          <Card
+            className="block-secondary-card"
+            titleClassName="opacity-50"
+            title="Time"
+            icon={<Calendar className="opacity-50" />}>
+            <div className="text-3xl">
+              <RelativeDatetime timestamp={block.timestamp} /> ago
+            </div>
+            <div className="text-lg opacity-75">
+              <Datetime timestamp={block.timestamp} />
+            </div>
+          </Card>
+          <Card
+            className="validator-primary-card"
+            titleClassName="opacity-70"
+            title="Proposer"
+            icon={<User />}>
+            <span className="text-5xl font-semibold">{block.proposer}</span>
+          </Card>
+          <Card
+            className="block-tertiary-card col-span-5"
+            titleClassName="opacity-50"
+            title="Block root"
+            icon={<Hash className="opacity-50" />}>
+            <div className="text-3xl">
+              {block.blockRoot}
+            </div>
+          </Card>
+          <Card
+            className="block-tertiary-card col-span-5"
+            titleClassName="opacity-50"
+            title="Parent root"
+            icon={<TreeStructure className="opacity-50" />}>
+            <div className="text-3xl">
+              {block.parentRoot}
+            </div>
+          </Card>
+          <Card
+            className="block-tertiary-card col-span-5"
+            titleClassName="opacity-50"
+            title="State root"
+            icon={<Database className="opacity-50" />}>
+            <div className="text-3xl">
+              {block.stateRoot}
+            </div>
+          </Card>
+          <Card
+            className="block-tertiary-card col-span-5"
+            titleClassName="opacity-50"
+            title="Signature"
+            icon={<Signature className="opacity-50" />}>
+            <div className="text-2xl break-words mr-24">
+              {block.signature}
+            </div>
+          </Card>
+          <Card
+            className="block-tertiary-card col-span-5"
+            titleClassName="opacity-50"
+            title="RANDAO Reveal"
+            icon={<Shuffle className="opacity-50" />}>
+            <div className="text-2xl break-words mr-24">
+              {block.randaoReveal}
+            </div>
+          </Card>
+        </div>
         <div className="tabular-data">
           <p>Showing block</p>
           <Tabs.Root defaultValue="overview">
