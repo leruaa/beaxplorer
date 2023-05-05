@@ -16,14 +16,6 @@
     @apply text-blue-600;
   }
 
-  .breadcrumb {
-    @apply py-2 text-lg;
-
-    .icon {
-      @apply align-middle;
-    }
-  }
-
   input,
   select {
     @apply border rounded border-gray-300 px-2 py-1;

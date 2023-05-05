@@ -21,7 +21,7 @@ export const Root = ({ children }: Props) => {
       }}
     >
       <h2 className="container mx-auto">
-        <ul className="breadcrumb">
+        <ul className="text-lg">
           <a href="/"><House /></a>
           {children}
         </ul>
