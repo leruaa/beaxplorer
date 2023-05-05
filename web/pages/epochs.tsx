@@ -108,7 +108,7 @@ export default (props) => {
           </>
         </Breadcrumb.Part>
       </Breadcrumb.Root>
-      <section className="container mx-auto">
+      <section>
         <DataTable table={table} />
       </section>
     </>

@@ -30,7 +30,7 @@ export default (props) => {
           </>
         </Breadcrumb.Part>
       </Breadcrumb.Root>
-      <section className="container mx-auto">
+      <section>
         <div className="tabular-data">
           <BlocksTable app={app} blocksCount={props.blocksCount} kind={{ kind: "integers" }} />
         </div>

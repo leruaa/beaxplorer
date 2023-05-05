@@ -57,7 +57,7 @@ const Epoch = ({ id }: { id: bigint }) => {
   });
 
   return (
-    <section className="container mx-auto">
+    <section>
       <div className="grid grid-flow-row grid-cols-5 gap-2">
         <Card
           className="epoch-primary-card"

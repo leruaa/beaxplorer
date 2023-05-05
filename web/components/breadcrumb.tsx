@@ -20,12 +20,10 @@ export const Root = ({ children }: Props) => {
         className: "inline mb-1",
       }}
     >
-      <h2 className="container mx-auto">
-        <ul className="text-lg">
-          <a href="/"><House /></a>
-          {children}
-        </ul>
-      </h2>
+      <ul className="text-lg">
+        <a href="/"><House /></a>
+        {children}
+      </ul>
     </IconContext.Provider>
   );
 }
