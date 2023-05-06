@@ -1,8 +1,25 @@
 import { CaretRight, House, Icon, IconContext } from "@phosphor-icons/react";
+import NextLink from "next/link";
+import { ReactNode, createContext, useContext } from "react";
 
-type Props = { children?: JSX.Element | JSX.Element[] }
+const LinksClassNameContext = createContext(null);
 
-export const Part = ({ children }: Props) => {
+type LinkProps = { href: string, children: ReactNode | JSX.Element[] }
+
+export const Link = ({ href, children }: LinkProps) => {
+  const className = useContext(LinksClassNameContext);
+
+  return (
+    <>
+      <CaretRight className="inline mb-1 text-gray-500" />
+      <NextLink className={className} href={href}>{children}</NextLink>
+    </>
+  );
+}
+
+type TextProps = { children: ReactNode }
+
+export const Text = ({ children }: TextProps) => {
   return (
     <>
       <CaretRight className="inline mb-1 text-gray-500" />
@@ -11,7 +28,11 @@ export const Part = ({ children }: Props) => {
   );
 }
 
-export const Root = ({ children }: Props) => {
+type RootProps = { linksClassName?: string, children?: JSX.Element | JSX.Element[] }
+
+
+
+export const Root = ({ linksClassName, children }: RootProps) => {
   return (
     <IconContext.Provider
       value={{
@@ -20,10 +41,13 @@ export const Root = ({ children }: Props) => {
         className: "inline mb-1",
       }}
     >
-      <ul className="text-lg">
-        <a href="/"><House /></a>
-        {children}
-      </ul>
+      <LinksClassNameContext.Provider value={linksClassName}>
+        <ul className="text-lg my-4">
+          <NextLink className={linksClassName} href="/"><House /></NextLink>
+          {children}
+        </ul>
+      </LinksClassNameContext.Provider>
+
     </IconContext.Provider>
   );
 }
