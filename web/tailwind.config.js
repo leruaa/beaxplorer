@@ -10,6 +10,10 @@ module.exports = {
         '2xl': '6rem',
       },
     },
+    data: {
+      active: 'state="active"',
+      inactive: 'state="inactive"'
+    }
   },
   plugins: [],
 }

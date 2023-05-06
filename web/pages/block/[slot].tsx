@@ -1,10 +1,10 @@
-import React, { Suspense } from 'react';
+import React, { ReactNode, Suspense } from 'react';
 import { useRouter } from 'next/router'
 import * as Tabs from '@radix-ui/react-tabs';
 import cx from 'classnames';
 import * as Breadcrumb from "../../components/breadcrumb";
 import { useQuery } from '@tanstack/react-query';
-import { App, AttestationView, BlockPaths, VoteView, getAttestations, getBlockExtended, getBlockPaths, getCommittees, getVotes } from '../../pkg/web';
+import { App, AttestationView, BlockPaths, VoteView, getAttestations, getBlockExtended, getBlockPaths, getCommittees, getVotes, BlockExtendedView } from '../../pkg/web';
 import Root from '../../components/root';
 import Link from 'next/link';
 import AggregationBits from '../../components/aggregation-bits';
@@ -159,6 +159,14 @@ const Attestation = ({ slot, attestation, committeesPath }: AttestationProps) =>
   );
 }
 
+const Tab = ({ value, children }: { value: string, children: ReactNode }) => {
+  return (
+    <Tabs.Trigger value={value} asChild={true}>
+      <span className="text-lg px-1 font-semibold text-indigo-500 data-active:bg-indigo-500 data-active:text-white data-active:rounded data-inactive:cursor-pointer">{children}</span>
+    </Tabs.Trigger>
+  )
+}
+
 const Block = ({ slot }: { slot: bigint }) => {
   const app = new App(process.env.NEXT_PUBLIC_HOST);
   const blockPaths = getBlockPaths(app, slot);
@@ -175,148 +183,147 @@ const Block = ({ slot }: { slot: bigint }) => {
   });
 
   return (
-    <>
+    <Tabs.Root defaultValue="overview" asChild={true}>
       <section>
-        <div className="grid grid-flow-row grid-cols-5 gap-2">
-          <Card
-            className="block-primary-card"
-            titleClassName="opacity-70"
-            title="Slot"
-            icon={<Cube />}>
-            <span className="text-5xl font-semibold">{block.slot}</span>
-          </Card>
-          <Card
-            className="epoch-primary-card"
-            titleClassName="opacity-70"
-            title="Epoch"
-            icon={<ClockCountdown />}>
-            <span className="text-5xl font-semibold">{block.epoch}</span>
-          </Card>
-          <Card
-            className="bg-gradient-to-b from-green-400 to-green-500"
-            titleClassName="opacity-70"
-            title="State"
-            icon={<Certificate />}>
-            <span className="text-4xl">
-              Finalized
-            </span>
-          </Card>
-          <Card
-            className="validator-primary-card"
-            titleClassName="opacity-70"
-            title="Proposer"
-            icon={<User />}>
-            <span className="text-5xl font-semibold">{block.proposer}</span>
-          </Card>
-          <Card
-            className="block-secondary-card"
-            titleClassName="opacity-50"
-            title="Time"
-            icon={<Calendar className="opacity-50" />}>
-            <div className="text-3xl">
-              <RelativeDatetime timestamp={block.timestamp} /> ago
-            </div>
-            <div className="text-lg opacity-75">
-              <Datetime timestamp={block.timestamp} />
-            </div>
-          </Card>
-          <Card
-            className="block-secondary-card"
-            titleClassName="opacity-50"
-            title="Attestations"
-            icon={<ListChecks className="opacity-50" />}>
-            <div className="text-5xl">
-              {block.attestationsCount}
-            </div>
-          </Card>
-          <Card
-            className="block-secondary-card"
-            titleClassName="opacity-50"
-            title="Votes"
-            icon={<IdentificationBadge className="opacity-50" />}>
-            <div className="text-5xl">
-              {block.votesCount}
-            </div>
-          </Card>
-          <Card
-            className="block-tertiary-card col-span-5 gap-4"
-            titleClassName="opacity-50"
-            contentClassName="text-2xl"
-            title="Block root"
-            icon={<Hash className="opacity-50" />}>
-            {block.blockRoot}
-          </Card>
-          <Card
-            className="block-tertiary-card col-span-5 gap-4"
-            titleClassName="opacity-50"
-            contentClassName="text-2xl"
-            title="Parent root"
-            icon={<TreeStructure className="opacity-50" />}>
-            {block.parentRoot}
-          </Card>
-          <Card
-            className="block-tertiary-card col-span-5 gap-4"
-            titleClassName="opacity-50"
-            contentClassName="text-2xl"
-            title="State root"
-            icon={<Database className="opacity-50" />}>
-            {block.stateRoot}
-          </Card>
-          <Card
-            className="block-tertiary-card col-span-5"
-            titleClassName="opacity-50"
-            title="Signature"
-            icon={<Signature className="opacity-50" />}>
-            <div className="text-xl break-words mr-24">
-              {block.signature}
-            </div>
-          </Card>
-          <Card
-            className="block-tertiary-card col-span-5"
-            titleClassName="opacity-50"
-            title="RANDAO Reveal"
-            icon={<Shuffle className="opacity-50" />}>
-            <div className="text-xl break-words mr-24">
-              {block.randaoReveal}
-            </div>
-          </Card>
-        </div>
-        <div className="tabular-data">
-          <p>Showing block</p>
-          <Tabs.Root defaultValue="overview">
-            <Tabs.List>
-              <Tabs.Trigger value="overview">Overview</Tabs.Trigger >
-              <Tabs.Trigger value="committees">Committees</Tabs.Trigger >
-              <Tabs.Trigger value="votes">Votes ({block.votesCount})</Tabs.Trigger >
-              <Tabs.Trigger value="attestations">Attestations ({block.attestationsCount})</Tabs.Trigger >
-            </Tabs.List>
-            <Tabs.Content value="overview">
-              <dl>
-                <dt>Epoch</dt>
-                <dd>{block.epoch}</dd>
-                <dt>Slot</dt>
-                <dd>{block.slot}</dd>
-              </dl>
-            </Tabs.Content>
-            <Tabs.Content value="committees">
-              <Suspense fallback={<Loading />}>
-                <Committees slot={slot} path={blockPaths.committees} />
-              </Suspense>
-            </Tabs.Content>
-            <Tabs.Content value="votes">
-              <Suspense fallback={<Loading />}>
-                <Votes slot={slot} path={blockPaths.votes} />
-              </Suspense>
-            </Tabs.Content>
-            <Tabs.Content value="attestations">
-              <Suspense fallback={<Loading />}>
-                <Attestations slot={slot} paths={blockPaths} />
-              </Suspense>
-            </Tabs.Content>
-          </Tabs.Root>
-        </div>
+        <Tabs.List asChild={true}>
+          <div className="flex gap-4 my-4">
+            <Tab value="overview">Overview</Tab>
+            <Tab value="committees">Committees</Tab>
+            <Tab value="votes">Votes ({block.votesCount})</Tab>
+            <Tab value="attestations">Attestations ({block.attestationsCount})</Tab>
+          </div>
+        </Tabs.List>
+        <Tabs.Content value="overview">
+          <Overview block={block} />
+        </Tabs.Content>
+        <Tabs.Content value="committees">
+          <Suspense fallback={<Loading />}>
+            <Committees slot={slot} path={blockPaths.committees} />
+          </Suspense>
+        </Tabs.Content>
+        <Tabs.Content value="votes">
+          <Suspense fallback={<Loading />}>
+            <Votes slot={slot} path={blockPaths.votes} />
+          </Suspense>
+        </Tabs.Content>
+        <Tabs.Content value="attestations">
+          <Suspense fallback={<Loading />}>
+            <Attestations slot={slot} paths={blockPaths} />
+          </Suspense>
+        </Tabs.Content>
       </section>
-    </>
+    </Tabs.Root>
+
+  )
+}
+
+const Overview = ({ block }: { block: BlockExtendedView }) => {
+
+  return (
+    <div className="grid grid-flow-row grid-cols-5 gap-2">
+      <Card
+        className="block-primary-card"
+        titleClassName="opacity-70"
+        title="Slot"
+        icon={<Cube />}>
+        <span className="text-5xl font-semibold">{block.slot}</span>
+      </Card>
+      <Card
+        className="epoch-primary-card"
+        titleClassName="opacity-70"
+        title="Epoch"
+        icon={<ClockCountdown />}>
+        <span className="text-5xl font-semibold">{block.epoch}</span>
+      </Card>
+      <Card
+        className="bg-gradient-to-b from-green-400 to-green-500"
+        titleClassName="opacity-70"
+        title="State"
+        icon={<Certificate />}>
+        <span className="text-4xl">
+          Finalized
+        </span>
+      </Card>
+      <Card
+        className="validator-primary-card"
+        titleClassName="opacity-70"
+        title="Proposer"
+        icon={<User />}>
+        <span className="text-5xl font-semibold">{block.proposer}</span>
+      </Card>
+      <Card
+        className="block-secondary-card"
+        titleClassName="opacity-50"
+        title="Time"
+        icon={<Calendar className="opacity-50" />}>
+        <div className="text-3xl">
+          <RelativeDatetime timestamp={block.timestamp} /> ago
+        </div>
+        <div className="text-lg opacity-75">
+          <Datetime timestamp={block.timestamp} />
+        </div>
+      </Card>
+      <Card
+        className="block-secondary-card"
+        titleClassName="opacity-50"
+        title="Attestations"
+        icon={<ListChecks className="opacity-50" />}>
+        <div className="text-5xl">
+          {block.attestationsCount}
+        </div>
+      </Card>
+      <Card
+        className="block-secondary-card"
+        titleClassName="opacity-50"
+        title="Votes"
+        icon={<IdentificationBadge className="opacity-50" />}>
+        <div className="text-5xl">
+          {block.votesCount}
+        </div>
+      </Card>
+      <Card
+        className="block-tertiary-card col-span-5 gap-4"
+        titleClassName="opacity-50"
+        contentClassName="text-2xl"
+        title="Block root"
+        icon={<Hash className="opacity-50" />}>
+        {block.blockRoot}
+      </Card>
+      <Card
+        className="block-tertiary-card col-span-5 gap-4"
+        titleClassName="opacity-50"
+        contentClassName="text-2xl"
+        title="Parent root"
+        icon={<TreeStructure className="opacity-50" />}>
+        {block.parentRoot}
+      </Card>
+      <Card
+        className="block-tertiary-card col-span-5 gap-4"
+        titleClassName="opacity-50"
+        contentClassName="text-2xl"
+        title="State root"
+        icon={<Database className="opacity-50" />}>
+        {block.stateRoot}
+      </Card>
+      <Card
+        className="block-tertiary-card col-span-5"
+        titleClassName="opacity-50"
+        title="Signature"
+        icon={<Signature className="opacity-50" />}>
+        <div className="text-xl break-words mr-24">
+          {block.signature}
+        </div>
+      </Card>
+      <Card
+        className="block-tertiary-card col-span-5"
+        titleClassName="opacity-50"
+        title="RANDAO Reveal"
+        icon={<Shuffle className="opacity-50" />}>
+        <div className="text-xl break-words mr-24">
+          {block.randaoReveal}
+        </div>
+      </Card>
+    </div>
   )
 }
 
