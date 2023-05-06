@@ -23,12 +23,10 @@ export default (props) => {
   const app = new App(process.env.NEXT_PUBLIC_HOST);
   return (
     <>
-      <Breadcrumb.Root>
-        <Breadcrumb.Part>
-          <>
-            <Cube />&nbsp;Blocks
-          </>
-        </Breadcrumb.Part>
+      <Breadcrumb.Root linksClassName="text-indigo-500">
+        <Breadcrumb.Text>
+          <Cube />&nbsp;Blocks
+        </Breadcrumb.Text>
       </Breadcrumb.Root>
       <section>
         <div className="tabular-data">

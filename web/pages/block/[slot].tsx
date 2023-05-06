@@ -327,13 +327,11 @@ export default () => {
 
   return (
     <>
-      <Breadcrumb.Root>
-        <Breadcrumb.Part>
-          <Link href="/blocks"><Cube />&nbsp;Blocks</Link>
-        </Breadcrumb.Part>
-        <Breadcrumb.Part>
-          <span>{slot}</span>
-        </Breadcrumb.Part>
+      <Breadcrumb.Root linksClassName="text-indigo-500">
+        <Breadcrumb.Link href="/blocks">
+          <Cube />&nbsp;Blocks
+        </Breadcrumb.Link>
+        <Breadcrumb.Text>{slot}</Breadcrumb.Text>
       </Breadcrumb.Root>
       {slot ? (
         <Suspense fallback={<Loading />}>

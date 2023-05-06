@@ -101,12 +101,10 @@ export default (props) => {
 
   return (
     <>
-      <Breadcrumb.Root>
-        <Breadcrumb.Part>
-          <>
-            <ClockCountdown />&nbsp;Epochs
-          </>
-        </Breadcrumb.Part>
+      <Breadcrumb.Root linksClassName="text-sky-500">
+        <Breadcrumb.Text>
+          <ClockCountdown />&nbsp;Epochs
+        </Breadcrumb.Text>
       </Breadcrumb.Root>
       <section>
         <DataTable table={table} />

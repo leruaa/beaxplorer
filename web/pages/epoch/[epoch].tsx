@@ -22,13 +22,11 @@ export default (props) => {
 
   return (
     <>
-      <Breadcrumb.Root>
-        <Breadcrumb.Part>
-          <Link href="/epochs"><ClockCountdown />&nbsp;Epochs</Link>
-        </Breadcrumb.Part>
-        <Breadcrumb.Part>
-          <span>{id}</span>
-        </Breadcrumb.Part>
+      <Breadcrumb.Root linksClassName="text-sky-500">
+        <Breadcrumb.Link href="/epochs">
+          <ClockCountdown />&nbsp;Epochs
+        </Breadcrumb.Link>
+        <Breadcrumb.Text>{id}</Breadcrumb.Text>
       </Breadcrumb.Root>
       {id ? (
         <Suspense fallback={<Loading />}>
