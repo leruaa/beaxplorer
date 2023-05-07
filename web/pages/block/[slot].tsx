@@ -159,10 +159,10 @@ const Attestation = ({ slot, attestation, committeesPath }: AttestationProps) =>
   );
 }
 
-const Tab = ({ value, children }: { value: string, children: ReactNode }) => {
+const Tab = ({ className, value, children }: { className?: string, value: string, children: ReactNode }) => {
   return (
     <Tabs.Trigger value={value} asChild={true}>
-      <span className="text-lg px-1 font-semibold text-indigo-500 data-active:bg-indigo-500 data-active:text-white data-active:rounded data-inactive:cursor-pointer">{children}</span>
+      <span className={cx(className, "text-lg px-1 text-indigo-500 data-active:bg-indigo-500 data-active:text-white data-active:rounded data-inactive:cursor-pointer")}>{children}</span>
     </Tabs.Trigger>
   )
 }
@@ -187,10 +187,10 @@ const Block = ({ slot }: { slot: bigint }) => {
       <section>
         <Tabs.List asChild={true}>
           <div className="flex gap-4 my-4">
-            <Tab value="overview">Overview</Tab>
-            <Tab value="committees">Committees</Tab>
-            <Tab value="votes">Votes ({block.votesCount})</Tab>
-            <Tab value="attestations">Attestations ({block.attestationsCount})</Tab>
+            <Tab className="font-semibold" value="overview">Overview</Tab>
+            <Tab className="font-semibold" value="committees">Committees</Tab>
+            <Tab value="votes"><span className="font-semibold">Votes</span> ({block.votesCount})</Tab>
+            <Tab value="attestations"><span className="font-semibold">Attestations</span> ({block.attestationsCount})</Tab>
           </div>
         </Tabs.List>
         <Tabs.Content value="overview">
