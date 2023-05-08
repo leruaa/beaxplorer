@@ -4,7 +4,7 @@ import * as Tabs from '@radix-ui/react-tabs';
 import cx from 'classnames';
 import * as Breadcrumb from "../../components/breadcrumb";
 import { useQuery } from '@tanstack/react-query';
-import { App, AttestationView, BlockPaths, VoteView, getAttestations, getBlockExtended, getBlockPaths, getCommittees, getVotes, BlockExtendedView } from '../../pkg/web';
+import { App, AttestationView, BlockPaths, VoteView, getAttestations, getBlockExtended, getBlockPaths, getCommittees, getVotes, BlockExtendedView, CommitteeView } from '../../pkg/web';
 import Link from 'next/link';
 import AggregationBits from '../../components/aggregation-bits';
 import { Calendar, Certificate, ClockCountdown, Cube, Database, Hash, IdentificationBadge, ListChecks, Shuffle, Signature, TreeStructure, User } from '@phosphor-icons/react';
@@ -41,16 +41,37 @@ const Committees = ({ slot, path }: ModelsProps) => {
     suspense: true
   });
 
-  return <>
+  return <div className="flex flex-col gap-2">
     {
-      committees.map(c => (
-        <dl key={c.index}>
-          <dt>{c.index}</dt>
-          <dd className="flex flex-wrap"><Validators validators={c.validators} /></dd>
-        </dl>
-      ))
+      committees.reduce((previousValue: ReactNode[], c: CommitteeView, i: number) => {
+        let node = <>
+          <div className="grid grid-cols-5 gap-2">
+            <Card
+              className="block-tertiary-card"
+              titleClassName="opacity-50"
+              contentClassName="text-5xl"
+              title="Index">
+              {c.index}
+            </Card>
+            <Card
+              className="block-tertiary-card col-span-4 h-72"
+              titleClassName="opacity-50"
+              contentClassName="text-lg flex flex-wrap"
+              title="Validators">
+              <Validators validators={c.validators} />
+            </Card>
+          </div>
+        </>;
+
+        if (previousValue.length == 0) {
+          return [node]
+        }
+        else {
+          return [...previousValue, <><Separator.Root className="h-1 bg-gradient-to-b from-white to-indigo-100" />{node}</>]
+        }
+      }, [])
     }
-  </>
+  </div>
 }
 
 const Votes = ({ slot, path }: ModelsProps) => {
@@ -69,7 +90,7 @@ const Votes = ({ slot, path }: ModelsProps) => {
           }
           else {
             return [...previousValue, <>
-              <Separator.Root className="h-px bg-indigo-200" />
+              <Separator.Root className="h-1 bg-gradient-to-b from-white to-indigo-100" />
               <Vote key={i} vote={v} />
             </>]
           }

@@ -94,7 +94,7 @@
   }
 
   .block-tertiary-card {
-    @apply bg-gradient-to-b from-white to-[#f7f9ff] text-indigo-700;
+    @apply text-indigo-800;
   }
 
   .validator-primary-card {
