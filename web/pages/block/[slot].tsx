@@ -5,7 +5,6 @@ import cx from 'classnames';
 import * as Breadcrumb from "../../components/breadcrumb";
 import { useQuery } from '@tanstack/react-query';
 import { App, AttestationView, BlockPaths, VoteView, getAttestations, getBlockExtended, getBlockPaths, getCommittees, getVotes, BlockExtendedView } from '../../pkg/web';
-import Root from '../../components/root';
 import Link from 'next/link';
 import AggregationBits from '../../components/aggregation-bits';
 import { Calendar, Certificate, ClockCountdown, Cube, Database, Hash, IdentificationBadge, ListChecks, Shuffle, Signature, TreeStructure, User } from '@phosphor-icons/react';
@@ -13,6 +12,7 @@ import { useBuffer } from '../../hooks/data';
 import Card from '../../components/card';
 import RelativeDatetime from '../../components/relative-datetime';
 import Datetime from '../../components/datetime';
+import * as Separator from '@radix-ui/react-separator';
 
 const Validators = (props: { validators: number[], aggregationBits?: boolean[] }) => {
   if (!props.validators) {
@@ -60,30 +60,62 @@ const Votes = ({ slot, path }: ModelsProps) => {
     suspense: true
   });
 
-  return <>
-    {
-      votes.map((v, i) => (
-        <Vote key={i} vote={v} />
-      ))
-    }
-  </>
+  return (
+    <div className="flex flex-col gap-2">
+      {
+        votes.reduce((previousValue: ReactNode[], v: VoteView, i: number) => {
+          if (previousValue.length == 0) {
+            return [<Vote key={i} vote={v} />]
+          }
+          else {
+            return [...previousValue, <>
+              <Separator.Root className="h-px bg-indigo-200" />
+              <Vote key={i} vote={v} />
+            </>]
+          }
+
+        }, [])
+      }
+    </div>
+  )
 }
 
-const Vote = (props: { vote: VoteView }) => {
+const Vote = ({ vote }: { vote: VoteView }) => {
   return (
-    <dl>
-      <dt>Slot</dt>
-      <dd>{props.vote.slot}</dd>
-
-      <dt>Committee index</dt>
-      <dd>{props.vote.committeeIndex}</dd>
-
-      <dt>Included in block</dt>
-      <dd>{props.vote.includedIn}</dd>
-
-      <dt>Validators</dt>
-      <dd className="flex flex-wrap"><Validators validators={props.vote.validators} /></dd>
-    </dl>
+    <div className="grid grid-cols-5 gap-2">
+      <div>
+        <Card
+          className="block-tertiary-card"
+          titleClassName="opacity-50"
+          contentClassName="text-5xl"
+          title="Slot">
+          {vote.slot}
+        </Card>
+        <Card
+          className="block-tertiary-card"
+          titleClassName="opacity-50"
+          contentClassName="text-5xl"
+          title="Committee index">
+          {vote.committeeIndex}
+        </Card>
+        <Card
+          className="block-tertiary-card"
+          titleClassName="opacity-50"
+          contentClassName="text-5xl"
+          title="Included in block">
+          {vote.includedIn}
+        </Card>
+      </div>
+      <div className="col-span-4">
+        <Card
+          className="block-tertiary-card col-span-4 h-72"
+          titleClassName="opacity-50"
+          contentClassName="text-lg flex flex-wrap"
+          title="Validators">
+          <Validators validators={vote.validators} />
+        </Card>
+      </div>
+    </div>
   );
 }
 
