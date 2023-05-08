@@ -8,10 +8,8 @@ import RelativeDatetime from '../../components/relative-datetime';
 import BlocksTable from '../../components/blocks/blocks-table';
 import { useBuffer } from '../../hooks/data';
 import { Suspense } from 'react';
-import Bdg from '../../components/badge';
-import Card from '../../components/card';
+import { HighlightCard, BasicCard } from '../../components/card';
 import { Calendar, Certificate, ClockCountdown, IdentificationBadge, ListChecks, SealCheck, SealWarning } from '@phosphor-icons/react';
-import Link from 'next/link';
 import Datetime from '../../components/datetime';
 import { Root as Separator } from '@radix-ui/react-separator';
 
@@ -57,25 +55,22 @@ const Epoch = ({ id }: { id: bigint }) => {
   return (
     <section>
       <div className="grid grid-flow-row grid-cols-5 gap-2">
-        <Card
+        <HighlightCard
           className="epoch-primary-card"
-          titleClassName="opacity-70"
           title="Epoch"
           icon={<ClockCountdown />}>
           <span className="text-5xl font-semibold">{epoch.epoch}</span>
-        </Card>
-        <Card
+        </HighlightCard>
+        <HighlightCard
           className="bg-gradient-to-b from-green-400 to-green-500"
-          titleClassName="opacity-70"
           title="State"
           icon={<Certificate />}>
           <span className="text-4xl">
             Finalized
           </span>
-        </Card>
-        <Card
+        </HighlightCard>
+        <BasicCard
           className="epoch-secondary-card"
-          titleClassName="opacity-50"
           title="Time"
           icon={<Calendar className="opacity-50" />}>
           <div className="text-3xl">
@@ -84,44 +79,40 @@ const Epoch = ({ id }: { id: bigint }) => {
           <div className="text-lg opacity-75">
             <Datetime timestamp={epoch.timestamp} />
           </div>
-        </Card>
-        <Card
+        </BasicCard>
+        <HighlightCard
           className="bg-gradient-to-b from-green-400 to-green-500"
-          titleClassName="opacity-70"
           title="Proposed blocks count"
           icon={<SealCheck />}>
           <span className="text-5xl font-semibold">
             {epoch.proposedBlocksCount}
           </span>
-        </Card>
-        <Card
+        </HighlightCard>
+        <HighlightCard
           className="bg-gradient-to-b from-yellow-400 to-yellow-500"
-          titleClassName="opacity-70"
           title="Missed blocks count"
           icon={<SealWarning />}>
           <span className="text-5xl font-semibold">
             {epoch.missedBlocksCount}
           </span>
-        </Card>
-        <Card
+        </HighlightCard>
+        <BasicCard
           className="epoch-secondary-card"
-          titleClassName="opacity-50"
           title="Attestations"
           icon={<ListChecks className="opacity-50" />}>
           <div className="text-5xl font-semibold">
             {epoch.attestationsCount}
           </div>
-        </Card>
-        <Card
+        </BasicCard>
+        <BasicCard
           className="col-span-2 epoch-secondary-card"
-          titleClassName="opacity-50"
           title="Voting participation"
           icon={<IdentificationBadge className="opacity-50" />}>
           <div className="text-3xl font-semibold">
             <Ethers value={epoch.votedEther} /> of <Ethers value={epoch.eligibleEther} />&nbsp;ETH{" "}
             (<Percentage value={epoch.globalParticipationRate} />)
           </div>
-        </Card>
+        </BasicCard>
       </div>
 
       <Separator className="my-5" />

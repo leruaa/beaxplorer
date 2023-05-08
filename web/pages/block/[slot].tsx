@@ -9,10 +9,14 @@ import Link from 'next/link';
 import AggregationBits from '../../components/aggregation-bits';
 import { Calendar, Certificate, ClockCountdown, Cube, Database, Hash, IdentificationBadge, ListChecks, Shuffle, Signature, TreeStructure, User } from '@phosphor-icons/react';
 import { useBuffer } from '../../hooks/data';
-import Card from '../../components/card';
+import { HighlightCard, BasicCard } from '../../components/card';
 import RelativeDatetime from '../../components/relative-datetime';
 import Datetime from '../../components/datetime';
-import * as Separator from '@radix-ui/react-separator';
+import * as RadixSeparator from '@radix-ui/react-separator';
+
+const Separator = ({ className }: { className?: string }) => {
+  return <RadixSeparator.Root className={cx(className, "h-1 bg-gradient-to-b from-white to-indigo-50")} />
+}
 
 const Validators = (props: { validators: number[], aggregationBits?: boolean[] }) => {
   if (!props.validators) {
@@ -46,20 +50,18 @@ const Committees = ({ slot, path }: ModelsProps) => {
       committees.reduce((previousValue: ReactNode[], c: CommitteeView, i: number) => {
         let node = <>
           <div className="grid grid-cols-5 gap-2">
-            <Card
-              className="block-tertiary-card"
-              titleClassName="opacity-50"
+            <BasicCard
+              className="block-tertiary-card h-24"
               contentClassName="text-5xl"
               title="Index">
               {c.index}
-            </Card>
-            <Card
+            </BasicCard>
+            <BasicCard
               className="block-tertiary-card col-span-4 h-72"
-              titleClassName="opacity-50"
               contentClassName="text-lg flex flex-wrap"
               title="Validators">
               <Validators validators={c.validators} />
-            </Card>
+            </BasicCard>
           </div>
         </>;
 
@@ -67,11 +69,11 @@ const Committees = ({ slot, path }: ModelsProps) => {
           return [node]
         }
         else {
-          return [...previousValue, <><Separator.Root className="h-1 bg-gradient-to-b from-white to-indigo-100" />{node}</>]
+          return [...previousValue, <><Separator />{node}</>]
         }
       }, [])
     }
-  </div>
+  </div >
 }
 
 const Votes = ({ slot, path }: ModelsProps) => {
@@ -90,7 +92,7 @@ const Votes = ({ slot, path }: ModelsProps) => {
           }
           else {
             return [...previousValue, <>
-              <Separator.Root className="h-1 bg-gradient-to-b from-white to-indigo-100" />
+              <Separator />
               <Vote key={i} vote={v} />
             </>]
           }
@@ -105,36 +107,32 @@ const Vote = ({ vote }: { vote: VoteView }) => {
   return (
     <div className="grid grid-cols-5 gap-2">
       <div>
-        <Card
-          className="block-tertiary-card"
-          titleClassName="opacity-50"
+        <BasicCard
+          className="block-tertiary-card h-24"
           contentClassName="text-5xl"
           title="Slot">
           {vote.slot}
-        </Card>
-        <Card
-          className="block-tertiary-card"
-          titleClassName="opacity-50"
+        </BasicCard>
+        <BasicCard
+          className="block-tertiary-card h-24"
           contentClassName="text-5xl"
           title="Committee index">
           {vote.committeeIndex}
-        </Card>
-        <Card
-          className="block-tertiary-card"
-          titleClassName="opacity-50"
+        </BasicCard>
+        <BasicCard
+          className="block-tertiary-card h-24"
           contentClassName="text-5xl"
           title="Included in block">
           {vote.includedIn}
-        </Card>
+        </BasicCard>
       </div>
       <div className="col-span-4">
-        <Card
+        <BasicCard
           className="block-tertiary-card col-span-4 h-72"
-          titleClassName="opacity-50"
           contentClassName="text-lg flex flex-wrap"
           title="Validators">
           <Validators validators={vote.validators} />
-        </Card>
+        </BasicCard>
       </div>
     </div>
   );
@@ -271,112 +269,103 @@ const Block = ({ slot }: { slot: bigint }) => {
 }
 
 const Overview = ({ block }: { block: BlockExtendedView }) => {
-
   return (
-    <div className="grid grid-flow-row grid-cols-5 gap-2">
-      <Card
-        className="block-primary-card"
-        titleClassName="opacity-70"
-        title="Slot"
-        icon={<Cube />}>
-        <span className="text-5xl font-semibold">{block.slot}</span>
-      </Card>
-      <Card
-        className="epoch-primary-card"
-        titleClassName="opacity-70"
-        title="Epoch"
-        icon={<ClockCountdown />}>
-        <span className="text-5xl font-semibold">{block.epoch}</span>
-      </Card>
-      <Card
-        className="bg-gradient-to-b from-green-400 to-green-500"
-        titleClassName="opacity-70"
-        title="State"
-        icon={<Certificate />}>
-        <span className="text-4xl">
-          Finalized
-        </span>
-      </Card>
-      <Card
-        className="validator-primary-card"
-        titleClassName="opacity-70"
-        title="Proposer"
-        icon={<User />}>
-        <span className="text-5xl font-semibold">{block.proposer}</span>
-      </Card>
-      <Card
-        className="block-secondary-card"
-        titleClassName="opacity-50"
-        title="Time"
-        icon={<Calendar className="opacity-50" />}>
-        <div className="text-3xl">
-          <RelativeDatetime timestamp={block.timestamp} /> ago
-        </div>
-        <div className="text-lg opacity-75">
-          <Datetime timestamp={block.timestamp} />
-        </div>
-      </Card>
-      <Card
-        className="block-secondary-card"
-        titleClassName="opacity-50"
-        title="Attestations"
-        icon={<ListChecks className="opacity-50" />}>
-        <div className="text-5xl">
-          {block.attestationsCount}
-        </div>
-      </Card>
-      <Card
-        className="block-secondary-card"
-        titleClassName="opacity-50"
-        title="Votes"
-        icon={<IdentificationBadge className="opacity-50" />}>
-        <div className="text-5xl">
-          {block.votesCount}
-        </div>
-      </Card>
-      <Card
-        className="block-tertiary-card col-span-5 gap-4"
-        titleClassName="opacity-50"
-        contentClassName="text-2xl"
-        title="Block root"
-        icon={<Hash className="opacity-50" />}>
-        {block.blockRoot}
-      </Card>
-      <Card
-        className="block-tertiary-card col-span-5 gap-4"
-        titleClassName="opacity-50"
-        contentClassName="text-2xl"
-        title="Parent root"
-        icon={<TreeStructure className="opacity-50" />}>
-        {block.parentRoot}
-      </Card>
-      <Card
-        className="block-tertiary-card col-span-5 gap-4"
-        titleClassName="opacity-50"
-        contentClassName="text-2xl"
-        title="State root"
-        icon={<Database className="opacity-50" />}>
-        {block.stateRoot}
-      </Card>
-      <Card
-        className="block-tertiary-card col-span-5"
-        titleClassName="opacity-50"
-        title="Signature"
-        icon={<Signature className="opacity-50" />}>
-        <div className="text-xl break-words mr-24">
-          {block.signature}
-        </div>
-      </Card>
-      <Card
-        className="block-tertiary-card col-span-5"
-        titleClassName="opacity-50"
-        title="RANDAO Reveal"
-        icon={<Shuffle className="opacity-50" />}>
-        <div className="text-xl break-words mr-24">
-          {block.randaoReveal}
-        </div>
-      </Card>
-    </div>
+    <>
+      <div className="grid grid-flow-row grid-cols-5 gap-2">
+        <HighlightCard
+          className="block-primary-card"
+          title="Slot"
+          icon={<Cube />}>
+          <span className="text-5xl font-semibold">{block.slot}</span>
+        </HighlightCard>
+        <HighlightCard
+          className="epoch-primary-card"
+          title="Epoch"
+          icon={<ClockCountdown />}>
+          <span className="text-5xl font-semibold">{block.epoch}</span>
+        </HighlightCard>
+        <HighlightCard
+          className="bg-gradient-to-b from-green-400 to-green-500"
+          title="State"
+          icon={<Certificate />}>
+          <span className="text-4xl">
+            Finalized
+          </span>
+        </HighlightCard>
+        <HighlightCard
+          className="validator-primary-card"
+          title="Proposer"
+          icon={<User />}>
+          <span className="text-5xl font-semibold">{block.proposer}</span>
+        </HighlightCard>
+        <BasicCard
+          className="block-secondary-card"
+          title="Time"
+          icon={<Calendar className="opacity-50" />}>
+          <div className="text-3xl">
+            <RelativeDatetime timestamp={block.timestamp} /> ago
+          </div>
+          <div className="text-lg opacity-75">
+            <Datetime timestamp={block.timestamp} />
+          </div>
+        </BasicCard>
+        <BasicCard
+          className="block-secondary-card"
+          title="Attestations"
+          icon={<ListChecks className="opacity-50" />}>
+          <div className="text-5xl">
+            {block.attestationsCount}
+          </div>
+        </BasicCard>
+        <BasicCard
+          className="block-secondary-card"
+          title="Votes"
+          icon={<IdentificationBadge className="opacity-50" />}>
+          <div className="text-5xl">
+            {block.votesCount}
+          </div>
+        </BasicCard>
+      </div>
+      <Separator className="my-2" />
+      <div className="flex flex-col gap-2">
+        <BasicCard
+          className="block-tertiary-card"
+          contentClassName="text-2xl"
+          title="Block root">
+          {block.blockRoot}
+        </BasicCard>
+        <Separator />
+        <BasicCard
+          className="block-tertiary-card"
+          contentClassName="text-2xl"
+          title="Parent root">
+          {block.parentRoot}
+        </BasicCard>
+        <Separator />
+        <BasicCard
+          className="block-tertiary-card"
+          contentClassName="text-2xl"
+          title="State root">
+          {block.stateRoot}
+        </BasicCard>
+        <Separator />
+        <BasicCard
+          className="block-tertiary-card"
+          title="Signature">
+          <div className="text-xl break-words mr-24">
+            {block.signature}
+          </div>
+        </BasicCard>
+        <Separator />
+        <BasicCard
+          className="block-tertiary-card"
+          title="RANDAO Reveal">
+          <div className="text-xl break-words mr-24">
+            {block.randaoReveal}
+          </div>
+        </BasicCard>
+      </div>
+    </>
   )
 }
 
