@@ -1,8 +1,10 @@
 import { CaretRight, House, Icon, IconContext } from "@phosphor-icons/react";
 import NextLink from "next/link";
 import { ReactNode, createContext, useContext } from "react";
+import cx from 'classnames';
+import { Accent, useAccent } from "../hooks/accent";
 
-const LinksClassNameContext = createContext<string>(null);
+const LinksClassNameContext = createContext<{ [key: string]: boolean }>(null);
 
 type LinkProps = { href: string, children: ReactNode | JSX.Element[] }
 
@@ -12,7 +14,7 @@ export const Link = ({ href, children }: LinkProps) => {
   return (
     <>
       <CaretRight className="inline mb-1 text-gray-500" />
-      <NextLink className={className} href={href}>{children}</NextLink>
+      <NextLink className={cx(className)} href={href}>{children}</NextLink>
     </>
   );
 }
@@ -28,22 +30,26 @@ export const Text = ({ children }: TextProps) => {
   );
 }
 
-type RootProps = { linksClassName?: string, children?: JSX.Element | JSX.Element[] }
+type RootProps = { children?: JSX.Element | JSX.Element[] }
 
+export const Root = ({ children }: RootProps) => {
+  const accent = useAccent();
+  const accentClassName = {
+    "text-sky-500": accent == Accent.Sky,
+    "text-indigo-500": accent == Accent.Indigo
+  };
 
-
-export const Root = ({ linksClassName, children }: RootProps) => {
   return (
     <IconContext.Provider
       value={{
         size: "1em",
         weight: "bold",
-        className: "inline mb-1",
+        className: cx(accentClassName, "inline mb-1"),
       }}
     >
-      <LinksClassNameContext.Provider value={linksClassName}>
+      <LinksClassNameContext.Provider value={accentClassName}>
         <ul className="text-lg my-4">
-          <NextLink className={linksClassName} href="/"><House /></NextLink>
+          <NextLink href="/"><House /></NextLink>
           {children}
         </ul>
       </LinksClassNameContext.Provider>
