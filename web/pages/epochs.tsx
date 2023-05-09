@@ -10,6 +10,7 @@ import Link from 'next/link';
 import RelativeDatetime from "../components/relative-datetime";
 import Badge from "../components/badge";
 import { ClockCountdown } from "@phosphor-icons/react";
+import { Accent, AccentContext } from "../hooks/accent";
 
 
 export async function getStaticProps() {
@@ -100,8 +101,8 @@ export default (props) => {
   const table = useDataTable(app, "epochs", { kind: "integers" }, getEpoch, getEpochRangePaths, columns, props.epochsCount);
 
   return (
-    <>
-      <Breadcrumb.Root linksClassName="text-sky-500">
+    <AccentContext.Provider value={Accent.Sky}>
+      <Breadcrumb.Root>
         <Breadcrumb.Text>
           <ClockCountdown />&nbsp;Epochs
         </Breadcrumb.Text>
@@ -109,6 +110,6 @@ export default (props) => {
       <section>
         <DataTable table={table} />
       </section>
-    </>
+    </AccentContext.Provider>
   )
 }
