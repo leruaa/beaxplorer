@@ -12,6 +12,7 @@ import { HighlightCard, BasicCard } from '../../components/card';
 import { Calendar, Certificate, ClockCountdown, IdentificationBadge, ListChecks, SealCheck, SealWarning } from '@phosphor-icons/react';
 import Datetime from '../../components/datetime';
 import { Root as Separator } from '@radix-ui/react-separator';
+import { Accent, AccentContext } from '../../hooks/accent';
 
 
 export default (props) => {
@@ -19,8 +20,8 @@ export default (props) => {
   const id = router.query.epoch as string;
 
   return (
-    <>
-      <Breadcrumb.Root linksClassName="text-sky-500">
+    <AccentContext.Provider value={Accent.Sky}>
+      <Breadcrumb.Root>
         <Breadcrumb.Link href="/epochs">
           <ClockCountdown />&nbsp;Epochs
         </Breadcrumb.Link>
@@ -33,7 +34,7 @@ export default (props) => {
       ) : (
         <Loading />
       )}
-    </>
+    </AccentContext.Provider>
   )
 }
 

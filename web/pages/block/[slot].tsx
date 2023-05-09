@@ -13,6 +13,7 @@ import { HighlightCard, BasicCard } from '../../components/card';
 import RelativeDatetime from '../../components/relative-datetime';
 import Datetime from '../../components/datetime';
 import * as RadixSeparator from '@radix-ui/react-separator';
+import { Accent, AccentContext } from '../../hooks/accent';
 
 const Separator = ({ className }: { className?: string }) => {
   return <RadixSeparator.Root className={cx(className, "h-1 bg-gradient-to-b from-white to-indigo-50")} />
@@ -375,8 +376,8 @@ export default () => {
   const slot = router.query.slot as string;
 
   return (
-    <>
-      <Breadcrumb.Root linksClassName="text-indigo-500">
+    <AccentContext.Provider value={Accent.Indigo}>
+      <Breadcrumb.Root>
         <Breadcrumb.Link href="/blocks">
           <Cube />&nbsp;Blocks
         </Breadcrumb.Link>
@@ -389,7 +390,7 @@ export default () => {
       ) : (
         <Loading />
       )}
-    </>
+    </AccentContext.Provider>
   )
 }
 
