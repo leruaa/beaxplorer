@@ -3,17 +3,18 @@ import { SortDirection, Table, flexRender } from "@tanstack/react-table";
 import { MouseEventHandler, ReactNode } from "react";
 
 interface DataTableProps {
+  title?: string,
   table: Table<any>;
 }
 
-export default ({ table }: DataTableProps) => {
+export default ({ title, table }: DataTableProps) => {
 
   const state = table.getState();
 
   return (
-    // apply the table props
     <div className="border border-gray-200 rounded shadow">
-      <div className="flex p-4">
+      <div className="flex p-2">
+        <h3 className="grow">{title}</h3>
         <span>
           Show
           &nbsp;
@@ -84,7 +85,7 @@ export default ({ table }: DataTableProps) => {
         </tbody>
       </table>
 
-      <div className="flex p-4 justify-end">
+      <div className="flex p-2 justify-end">
         <PaginationButton onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
           First
         </PaginationButton>
