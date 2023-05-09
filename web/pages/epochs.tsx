@@ -108,7 +108,7 @@ export default (props) => {
         </Breadcrumb.Text>
       </Breadcrumb.Root>
       <section>
-        <DataTable table={table} />
+        <DataTable table={table} updatable={true} />
       </section>
     </AccentContext.Provider>
   )

@@ -5,9 +5,10 @@ import { MouseEventHandler, ReactNode } from "react";
 interface DataTableProps {
   title?: string,
   table: Table<any>;
+  updatable?: boolean
 }
 
-export default ({ title, table }: DataTableProps) => {
+export default ({ title, table, updatable }: DataTableProps) => {
 
   const state = table.getState();
 
@@ -65,7 +66,7 @@ export default ({ title, table }: DataTableProps) => {
           {// Loop over the table rows
             table.getRowModel().rows.map(row => (
               <tr key={row.id} className={cx(isStalled(table, row.index) ? "text-gray-400" : "text-gray-800")}>
-                {table.options.data[row.index].isLoaded ?
+                {!updatable || table.options.data[row.index].isLoaded ?
                   row.getVisibleCells().map(cell => (
                     <td key={cell.id} className={cx("text-right tabular-nums py-1.5 pr-4 border-b border-gray-200", { "bg-gray-50": cell.column.getIsSorted() })}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
