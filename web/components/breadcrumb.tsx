@@ -2,7 +2,7 @@ import { CaretRight, House, Icon, IconContext } from "@phosphor-icons/react";
 import NextLink from "next/link";
 import { ReactNode, createContext, useContext } from "react";
 
-const LinksClassNameContext = createContext(null);
+const LinksClassNameContext = createContext<string>(null);
 
 type LinkProps = { href: string, children: ReactNode | JSX.Element[] }
 
