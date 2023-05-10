@@ -30,7 +30,7 @@ export const Text = ({ children }: TextProps) => {
   );
 }
 
-type RootProps = { children?: JSX.Element | JSX.Element[] }
+type RootProps = { children?: ReactNode }
 
 export const Root = ({ children }: RootProps) => {
   const accent = useAccent();

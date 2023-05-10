@@ -37,12 +37,13 @@ export default (props) => {
       header: "Epoch",
       cell: props => <Link href={`/epoch/${props.getValue()}`}>
         {props.getValue()}
-      </Link>
+      </Link>,
+      meta: { className: "text-right" }
     }),
     columnHelper.accessor("timestamp", {
       header: "Time",
-      cell: props => <><RelativeDatetime timestamp={props.getValue()} /> ago</>
-
+      cell: props => <><RelativeDatetime timestamp={props.getValue()} /> ago</>,
+      meta: { className: "text-right" }
     }),
     columnHelper.accessor(
       row => ({ p: row.proposedBlocksCount, m: row.missedBlocksCount, o: row.orphanedBlocksCount }),
@@ -65,11 +66,13 @@ export default (props) => {
       }),
     columnHelper.accessor("attestationsCount", {
       header: "Attestations",
-      cell: props => <Number value={props.getValue()} />
+      cell: props => <Number value={props.getValue()} />,
+      meta: { className: "text-right" }
     }),
     columnHelper.accessor("depositsCount", {
       header: "Deposits",
-      cell: props => <Number value={props.getValue()} />
+      cell: props => <Number value={props.getValue()} />,
+      meta: { className: "text-right" }
     }),
     columnHelper.accessor(
       row => ({ p: row.proposerSlashingsCount, a: row.attesterSlashingsCount }),
@@ -78,7 +81,8 @@ export default (props) => {
         cell: props =>
           <>
             <Number value={props.getValue().p} /> / <Number value={props.getValue().a} />
-          </>
+          </>,
+        meta: { className: "text-right" }
       }),
     columnHelper.accessor("finalized", {
       header: "Finalized",
@@ -86,15 +90,18 @@ export default (props) => {
     }),
     columnHelper.accessor("eligibleEther", {
       header: "Eligible",
-      cell: props => <Ethers value={props.getValue()} />
+      cell: props => <Ethers value={props.getValue()} />,
+      meta: { className: "text-right" }
     }),
     columnHelper.accessor("votedEther", {
       header: "Voted",
-      cell: props => <Ethers value={props.getValue()} />
+      cell: props => <Ethers value={props.getValue()} />,
+      meta: { className: "text-right" }
     }),
     columnHelper.accessor("globalParticipationRate", {
       header: "Rate",
-      cell: props => <Percentage value={props.getValue()} />
+      cell: props => <Percentage value={props.getValue()} />,
+      meta: { className: "text-right" }
     })
   ];
 

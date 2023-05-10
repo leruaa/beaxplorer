@@ -8,7 +8,7 @@ export const Root = ({ children }: RootProps) => {
 }
 
 type HeaderProps = {
-  key?: string,
+  className?: string,
   colSpan?: number,
   canSort?: boolean,
   isSorted?: boolean,
@@ -16,11 +16,10 @@ type HeaderProps = {
   onClick?: MouseEventHandler<HTMLTableHeaderCellElement>
 }
 
-export const Header = ({ key, colSpan, canSort, isSorted, children, onClick }: HeaderProps) => {
+export const Header = ({ className, colSpan, canSort, isSorted, children, onClick }: HeaderProps) => {
   return <th
-    key={key}
     colSpan={colSpan}
-    className={cx("text-xs text-right px-1.5 py-2 text-gray-600 uppercase bg-gray-100", { "cursor-pointer": canSort }, { "text-black": isSorted })}
+    className={cx(className, "text-xs px-1.5 py-2 text-gray-600 uppercase bg-gray-100", { "cursor-pointer": canSort }, { "text-black": isSorted })}
     onClick={onClick}
   >
     {children}
@@ -28,13 +27,13 @@ export const Header = ({ key, colSpan, canSort, isSorted, children, onClick }: H
 }
 
 type CellProps = {
-  key?: string,
+  className?: string,
   isSorted?: boolean,
   children?: ReactNode
 }
 
-export const Cell = ({ key, isSorted, children }: CellProps) => {
-  return <td key={key} className={cx("text-right tabular-nums py-1.5 pr-4 border-b border-gray-200", { "bg-gray-50": isSorted })}>
+export const Cell = ({ className, isSorted, children }: CellProps) => {
+  return <td className={cx(className, "tabular-nums py-1.5 px-2 border-b border-gray-200", { "bg-gray-50": isSorted })}>
     {children}
   </td>
 }

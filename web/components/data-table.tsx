@@ -47,6 +47,7 @@ export default ({ title, table, updatable }: DataTableProps) => {
                     // Apply the header cell props
                     <Table.Header
                       key={header.id}
+                      className={(header.column.columnDef.meta as any)?.className}
                       colSpan={header.colSpan}
                       canSort={header.column.getCanSort()}
                       isSorted={!!header.column.getIsSorted()}
@@ -70,7 +71,7 @@ export default ({ title, table, updatable }: DataTableProps) => {
               <tr key={row.id} className={cx(isStalled(table, row.index) ? "text-gray-400" : "text-gray-800")}>
                 {!updatable || table.options.data[row.index].isLoaded ?
                   row.getVisibleCells().map(cell => (
-                    <Table.Cell key={cell.id} isSorted={!!cell.column.getIsSorted()}>
+                    <Table.Cell className={(cell.column.columnDef.meta as any)?.className} key={cell.id} isSorted={!!cell.column.getIsSorted()}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </Table.Cell>
                   ))

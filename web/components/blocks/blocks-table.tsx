@@ -16,7 +16,8 @@ export default ({ app, blocksCount, kind }: Props) => {
     columns.push(
       columnHelper.accessor("epoch", {
         header: "Epoch",
-        cell: props => <a href={`/block/${props.getValue()}`}><Number value={props.getValue()} /></a>
+        cell: props => <a href={`/block/${props.getValue()}`}><Number value={props.getValue()} /></a>,
+        meta: { className: "text-right" }
       })
     );
   }
@@ -25,7 +26,8 @@ export default ({ app, blocksCount, kind }: Props) => {
     ...columns,
     columnHelper.accessor("slot", {
       header: "Block",
-      cell: props => <a href={`/block/${props.getValue()}`}><Number value={props.getValue()} /></a>
+      cell: props => <a href={`/block/${props.getValue()}`}><Number value={props.getValue()} /></a>,
+      meta: { className: "text-right" }
     }),
     columnHelper.accessor("status", {
       header: "Status",
@@ -45,18 +47,21 @@ export default ({ app, blocksCount, kind }: Props) => {
             )
         }
       },
-      enableSorting: false,
+      enableSorting: false
     }),
     columnHelper.accessor("proposer", {
-      header: "Proposer"
+      header: "Proposer",
+      meta: { className: "text-right" }
     }),
     columnHelper.accessor("attestationsCount", {
       header: "Attestations",
-      cell: props => <Number value={props.getValue()} />
+      cell: props => <Number value={props.getValue()} />,
+      meta: { className: "text-right" }
     }),
     columnHelper.accessor("depositsCount", {
       header: "Deposits",
-      cell: props => <Number value={props.getValue()} />
+      cell: props => <Number value={props.getValue()} />,
+      meta: { className: "text-right" }
     }),
     columnHelper.accessor(
       (row, rowIndex) => { return { p: row.proposerSlashingsCount, a: row.attesterSlashingsCount } },
@@ -64,12 +69,14 @@ export default ({ app, blocksCount, kind }: Props) => {
         header: "Slashings P / A",
         cell: props => <>
           <Number value={props.getValue().p} /> / <Number value={props.getValue().a} />
-        </>
+        </>,
+        meta: { className: "text-right" }
       }
     ),
     columnHelper.accessor("voluntaryExitsCount", {
       header: "Exits",
-      cell: props => <Number value={props.getValue()} />
+      cell: props => <Number value={props.getValue()} />,
+      meta: { className: "text-right" }
     })
   ];
 
