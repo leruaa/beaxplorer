@@ -16,35 +16,38 @@ import * as RadixSeparator from '@radix-ui/react-separator';
 import { Accent, AccentContext } from '../../hooks/accent';
 import * as Table from '../../components/table';
 import * as Collapsible from '@radix-ui/react-collapsible';
-import { useElementSize } from 'usehooks-ts'
 
 const Separator = ({ className }: { className?: string }) => {
   return <RadixSeparator.Root className={cx(className, "h-1 bg-gradient-to-b from-white to-indigo-50")} />
 }
 
-const Validators = ({ validators, aggregationBits, count }: { validators: number[], aggregationBits?: boolean[], count?: number }) => {
+const Validators = ({ validators, aggregationBits }: { validators: number[], aggregationBits?: boolean[] }) => {
 
   if (!validators) {
     return (
       <p>Loading...</p>
     );
   }
-  if (!count) count = validators.length;
 
-  let validatorsElements = validators.map(
-    (v, i) => (
-      <span key={v} className={cx({ 'w-16': true, "text-gray-400": aggregationBits && aggregationBits.length > 0 && !aggregationBits[i] })}>
+  let validatorsElements = validators.reduce(
+    (previousValue: ReactNode[], v: number, i: number) => {
+      let el = <span key={i} className={cx({ "text-gray-400": aggregationBits && aggregationBits.length > 0 && !aggregationBits[i] })}>
         {v}
-      </span>
-    )
+      </span>;
+
+      if (previousValue.length == 0) {
+        return [el]
+      }
+      else {
+        return [...previousValue, <>, {el}</>]
+      }
+    },
+    []
   );
 
-  return <Collapsible.Root className="flex" >
-    <div className="flex flex-wrap grow">
-      {validatorsElements.splice(0, count)}
-      <Collapsible.Content className="contents">{validatorsElements.splice(count)}</Collapsible.Content>
-    </div>
-    <div>
+  return <Collapsible.Root className=" relative data-closed:truncate pr-6">
+    {validatorsElements}
+    <div className="absolute inset-y-0 -right-1 p-1">
       <Collapsible.Trigger className="data-open:hidden"><CaretDown /></Collapsible.Trigger>
       <Collapsible.Trigger className="data-closed:hidden"><CaretUp /></Collapsible.Trigger>
     </div>
@@ -63,15 +66,11 @@ const Committees = ({ slot, path }: ModelsProps) => {
     suspense: true
   });
 
-  const [validatorsContainerRef, { width }] = useElementSize();
-
-  let count = Math.floor(width / 64);
-
   return <Table.Root>
     <thead>
       <tr>
-        <Table.Header>Index</Table.Header>
-        <Table.Header>Validators</Table.Header>
+        <Table.Header className="w-1/6">Index</Table.Header>
+        <Table.Header className="w-5/6">Validators</Table.Header>
       </tr>
     </thead>
     <tbody>
@@ -79,8 +78,8 @@ const Committees = ({ slot, path }: ModelsProps) => {
         committees.map(
           (c, index) => (
             <tr key={index} >
-              <Table.Cell className="w-1/6 text-left">{c.index}</Table.Cell>
-              <Table.Cell ref={validatorsContainerRef} className="flex flex-wrap" ><Validators validators={c.validators} count={count} /></Table.Cell>
+              <Table.Cell className="text-left">{c.index}</Table.Cell>
+              <Table.Cell><Validators validators={c.validators} /></Table.Cell>
             </tr>
           )
         )

@@ -4,7 +4,7 @@ import cx from "classnames";
 type RootProps = { children?: ReactNode }
 
 export const Root = ({ children }: RootProps) => {
-  return <table className="w-full table-auto">{children}</table>
+  return <table className="w-full table-fixed">{children}</table>
 }
 
 type HeaderProps = {
