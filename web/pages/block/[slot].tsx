@@ -95,59 +95,30 @@ const Votes = ({ slot, path }: ModelsProps) => {
     suspense: true
   });
 
-  return (
-    <div className="flex flex-col gap-2">
+  return <Table.Root>
+    <thead>
+      <tr>
+        <Table.Header className="w-1/6">Slot</Table.Header>
+        <Table.Header className="w-1/6">Committee index</Table.Header>
+        <Table.Header className="w-1/6">Included in block</Table.Header>
+        <Table.Header>Validators</Table.Header>
+      </tr>
+    </thead>
+    <tbody>
       {
-        votes.reduce((previousValue: ReactNode[], v: VoteView, i: number) => {
-          if (previousValue.length == 0) {
-            return [<Vote key={i} vote={v} />]
-          }
-          else {
-            return [...previousValue, <>
-              <Separator />
-              <Vote key={i} vote={v} />
-            </>]
-          }
-
-        }, [])
-      }
-    </div>
+        votes.map(
+          (v, index) => (
+            <tr key={index} >
+              <Table.Cell className="text-left">{v.slot}</Table.Cell>
+              <Table.Cell className="text-left">{v.committeeIndex}</Table.Cell>
+              <Table.Cell className="text-left">{v.includedIn}</Table.Cell>
+              <Table.Cell><Validators validators={v.validators} /></Table.Cell>
+            </tr>
+          )
   )
 }
-
-const Vote = ({ vote }: { vote: VoteView }) => {
-  return (
-    <div className="grid grid-cols-5 gap-2">
-      <div>
-        <BasicCard
-          className="block-tertiary-card h-24"
-          contentClassName="text-5xl"
-          title="Slot">
-          {vote.slot}
-        </BasicCard>
-        <BasicCard
-          className="block-tertiary-card h-24"
-          contentClassName="text-5xl"
-          title="Committee index">
-          {vote.committeeIndex}
-        </BasicCard>
-        <BasicCard
-          className="block-tertiary-card h-24"
-          contentClassName="text-5xl"
-          title="Included in block">
-          {vote.includedIn}
-        </BasicCard>
-      </div>
-      <div className="col-span-4">
-        <BasicCard
-          className="block-tertiary-card col-span-4 h-72"
-          contentClassName="text-lg flex flex-wrap"
-          title="Validators">
-          <Validators validators={vote.validators} />
-        </BasicCard>
-      </div>
-    </div>
-  );
+    </tbody>
+  </Table.Root>
 }
 
 type AttestationsProps = { slot: bigint, paths: BlockPaths };
