@@ -1,10 +1,11 @@
 import cx from "classnames";
-import { SortDirection, Table, flexRender } from "@tanstack/react-table";
+import { SortDirection, Table as TanstackTable, flexRender } from "@tanstack/react-table";
 import { MouseEventHandler, ReactNode } from "react";
+import * as Table from "../components/table";
 
 interface DataTableProps {
   title?: string,
-  table: Table<any>;
+  table: TanstackTable<any>;
   updatable?: boolean
 }
 
@@ -13,7 +14,7 @@ export default ({ title, table, updatable }: DataTableProps) => {
   const state = table.getState();
 
   return (
-    <div className="border border-gray-200 rounded shadow">
+    <div className="border border-gray-200 rounded">
       <div className="flex p-2">
         <h3 className="grow">{title}</h3>
         <span>
@@ -35,7 +36,7 @@ export default ({ title, table, updatable }: DataTableProps) => {
           entries
         </span>
       </div>
-      <table className="w-full table-fixed">
+      <Table.Root>
         <thead>
           {// Loop over the header rows
             table.getHeaderGroups().map(headerGroup => (
@@ -44,10 +45,11 @@ export default ({ title, table, updatable }: DataTableProps) => {
                 {// Loop over the headers in each row
                   headerGroup.headers.map(header => (
                     // Apply the header cell props
-                    <th
+                    <Table.Header
                       key={header.id}
                       colSpan={header.colSpan}
-                      className={cx("text-xs text-right px-1.5 py-2 text-gray-600 uppercase bg-gray-100", { "cursor-pointer": header.column.getCanSort() }, { "text-black": header.column.getIsSorted() })}
+                      canSort={header.column.getCanSort()}
+                      isSorted={!!header.column.getIsSorted()}
                       onClick={header.column.getToggleSortingHandler()}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
@@ -56,7 +58,7 @@ export default ({ title, table, updatable }: DataTableProps) => {
                           <SortIcon isSorted={header.column.getIsSorted()} />
                         </span>
                       )}
-                    </th>
+                    </Table.Header>
                   ))}
               </tr>
             ))}
@@ -68,9 +70,9 @@ export default ({ title, table, updatable }: DataTableProps) => {
               <tr key={row.id} className={cx(isStalled(table, row.index) ? "text-gray-400" : "text-gray-800")}>
                 {!updatable || table.options.data[row.index].isLoaded ?
                   row.getVisibleCells().map(cell => (
-                    <td key={cell.id} className={cx("text-right tabular-nums py-1.5 pr-4 border-b border-gray-200", { "bg-gray-50": cell.column.getIsSorted() })}>
+                    <Table.Cell key={cell.id} isSorted={!!cell.column.getIsSorted()}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
+                    </Table.Cell>
                   ))
                   : (
                     <td className="p-1.5 border-b border-gray-200" colSpan={table.options.columns.length}>
@@ -84,7 +86,7 @@ export default ({ title, table, updatable }: DataTableProps) => {
             ))
           }
         </tbody>
-      </table>
+      </Table.Root>
 
       <div className="flex p-2 justify-end">
         <PaginationButton onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
@@ -130,7 +132,7 @@ const PaginationButton = ({ disabled, children, onClick }: PaginationButtonProps
   )
 }
 
-function isStalled(table: Table<any>, rowIndex: number): boolean {
+function isStalled(table: TanstackTable<any>, rowIndex: number): boolean {
   return table.options.data[rowIndex]?.isPreviousData;
 }
 

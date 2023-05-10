@@ -76,6 +76,6 @@ export default ({ app, blocksCount, kind }: Props) => {
   const table = useDataTable(app, "blocks", kind, getBlock, getBlockRangePaths, columns, blocksCount);
 
   return (
-    <DataTable table={table} />
+    <DataTable table={table} updatable={true} />
   )
 }
