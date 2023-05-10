@@ -69,8 +69,8 @@ const Committees = ({ slot, path }: ModelsProps) => {
   return <Table.Root>
     <thead>
       <tr>
-        <Table.Header className="w-1/6">Index</Table.Header>
-        <Table.Header className="w-5/6">Validators</Table.Header>
+        <Table.Header className="w-1/12">Index</Table.Header>
+        <Table.Header>Validators</Table.Header>
       </tr>
     </thead>
     <tbody>
@@ -98,7 +98,7 @@ const Votes = ({ slot, path }: ModelsProps) => {
   return <Table.Root>
     <thead>
       <tr>
-        <Table.Header className="w-1/6">Slot</Table.Header>
+        <Table.Header className="w-1/12">Slot</Table.Header>
         <Table.Header className="w-1/6">Committee index</Table.Header>
         <Table.Header className="w-1/6">Included in block</Table.Header>
         <Table.Header>Validators</Table.Header>
