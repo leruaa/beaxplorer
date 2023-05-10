@@ -7,34 +7,51 @@ import { useQuery } from '@tanstack/react-query';
 import { App, AttestationView, BlockPaths, VoteView, getAttestations, getBlockExtended, getBlockPaths, getCommittees, getVotes, BlockExtendedView, CommitteeView } from '../../pkg/web';
 import Link from 'next/link';
 import AggregationBits from '../../components/aggregation-bits';
-import { Calendar, Certificate, ClockCountdown, Cube, Database, Hash, IdentificationBadge, ListChecks, Shuffle, Signature, TreeStructure, User } from '@phosphor-icons/react';
+import { Calendar, CaretDown, CaretUp, Certificate, ClockCountdown, Cube, IdentificationBadge, ListChecks, User } from '@phosphor-icons/react';
 import { useBuffer } from '../../hooks/data';
 import { HighlightCard, BasicCard } from '../../components/card';
 import RelativeDatetime from '../../components/relative-datetime';
 import Datetime from '../../components/datetime';
 import * as RadixSeparator from '@radix-ui/react-separator';
 import { Accent, AccentContext } from '../../hooks/accent';
+import * as Table from '../../components/table';
+import * as Collapsible from '@radix-ui/react-collapsible';
+import { useElementSize } from 'usehooks-ts'
 
 const Separator = ({ className }: { className?: string }) => {
   return <RadixSeparator.Root className={cx(className, "h-1 bg-gradient-to-b from-white to-indigo-50")} />
 }
 
-const Validators = (props: { validators: number[], aggregationBits?: boolean[] }) => {
-  if (!props.validators) {
+const Validators = ({ validators, aggregationBits, count }: { validators: number[], aggregationBits?: boolean[], count?: number }) => {
+
+  if (!validators) {
     return (
       <p>Loading...</p>
     );
   }
+  if (!count) count = validators.length;
 
-  let validators = props.validators.map(
+  let validatorsElements = validators.map(
     (v, i) => (
-      <span key={v} className={cx({ 'w-16': true, "text-gray-400": props.aggregationBits && props.aggregationBits.length > 0 && !props.aggregationBits[i] })}>
+      <span key={v} className={cx({ 'w-16': true, "text-gray-400": aggregationBits && aggregationBits.length > 0 && !aggregationBits[i] })}>
         {v}
       </span>
     )
   );
 
-  return <>{validators}</>
+  return <Collapsible.Root className="flex" >
+    <div className="flex flex-wrap grow">
+      {validatorsElements.splice(0, count)}
+      <Collapsible.Content className="contents">{validatorsElements.splice(count)}</Collapsible.Content>
+    </div>
+    <div>
+      <Collapsible.Trigger className="data-open:hidden"><CaretDown /></Collapsible.Trigger>
+      <Collapsible.Trigger className="data-closed:hidden"><CaretUp /></Collapsible.Trigger>
+    </div>
+  </Collapsible.Root>
+
+
+  return <>{validatorsElements}</>
 }
 
 type ModelsProps = { slot: bigint, path: string };
@@ -46,35 +63,30 @@ const Committees = ({ slot, path }: ModelsProps) => {
     suspense: true
   });
 
-  return <div className="flex flex-col gap-2">
-    {
-      committees.reduce((previousValue: ReactNode[], c: CommitteeView, i: number) => {
-        let node = <>
-          <div className="grid grid-cols-5 gap-2">
-            <BasicCard
-              className="block-tertiary-card h-24"
-              contentClassName="text-5xl"
-              title="Index">
-              {c.index}
-            </BasicCard>
-            <BasicCard
-              className="block-tertiary-card col-span-4 h-72"
-              contentClassName="text-lg flex flex-wrap"
-              title="Validators">
-              <Validators validators={c.validators} />
-            </BasicCard>
-          </div>
-        </>;
+  const [validatorsContainerRef, { width }] = useElementSize();
 
-        if (previousValue.length == 0) {
-          return [node]
+  let count = Math.floor(width / 64);
+
+  return <Table.Root>
+    <thead>
+      <tr>
+        <Table.Header>Index</Table.Header>
+        <Table.Header>Validators</Table.Header>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        committees.map(
+          (c, index) => (
+            <tr key={index} >
+              <Table.Cell className="w-1/6 text-left">{c.index}</Table.Cell>
+              <Table.Cell ref={validatorsContainerRef} className="flex flex-wrap" ><Validators validators={c.validators} count={count} /></Table.Cell>
+            </tr>
+          )
+        )
         }
-        else {
-          return [...previousValue, <><Separator />{node}</>]
-        }
-      }, [])
-    }
-  </div >
+    </tbody>
+  </Table.Root>
 }
 
 const Votes = ({ slot, path }: ModelsProps) => {

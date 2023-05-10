@@ -1,4 +1,4 @@
-import { MouseEventHandler, ReactNode } from "react"
+import { MouseEventHandler, ReactNode, forwardRef } from "react"
 import cx from "classnames";
 
 type RootProps = { children?: ReactNode }
@@ -32,9 +32,10 @@ type CellProps = {
   children?: ReactNode
 }
 
-export const Cell = ({ className, isSorted, children }: CellProps) => {
-  return <td className={cx(className, "tabular-nums py-1.5 px-2 border-b border-gray-200", { "bg-gray-50": isSorted })}>
+export const Cell = forwardRef<HTMLTableCellElement, CellProps>(({ className, isSorted, children }: CellProps, ref) => {
+  return <td ref={ref} className={cx(className, "tabular-nums py-1.5 px-2 border-b border-gray-200", { "bg-gray-50": isSorted })}>
     {children}
   </td>
-}
+});
+
 

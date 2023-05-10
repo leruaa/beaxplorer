@@ -12,7 +12,9 @@ module.exports = {
     },
     data: {
       active: 'state="active"',
-      inactive: 'state="inactive"'
+      inactive: 'state="inactive"',
+      open: 'state="open"',
+      closed: 'state="closed"'
     }
   },
   plugins: [],
