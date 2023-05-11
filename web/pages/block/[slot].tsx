@@ -83,7 +83,7 @@ const Committees = ({ slot, path }: ModelsProps) => {
             </tr>
           )
         )
-        }
+      }
     </tbody>
   </Table.Root>
 }
@@ -115,8 +115,8 @@ const Votes = ({ slot, path }: ModelsProps) => {
               <Table.Cell><Validators validators={v.validators} /></Table.Cell>
             </tr>
           )
-  )
-}
+        )
+      }
     </tbody>
   </Table.Root>
 }
@@ -130,67 +130,32 @@ const Attestations = ({ slot, paths }: AttestationsProps) => {
     suspense: true
   });
 
-  return <>
-    {
-      attestations.map((a, i) => (
-        <div key={i}>
-          <h3>Attestation {i}</h3>
-          <Attestation slot={slot} attestation={a} committeesPath={paths.committees} />
-        </div>
-      ))
-    }
-  </>
-}
-
-type AttestationProps = { slot: bigint, attestation: AttestationView, committeesPath: string };
-
-const Attestation = ({ slot, attestation, committeesPath }: AttestationProps) => {
-  const { data: committees } = useQuery({
-    queryKey: [committeesPath],
-    queryFn: () => useBuffer(slot, committeesPath).then(committeesBuffer => getCommittees(committeesBuffer.buffer)),
-    suspense: true
-  });
-
-
-  return (
-    <dl>
-      <dt>Slot</dt>
-      <dd>{attestation.slot}</dd>
-
-      <dt>Committee index</dt>
-      <dd>{attestation.committeeIndex}</dd>
-
-      <dt>Aggregation bits</dt>
-      <dd className="flex flex-wrap">
-        <AggregationBits bits={attestation.aggregationBits} />
-      </dd>
-
-      <dt>Validators</dt>
-      <dd className="flex flex-wrap">
-        <Validators
-          validators={committees[attestation.committeeIndex].validators}
-          aggregationBits={attestation.aggregationBits} />
-      </dd>
-
-      <dt>Beacon block root</dt>
-      <dd><span className="font-mono">{attestation.beaconBlockRoot}</span></dd>
-
-      <dt>Source</dt>
-      <dd>
-        Epoch <Link href={`/epoch/${attestation.sourceEpoch}`}>{attestation.sourceEpoch}</Link>
-        &nbsp;(<span className="font-mono">{attestation.sourceRoot}</span>)
-      </dd>
-
-      <dt>Target</dt>
-      <dd>
-        Epoch <Link href={`/epoch/${attestation.targetEpoch}`}>{attestation.targetEpoch}</Link>
-        &nbsp;(<span className="font-mono">{attestation.targetRoot}</span>)
-      </dd>
-
-      <dt>Signature</dt>
-      <dd><span className="font-mono break-words">{attestation.signature}</span></dd>
-    </dl>
-  );
+  return <Table.Root>
+    <thead>
+      <tr>
+        <Table.Header>Slot</Table.Header>
+        <Table.Header>Committee index</Table.Header>
+        <Table.Header>Participation</Table.Header>
+        <Table.Header>Source epoch</Table.Header>
+        <Table.Header>Target epoch</Table.Header>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        attestations.map(
+          (a, index) => (
+            <tr key={index} >
+              <Table.Cell className="text-left">{a.slot}</Table.Cell>
+              <Table.Cell className="text-left">{a.committeeIndex}</Table.Cell>
+              <Table.Cell className="text-left">{a.aggregationBits.reduce((sum, b) => sum + (b ? 1 : 0), 0)} / {a.aggregationBits.length}</Table.Cell>
+              <Table.Cell className="text-left">{a.sourceEpoch}</Table.Cell>
+              <Table.Cell className="text-left">{a.targetEpoch}</Table.Cell>
+            </tr>
+          )
+        )
+      }
+    </tbody>
+  </Table.Root>
 }
 
 const Tab = ({ className, value, children }: { className?: string, value: string, children: ReactNode }) => {
