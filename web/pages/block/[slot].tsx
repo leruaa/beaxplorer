@@ -16,6 +16,8 @@ import * as RadixSeparator from '@radix-ui/react-separator';
 import { Accent, AccentContext } from '../../hooks/accent';
 import * as Table from '../../components/table';
 import * as Collapsible from '@radix-ui/react-collapsible';
+import Root from '../../components/root';
+import Trim from '../../components/trim';
 
 const Separator = ({ className }: { className?: string }) => {
   return <RadixSeparator.Root className={cx(className, "h-1 bg-gradient-to-b from-white to-indigo-50")} />
@@ -98,9 +100,9 @@ const Votes = ({ slot, path }: ModelsProps) => {
   return <Table.Root>
     <thead>
       <tr>
-        <Table.Header className="w-1/12">Slot</Table.Header>
-        <Table.Header className="w-1/6">Committee index</Table.Header>
-        <Table.Header className="w-1/6">Included in block</Table.Header>
+        <Table.Header>Slot</Table.Header>
+        <Table.Header>Committee index</Table.Header>
+        <Table.Header>Included in block</Table.Header>
         <Table.Header>Validators</Table.Header>
       </tr>
     </thead>
@@ -133,23 +135,37 @@ const Attestations = ({ slot, paths }: AttestationsProps) => {
   return <Table.Root>
     <thead>
       <tr>
+        <Table.Header>Index</Table.Header>
         <Table.Header>Slot</Table.Header>
         <Table.Header>Committee index</Table.Header>
-        <Table.Header>Participation</Table.Header>
-        <Table.Header>Source epoch</Table.Header>
-        <Table.Header>Target epoch</Table.Header>
+        <Table.RightAlignedHeader>Aggregation bits</Table.RightAlignedHeader>
+        <Table.RightAlignedHeader>Participation</Table.RightAlignedHeader>
+        <Table.RightAlignedHeader>Source epoch</Table.RightAlignedHeader>
+        <Table.RightAlignedHeader>Target epoch</Table.RightAlignedHeader>
+        <Table.RightAlignedHeader>Block root</Table.RightAlignedHeader>
+        <Table.RightAlignedHeader>Signature</Table.RightAlignedHeader>
       </tr>
     </thead>
     <tbody>
       {
         attestations.map(
           (a, index) => (
-            <tr key={index} >
-              <Table.Cell className="text-left">{a.slot}</Table.Cell>
-              <Table.Cell className="text-left">{a.committeeIndex}</Table.Cell>
-              <Table.Cell className="text-left">{a.aggregationBits.reduce((sum, b) => sum + (b ? 1 : 0), 0)} / {a.aggregationBits.length}</Table.Cell>
-              <Table.Cell className="text-left">{a.sourceEpoch}</Table.Cell>
-              <Table.Cell className="text-left">{a.targetEpoch}</Table.Cell>
+            <tr key={index}>
+              <Table.Cell>{index}</Table.Cell>
+              <Table.Cell>{a.slot}</Table.Cell>
+              <Table.Cell>{a.committeeIndex}</Table.Cell>
+              <Table.RightAlignedCell>
+                <span className="font-mono">{a.aggregationBits.reduce((str, b, i) => str + (i < 8 ? (b ? "1" : "0") : ""), "")}</span>&hellip;
+              </Table.RightAlignedCell>
+              <Table.RightAlignedCell>{a.aggregationBits.reduce((sum, b) => sum + (b ? 1 : 0), 0)} / {a.aggregationBits.length}</Table.RightAlignedCell>
+              <Table.RightAlignedCell className="whitespace-nowrap">{a.sourceEpoch} (<Root value={a.sourceRoot} />)</Table.RightAlignedCell>
+              <Table.RightAlignedCell className="whitespace-nowrap">{a.targetEpoch} (<Root value={a.targetRoot} />)</Table.RightAlignedCell>
+              <Table.RightAlignedCell>
+                <Root value={a.beaconBlockRoot} />
+              </Table.RightAlignedCell>
+              <Table.RightAlignedCell>
+                <Trim value={a.signature} className="font-mono" regEx={/^(.{10}).*$/g} groups={"$1"} />&hellip;
+              </Table.RightAlignedCell>
             </tr>
           )
         )
