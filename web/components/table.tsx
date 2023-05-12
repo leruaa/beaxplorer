@@ -4,7 +4,7 @@ import cx from "classnames";
 type RootProps = { children?: ReactNode }
 
 export const Root = ({ children }: RootProps) => {
-  return <table className="w-full table-fixed">{children}</table>
+  return <table className="w-full table-auto">{children}</table>
 }
 
 enum Align {
@@ -33,6 +33,10 @@ export const Header = ({ className, align = Align.Left, colSpan, canSort, isSort
   </th>
 }
 
+export const RightAlignedHeader = ({ className, colSpan, canSort, isSorted, children, onClick }: HeaderProps) => {
+  return <Header className={className} colSpan={colSpan} canSort={canSort} isSorted={isSorted} onClick={onClick} align={Align.Right}>{children}</Header>
+}
+
 type CellProps = {
   className?: string,
   align?: Align,
@@ -40,10 +44,14 @@ type CellProps = {
   children?: ReactNode
 }
 
-export const Cell = forwardRef<HTMLTableCellElement, CellProps>(({ className, align = Align.Left, isSorted, children }: CellProps, ref) => {
-  return <td ref={ref} className={cx(className, align, "tabular-nums py-1.5 px-2 border-b border-gray-200", { "bg-gray-50": isSorted })}>
+export const Cell = ({ className, align = Align.Left, isSorted, children }: CellProps) => {
+  return <td className={cx(className, align, "tabular-nums py-1.5 px-2 border-b border-gray-200", { "bg-gray-50": isSorted })}>
     {children}
   </td>
-});
+};
+
+export const RightAlignedCell = ({ className, isSorted, children }: CellProps) => {
+  return <Cell className={className} isSorted={isSorted} align={Align.Right}>{children}</Cell>
+};
 
 
