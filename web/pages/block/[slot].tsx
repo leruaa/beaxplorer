@@ -15,12 +15,26 @@ import Datetime from '../../components/datetime';
 import * as RadixSeparator from '@radix-ui/react-separator';
 import { Accent, AccentContext } from '../../hooks/accent';
 import * as Table from '../../components/table';
-import * as Collapsible from '@radix-ui/react-collapsible';
+import * as RadixTooltip from "@radix-ui/react-tooltip";
 import Root from '../../components/root';
 import Trim from '../../components/trim';
 
 const Separator = ({ className }: { className?: string }) => {
   return <RadixSeparator.Root className={cx(className, "h-1 bg-gradient-to-b from-white to-indigo-50")} />
+}
+
+const Tooltip = ({ children }: { children: ReactNode }) => {
+  return <RadixTooltip.Provider delayDuration={100}>
+    <RadixTooltip.Root>
+      <RadixTooltip.Trigger><DotsThreeCircle /></RadixTooltip.Trigger>
+      <RadixTooltip.Portal>
+        <RadixTooltip.Content className="mx-2 p-2 bg-white rounded shadow">
+          <RadixTooltip.Arrow className="fill-white" />
+          {children}
+        </RadixTooltip.Content>
+      </RadixTooltip.Portal>
+    </RadixTooltip.Root>
+  </RadixTooltip.Provider>;
 }
 
 const Validators = ({ validators, aggregationBits }: { validators: number[], aggregationBits?: boolean[] }) => {
