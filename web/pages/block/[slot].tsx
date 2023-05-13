@@ -31,32 +31,15 @@ const Validators = ({ validators, aggregationBits }: { validators: number[], agg
     );
   }
 
-  let validatorsElements = validators.reduce(
-    (previousValue: ReactNode[], v: number, i: number) => {
-      let el = <span key={i} className={cx({ "text-gray-400": aggregationBits && aggregationBits.length > 0 && !aggregationBits[i] })}>
+  let validatorsElements = validators.map(
+    (v, i) => (
+      <span key={v} className={cx({ 'w-16': true, "text-gray-400": aggregationBits && aggregationBits.length > 0 && !aggregationBits[i] })}>
         {v}
-      </span>;
-
-      if (previousValue.length == 0) {
-        return [el]
-      }
-      else {
-        return [...previousValue, <>, {el}</>]
-      }
-    },
-    []
+      </span>
+    )
   );
 
-  return <Collapsible.Root className=" relative data-closed:truncate pr-6">
-    {validatorsElements}
-    <div className="absolute inset-y-0 -right-1 p-1">
-      <Collapsible.Trigger className="data-open:hidden"><CaretDown /></Collapsible.Trigger>
-      <Collapsible.Trigger className="data-closed:hidden"><CaretUp /></Collapsible.Trigger>
-    </div>
-  </Collapsible.Root>
-
-
-  return <>{validatorsElements}</>
+  return <div className="flex flex-wrap">{validatorsElements}</div>
 }
 
 type ModelsProps = { slot: bigint, path: string };
