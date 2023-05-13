@@ -4,10 +4,10 @@ import * as Tabs from '@radix-ui/react-tabs';
 import cx from 'classnames';
 import * as Breadcrumb from "../../components/breadcrumb";
 import { useQuery } from '@tanstack/react-query';
-import { App, AttestationView, BlockPaths, VoteView, getAttestations, getBlockExtended, getBlockPaths, getCommittees, getVotes, BlockExtendedView, CommitteeView } from '../../pkg/web';
+import { App, BlockPaths, getAttestations, getBlockExtended, getBlockPaths, getCommittees, getVotes, BlockExtendedView } from '../../pkg/web';
 import Link from 'next/link';
 import AggregationBits from '../../components/aggregation-bits';
-import { Calendar, CaretDown, CaretUp, Certificate, ClockCountdown, Cube, IdentificationBadge, ListChecks, User } from '@phosphor-icons/react';
+import { Calendar, Certificate, ClockCountdown, Cube, DotsThreeCircle, IconContext, IdentificationBadge, ListChecks, User } from '@phosphor-icons/react';
 import { useBuffer } from '../../hooks/data';
 import { HighlightCard, BasicCard } from '../../components/card';
 import RelativeDatetime from '../../components/relative-datetime';
@@ -129,46 +129,56 @@ const Attestations = ({ slot, paths }: AttestationsProps) => {
     suspense: true
   });
 
-  return <Table.Root>
-    <thead>
-      <tr>
-        <Table.Header>Index</Table.Header>
-        <Table.Header>Slot</Table.Header>
-        <Table.Header>Committee index</Table.Header>
-        <Table.RightAlignedHeader>Aggregation bits</Table.RightAlignedHeader>
-        <Table.RightAlignedHeader>Participation</Table.RightAlignedHeader>
-        <Table.RightAlignedHeader>Source epoch</Table.RightAlignedHeader>
-        <Table.RightAlignedHeader>Target epoch</Table.RightAlignedHeader>
-        <Table.RightAlignedHeader>Block root</Table.RightAlignedHeader>
-        <Table.RightAlignedHeader>Signature</Table.RightAlignedHeader>
-      </tr>
-    </thead>
-    <tbody>
-      {
-        attestations.map(
-          (a, index) => (
-            <tr key={index}>
-              <Table.Cell>{index}</Table.Cell>
-              <Table.Cell>{a.slot}</Table.Cell>
-              <Table.Cell>{a.committeeIndex}</Table.Cell>
-              <Table.RightAlignedCell>
-                <span className="font-mono">{a.aggregationBits.reduce((str, b, i) => str + (i < 8 ? (b ? "1" : "0") : ""), "")}</span>&hellip;
-              </Table.RightAlignedCell>
-              <Table.RightAlignedCell>{a.aggregationBits.reduce((sum, b) => sum + (b ? 1 : 0), 0)} / {a.aggregationBits.length}</Table.RightAlignedCell>
-              <Table.RightAlignedCell className="whitespace-nowrap">{a.sourceEpoch} (<Root value={a.sourceRoot} />)</Table.RightAlignedCell>
-              <Table.RightAlignedCell className="whitespace-nowrap">{a.targetEpoch} (<Root value={a.targetRoot} />)</Table.RightAlignedCell>
-              <Table.RightAlignedCell>
-                <Root value={a.beaconBlockRoot} />
-              </Table.RightAlignedCell>
-              <Table.RightAlignedCell>
-                <Trim value={a.signature} className="font-mono" regEx={/^(.{10}).*$/g} groups={"$1"} />&hellip;
-              </Table.RightAlignedCell>
-            </tr>
+  return <IconContext.Provider
+    value={{
+      size: "1.25em",
+      className: "inline text-indigo-500"
+    }}>
+    <Table.Root>
+      <thead>
+        <tr>
+          <Table.Header>Index</Table.Header>
+          <Table.Header>Slot</Table.Header>
+          <Table.Header>Committee index</Table.Header>
+          <Table.RightAlignedHeader>Aggregation bits</Table.RightAlignedHeader>
+          <Table.RightAlignedHeader>Participation</Table.RightAlignedHeader>
+          <Table.RightAlignedHeader>Block root</Table.RightAlignedHeader>
+          <Table.RightAlignedHeader>Source epoch</Table.RightAlignedHeader>
+          <Table.RightAlignedHeader>Target epoch</Table.RightAlignedHeader>
+          <Table.RightAlignedHeader>Signature</Table.RightAlignedHeader>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          attestations.map(
+            (a, index) => (
+              <tr key={index}>
+                <Table.Cell>{index}</Table.Cell>
+                <Table.Cell>{a.slot}</Table.Cell>
+                <Table.Cell>{a.committeeIndex}</Table.Cell>
+                <Table.RightAlignedCell>
+                  <span className="font-mono">{a.aggregationBits.reduce((str, b, i) => str + (i < 8 ? (b ? "1" : "0") : ""), "")}</span>
+                  &hellip;&nbsp;
+                  <Tooltip>
+                    <h4 className="text-xs uppercase font-bold text-indigo-600">Aggregation bits</h4>
+                    <AggregationBits bits={a.aggregationBits} /></Tooltip>
+                </Table.RightAlignedCell>
+                <Table.RightAlignedCell>{a.aggregationBits.reduce((sum, b) => sum + (b ? 1 : 0), 0)} / {a.aggregationBits.length}</Table.RightAlignedCell>
+                <Table.RightAlignedCell>
+                  <Root value={a.beaconBlockRoot} />
+                </Table.RightAlignedCell>
+                <Table.RightAlignedCell className="whitespace-nowrap">{a.sourceEpoch} (<Root value={a.sourceRoot} />)</Table.RightAlignedCell>
+                <Table.RightAlignedCell className="whitespace-nowrap">{a.targetEpoch} (<Root value={a.targetRoot} />)</Table.RightAlignedCell>
+                <Table.RightAlignedCell>
+                  <Trim value={a.signature} className="font-mono" regEx={/^(.{10}).*$/g} groups={"$1"} />&hellip;
+                </Table.RightAlignedCell>
+              </tr>
+            )
           )
-        )
-      }
-    </tbody>
-  </Table.Root>
+        }
+      </tbody>
+    </Table.Root>
+  </IconContext.Provider>
 }
 
 const Tab = ({ className, value, children }: { className?: string, value: string, children: ReactNode }) => {
@@ -225,7 +235,6 @@ const Block = ({ slot }: { slot: bigint }) => {
         </Tabs.Content>
       </section>
     </Tabs.Root>
-
   )
 }
 
