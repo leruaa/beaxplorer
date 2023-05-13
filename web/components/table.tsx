@@ -26,7 +26,7 @@ type HeaderProps = {
 export const Header = ({ className, align = Align.Left, colSpan, canSort, isSorted, children, onClick }: HeaderProps) => {
   return <th
     colSpan={colSpan}
-    className={cx(className, align, "text-xs px-1.5 py-2 text-gray-600 uppercase bg-gray-100", { "cursor-pointer": canSort }, { "text-black": isSorted })}
+    className={cx(className, align, "text-xs p-2 text-gray-600 whitespace-nowrap uppercase bg-gray-100", { "cursor-pointer": canSort }, { "text-black": isSorted })}
     onClick={onClick}
   >
     {children}
