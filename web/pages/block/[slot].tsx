@@ -189,7 +189,12 @@ const Attestations = ({ slot, paths }: AttestationsProps) => {
                   </Tooltip>
                 </Table.RightAlignedCell>
                 <Table.RightAlignedCell>
-                  <Trim value={a.signature} className="font-mono" regEx={/^(.{10}).*$/g} groups={"$1"} />&hellip;
+                  <Trim value={a.signature} className="font-mono" regEx={/^(.{10}).*$/g} groups={"$1"} />
+                  &hellip;
+                  &nbsp;
+                  <Tooltip title="Signature">
+                    <div className="font-mono break-words w-[48rem]">{a.signature}</div>
+                  </Tooltip>
                 </Table.RightAlignedCell>
               </tr>
             )
