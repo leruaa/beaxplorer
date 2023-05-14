@@ -23,13 +23,16 @@ const Separator = ({ className }: { className?: string }) => {
   return <RadixSeparator.Root className={cx(className, "h-1 bg-gradient-to-b from-white to-indigo-50")} />
 }
 
-const Tooltip = ({ children }: { children: ReactNode }) => {
+const Tooltip = ({ title, children }: { title?: string, children: ReactNode }) => {
   return <RadixTooltip.Provider delayDuration={100}>
     <RadixTooltip.Root>
       <RadixTooltip.Trigger><DotsThreeCircle /></RadixTooltip.Trigger>
       <RadixTooltip.Portal>
         <RadixTooltip.Content className="mx-2 p-2 bg-white rounded shadow">
           <RadixTooltip.Arrow className="fill-white" />
+          {title && (
+            <h4 className="text-xs uppercase font-bold text-indigo-400">{title}</h4>
+          )}
           {children}
         </RadixTooltip.Content>
       </RadixTooltip.Portal>
@@ -159,9 +162,9 @@ const Attestations = ({ slot, paths }: AttestationsProps) => {
                 <Table.RightAlignedCell>
                   <span className="font-mono">{a.aggregationBits.reduce((str, b, i) => str + (i < 8 ? (b ? "1" : "0") : ""), "")}</span>
                   &hellip;&nbsp;
-                  <Tooltip>
-                    <h4 className="text-xs uppercase font-bold text-indigo-600">Aggregation bits</h4>
-                    <AggregationBits bits={a.aggregationBits} /></Tooltip>
+                  <Tooltip title="Aggregation bits">
+                    <AggregationBits bits={a.aggregationBits} />
+                  </Tooltip>
                 </Table.RightAlignedCell>
                 <Table.RightAlignedCell>{a.aggregationBits.reduce((sum, b) => sum + (b ? 1 : 0), 0)} / {a.aggregationBits.length}</Table.RightAlignedCell>
                 <Table.RightAlignedCell>
