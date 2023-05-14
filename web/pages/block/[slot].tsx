@@ -169,9 +169,25 @@ const Attestations = ({ slot, paths }: AttestationsProps) => {
                 <Table.RightAlignedCell>{a.aggregationBits.reduce((sum, b) => sum + (b ? 1 : 0), 0)} / {a.aggregationBits.length}</Table.RightAlignedCell>
                 <Table.RightAlignedCell>
                   <Root value={a.beaconBlockRoot} />
+                  &nbsp;
+                  <Tooltip title="Block root">
+                    <span className="font-mono">{a.beaconBlockRoot}</span>
+                  </Tooltip>
                 </Table.RightAlignedCell>
-                <Table.RightAlignedCell className="whitespace-nowrap">{a.sourceEpoch} (<Root value={a.sourceRoot} />)</Table.RightAlignedCell>
-                <Table.RightAlignedCell className="whitespace-nowrap">{a.targetEpoch} (<Root value={a.targetRoot} />)</Table.RightAlignedCell>
+                <Table.RightAlignedCell className="whitespace-nowrap">
+                  {a.sourceEpoch} (<Root value={a.sourceRoot} />)
+                  &nbsp;
+                  <Tooltip title="Source epoch block root">
+                    <span className="font-mono">{a.sourceRoot}</span>
+                  </Tooltip>
+                </Table.RightAlignedCell>
+                <Table.RightAlignedCell className="whitespace-nowrap">
+                  {a.targetEpoch} (<Root value={a.targetRoot} />)
+                  &nbsp;
+                  <Tooltip title="Target epoch block root">
+                    <span className="font-mono">{a.targetRoot}</span>
+                  </Tooltip>
+                </Table.RightAlignedCell>
                 <Table.RightAlignedCell>
                   <Trim value={a.signature} className="font-mono" regEx={/^(.{10}).*$/g} groups={"$1"} />&hellip;
                 </Table.RightAlignedCell>
