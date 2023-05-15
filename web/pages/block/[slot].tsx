@@ -17,7 +17,6 @@ import { Accent, AccentContext } from '../../hooks/accent';
 import * as Table from '../../components/table';
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import Root from '../../components/root';
-import Trim from '../../components/trim';
 import Signature from '../../components/signature';
 import Field from '../../components/field';
 
@@ -33,9 +32,9 @@ const Tooltip = ({ title, children }: { title?: string, children: ReactNode }) =
         <RadixTooltip.Content className="mx-2 p-2 bg-white rounded shadow">
           <RadixTooltip.Arrow className="fill-white" />
           {title && (
-            <h4 className="text-xs uppercase font-bold text-indigo-400">{title}</h4>
+            <Field titleClassName="text-sm" title={title}>{children}</Field>
           )}
-          {children}
+          {!title && children}
         </RadixTooltip.Content>
       </RadixTooltip.Portal>
     </RadixTooltip.Root>
