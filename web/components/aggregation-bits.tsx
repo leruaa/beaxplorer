@@ -16,5 +16,5 @@ export default ({ bits }: Props) => {
     }
   }
 
-  return <div className="font-mono grid grid-cols-8 gap-1">{chunks}</div>
+  return <div className="font-mono grid grid-cols-8 gap-x-1">{chunks}</div>
 }

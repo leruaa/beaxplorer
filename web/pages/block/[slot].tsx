@@ -282,13 +282,13 @@ const Overview = ({ block }: { block: BlockExtendedView }) => {
     <>
       <div className="grid grid-flow-row grid-cols-5 gap-2">
         <HighlightCard
-          className="block-primary-card"
+          accent={Accent.Indigo}
           title="Slot"
           icon={<Cube />}>
           <span className="text-5xl font-semibold">{block.slot}</span>
         </HighlightCard>
         <HighlightCard
-          className="epoch-primary-card"
+          accent={Accent.Sky}
           title="Epoch"
           icon={<ClockCountdown />}>
           <span className="text-5xl font-semibold">{block.epoch}</span>
@@ -308,7 +308,7 @@ const Overview = ({ block }: { block: BlockExtendedView }) => {
           <span className="text-5xl font-semibold">{block.proposer}</span>
         </HighlightCard>
         <BasicCard
-          className="block-secondary-card"
+          accent={Accent.Indigo}
           title="Time"
           icon={<Calendar className="opacity-50" />}>
           <div className="text-3xl">
@@ -319,7 +319,7 @@ const Overview = ({ block }: { block: BlockExtendedView }) => {
           </div>
         </BasicCard>
         <BasicCard
-          className="block-secondary-card"
+          accent={Accent.Indigo}
           title="Attestations"
           icon={<ListChecks className="opacity-50" />}>
           <div className="text-5xl">
@@ -327,7 +327,7 @@ const Overview = ({ block }: { block: BlockExtendedView }) => {
           </div>
         </BasicCard>
         <BasicCard
-          className="block-secondary-card"
+          accent={Accent.Indigo}
           title="Votes"
           icon={<IdentificationBadge className="opacity-50" />}>
           <div className="text-5xl">
