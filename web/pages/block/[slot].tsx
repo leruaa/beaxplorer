@@ -19,6 +19,7 @@ import * as RadixTooltip from "@radix-ui/react-tooltip";
 import Root from '../../components/root';
 import Trim from '../../components/trim';
 import Signature from '../../components/signature';
+import Field from '../../components/field';
 
 const Separator = ({ className }: { className?: string }) => {
   return <RadixSeparator.Root className={cx(className, "h-1 bg-gradient-to-b from-white to-indigo-50")} />
@@ -337,42 +338,35 @@ const Overview = ({ block }: { block: BlockExtendedView }) => {
       </div>
       <Separator className="my-2" />
       <div className="flex flex-col gap-2">
-        <BasicCard
-          className="block-tertiary-card"
-          contentClassName="text-2xl"
+        <Field
+          contentClassName="text-lg"
           title="Block root">
           {block.blockRoot}
-        </BasicCard>
+        </Field>
         <Separator />
-        <BasicCard
-          className="block-tertiary-card"
-          contentClassName="text-2xl"
+        <Field
+          contentClassName="text-lg"
           title="Parent root">
           {block.parentRoot}
-        </BasicCard>
+        </Field>
         <Separator />
-        <BasicCard
-          className="block-tertiary-card"
-          contentClassName="text-2xl"
+        <Field
+          contentClassName="text-lg"
           title="State root">
           {block.stateRoot}
-        </BasicCard>
+        </Field>
         <Separator />
-        <BasicCard
-          className="block-tertiary-card"
-          title="Signature">
-          <div className="text-xl break-words mr-24">
-            {block.signature}
-          </div>
-        </BasicCard>
+        <Field
+          title="Signature"
+          contentClassName="text-lg break-words">
+          {block.signature}
+        </Field>
         <Separator />
-        <BasicCard
-          className="block-tertiary-card"
-          title="RANDAO Reveal">
-          <div className="text-xl break-words mr-24">
-            {block.randaoReveal}
-          </div>
-        </BasicCard>
+        <Field
+          title="RANDAO Reveal"
+          contentClassName="text-lg break-words">
+          {block.randaoReveal}
+        </Field>
       </div>
     </>
   )
