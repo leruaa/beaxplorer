@@ -18,6 +18,7 @@ import * as Table from '../../components/table';
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import Root from '../../components/root';
 import Trim from '../../components/trim';
+import Signature from '../../components/signature';
 
 const Separator = ({ className }: { className?: string }) => {
   return <RadixSeparator.Root className={cx(className, "h-1 bg-gradient-to-b from-white to-indigo-50")} />
@@ -167,8 +168,8 @@ const Attestations = ({ slot, paths }: AttestationsProps) => {
                 <Table.Cell>{a.slot}</Table.Cell>
                 <Table.Cell>{a.committeeIndex}</Table.Cell>
                 <Table.RightAlignedCell>
-                  <span className="font-mono">{a.aggregationBits.reduce((str, b, i) => str + (i < 8 ? (b ? "1" : "0") : ""), "")}</span>
-                  &hellip;&nbsp;
+                  <span className="font-mono">{a.aggregationBits.reduce((str, b, i) => str + (i < 8 ? (b ? "1" : "0") : ""), "")}&hellip;</span>
+                  &nbsp;
                   <Tooltip title="Aggregation bits">
                     <AggregationBits bits={a.aggregationBits} />
                   </Tooltip>
@@ -204,8 +205,7 @@ const Attestations = ({ slot, paths }: AttestationsProps) => {
                   </Tooltip>
                 </Table.RightAlignedCell>
                 <Table.RightAlignedCell>
-                  <Trim value={a.signature} className="font-mono" regEx={/^(.{10}).*$/g} groups={"$1"} />
-                  &hellip;
+                  <Signature value={a.signature} />
                   &nbsp;
                   <Tooltip title="Signature">
                     <div className="font-mono break-words w-[48rem]">{a.signature}</div>
