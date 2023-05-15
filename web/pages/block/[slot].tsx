@@ -132,6 +132,13 @@ const Attestations = ({ slot, paths }: AttestationsProps) => {
     suspense: true
   });
 
+  const { data: committees } = useQuery({
+    queryKey: [paths.committees],
+    queryFn: () => useBuffer(slot, paths.committees).then(committeesBuffer => getCommittees(committeesBuffer.buffer)),
+    suspense: true
+  });
+
+
   return <IconContext.Provider
     value={{
       size: "1.25em",
@@ -166,7 +173,15 @@ const Attestations = ({ slot, paths }: AttestationsProps) => {
                     <AggregationBits bits={a.aggregationBits} />
                   </Tooltip>
                 </Table.RightAlignedCell>
-                <Table.RightAlignedCell>{a.aggregationBits.reduce((sum, b) => sum + (b ? 1 : 0), 0)} / {a.aggregationBits.length}</Table.RightAlignedCell>
+                <Table.RightAlignedCell>
+                  {a.aggregationBits.reduce((sum, b) => sum + (b ? 1 : 0), 0)} / {a.aggregationBits.length}
+                  &nbsp;
+                  <Tooltip title="Validators">
+                    <div className="w-[48rem]">
+                      <Validators validators={committees[a.committeeIndex].validators} aggregationBits={a.aggregationBits} />
+                    </div>
+                  </Tooltip>
+                </Table.RightAlignedCell>
                 <Table.RightAlignedCell>
                   <Root value={a.beaconBlockRoot} />
                   &nbsp;
