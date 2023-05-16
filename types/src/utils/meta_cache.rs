@@ -42,7 +42,7 @@ impl MetaCache {
         M: Prefix,
     {
         let full_path = Meta::to_path::<M>(&self.base_path);
-        self.cache.get(&full_path).map_or(0, |m|m.count)
+        self.cache.get(&full_path).map_or(0, |m| m.count)
     }
 
     pub fn get<M>(&mut self) -> Result<&Meta, String>

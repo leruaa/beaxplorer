@@ -13,6 +13,19 @@ use tsify::Tsify;
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub struct Meta {
     pub count: usize,
+    pub specific: MetaSpecific,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+pub struct DepositMeta {
+    latest_block: Option<u64>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+pub enum MetaSpecific {
+    #[default]
+    Empty,
+    Deposit(DepositMeta),
 }
 
 impl Meta {
