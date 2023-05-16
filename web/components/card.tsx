@@ -21,9 +21,9 @@ type ComonProps = {
 export const HighlightCard = (props: ComonProps) => {
   switch (props.accent) {
     case Accent.Sky:
-      return <Card {...props} className="from-sky-400 to-sky-500" kind={Kind.Highlight} />
+      return <Card {...props} className={cx(props.className, "from-sky-400 to-sky-500 text-white")} kind={Kind.Highlight} />
     case Accent.Indigo:
-      return <Card {...props} className="from-indigo-400 to-indigo-500" kind={Kind.Highlight} />
+      return <Card {...props} className={cx(props.className, "from-indigo-400 to-indigo-500 text-white")} kind={Kind.Highlight} />
     default:
       return <Card {...props} kind={Kind.Highlight} />
   }
@@ -32,9 +32,9 @@ export const HighlightCard = (props: ComonProps) => {
 export const BasicCard = (props: ComonProps) => {
   switch (props.accent) {
     case Accent.Sky:
-      return <Card {...props} className="from-white to-sky-50 text-sky-700" kind={Kind.Basic} />
+      return <Card {...props} className={cx(props.className, "from-white to-sky-50 text-sky-700")} kind={Kind.Basic} />
     case Accent.Indigo:
-      return <Card {...props} className="from-white to-indigo-50 text-indigo-700" kind={Kind.Basic} />
+      return <Card {...props} className={cx(props.className, "from-white to-indigo-50 text-indigo-700")} kind={Kind.Basic} />
     default:
       return <Card {...props} kind={Kind.Basic} />
   }
@@ -47,7 +47,7 @@ type BaseProps = {
 const Card = ({ className, contentClassName, title, icon, kind, children }: ComonProps & BaseProps) => {
 
   return (
-    <div className={cx(className, "relative flex flex-col gap-1 px-2 rounded bg-gradient-to-b text-white h-24 overflow-hidden")}>
+    <div className={cx(className, "relative flex flex-col gap-1 px-2 rounded bg-gradient-to-b h-24 overflow-hidden")}>
       {icon &&
         <div className="absolute -right-6 -top -bottom opacity-30">
           <IconContext.Provider
