@@ -60,6 +60,9 @@ pub enum DeserializeError {
 
     #[error("Invalid model id {0}")]
     InvalidModelId(ModelId),
+
+    #[error("Invalid meta type")]
+    InvalidMetaType,
 }
 
 impl From<DeserializeError> for JsValue {
