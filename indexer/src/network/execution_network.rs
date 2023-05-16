@@ -11,14 +11,14 @@ use tracing::{error, info};
 /// Timeout when doing an eth_getLogs to read the deposit contract logs.
 const GET_DEPOSIT_LOG_TIMEOUT_MILLIS: u64 = 60_000;
 
-pub struct ExecutionService {
+pub struct ExecutionNetwork {
     endpoint: HttpJsonRpc,
     spec: ChainSpec,
     deposit_contract_address: String,
     deposit_contract_deploy_block: u64,
 }
 
-impl ExecutionService {
+impl ExecutionNetwork {
     pub async fn start<E: EthSpec>(
         executor: TaskExecutor,
         execution_node_url: SensitiveUrl,
