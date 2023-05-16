@@ -71,32 +71,4 @@
   .highlight-slate {
     @apply bg-slate-50 text-slate-500
   }
-
-  .epoch-primary-card {
-    @apply bg-gradient-to-b from-sky-400 to-sky-500 h-24;
-  }
-
-  .epoch-secondary-card {
-    @apply bg-gradient-to-b from-white to-sky-50 text-sky-700 h-24
-  }
-
-  .block-primary-card {
-    @apply bg-gradient-to-b from-indigo-400 to-indigo-500 h-24
-  }
-
-  .block-secondary-card {
-    @apply bg-gradient-to-b from-white to-indigo-50 text-indigo-700 h-24
-  }
-
-  .block-tertiary-card {
-    @apply text-indigo-800
-  }
-
-  .validator-primary-card {
-    @apply bg-gradient-to-b from-purple-400 to-purple-500
-  }
-
-  .validator-secondary-card {
-    @apply bg-gradient-to-b from-white to-purple-50 text-purple-700
-  }
 }
