@@ -294,7 +294,7 @@ const Overview = ({ block }: { block: BlockExtendedView }) => {
           <span className="text-5xl font-semibold">{block.epoch}</span>
         </HighlightCard>
         <HighlightCard
-          className="bg-gradient-to-b from-green-400 to-green-500"
+          accent={Accent.Green}
           title="State"
           icon={<Certificate />}>
           <span className="text-4xl">
@@ -302,7 +302,7 @@ const Overview = ({ block }: { block: BlockExtendedView }) => {
           </span>
         </HighlightCard>
         <HighlightCard
-          className="validator-primary-card"
+          accent={Accent.Purple}
           title="Proposer"
           icon={<User />}>
           <span className="text-5xl font-semibold">{block.proposer}</span>

@@ -57,13 +57,13 @@ const Epoch = ({ id }: { id: bigint }) => {
     <section>
       <div className="grid grid-flow-row grid-cols-5 gap-2">
         <HighlightCard
-          className="epoch-primary-card"
+          accent={Accent.Sky}
           title="Epoch"
           icon={<ClockCountdown />}>
           <span className="text-5xl font-semibold">{epoch.epoch}</span>
         </HighlightCard>
         <HighlightCard
-          className="bg-gradient-to-b from-green-400 to-green-500"
+          accent={Accent.Green}
           title="State"
           icon={<Certificate />}>
           <span className="text-4xl">
@@ -71,7 +71,7 @@ const Epoch = ({ id }: { id: bigint }) => {
           </span>
         </HighlightCard>
         <BasicCard
-          className="epoch-secondary-card"
+          accent={Accent.Sky}
           title="Time"
           icon={<Calendar className="opacity-50" />}>
           <div className="text-3xl">
@@ -82,7 +82,7 @@ const Epoch = ({ id }: { id: bigint }) => {
           </div>
         </BasicCard>
         <HighlightCard
-          className="bg-gradient-to-b from-green-400 to-green-500"
+          accent={Accent.Green}
           title="Proposed blocks count"
           icon={<SealCheck />}>
           <span className="text-5xl font-semibold">
@@ -90,7 +90,7 @@ const Epoch = ({ id }: { id: bigint }) => {
           </span>
         </HighlightCard>
         <HighlightCard
-          className="bg-gradient-to-b from-yellow-400 to-yellow-500"
+          accent={Accent.Yellow}
           title="Missed blocks count"
           icon={<SealWarning />}>
           <span className="text-5xl font-semibold">
@@ -98,7 +98,7 @@ const Epoch = ({ id }: { id: bigint }) => {
           </span>
         </HighlightCard>
         <BasicCard
-          className="epoch-secondary-card"
+          accent={Accent.Sky}
           title="Attestations"
           icon={<ListChecks className="opacity-50" />}>
           <div className="text-5xl font-semibold">
@@ -106,7 +106,8 @@ const Epoch = ({ id }: { id: bigint }) => {
           </div>
         </BasicCard>
         <BasicCard
-          className="col-span-2 epoch-secondary-card"
+          className="col-span-2"
+          accent={Accent.Sky}
           title="Voting participation"
           icon={<IdentificationBadge className="opacity-50" />}>
           <div className="text-3xl font-semibold">

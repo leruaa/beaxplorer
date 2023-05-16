@@ -20,10 +20,16 @@ type ComonProps = {
 
 export const HighlightCard = (props: ComonProps) => {
   switch (props.accent) {
+    case Accent.Green:
+      return <Card {...props} className={cx(props.className, "from-green-400 to-green-500 text-white")} kind={Kind.Highlight} />
+    case Accent.Yellow:
+      return <Card {...props} className={cx(props.className, "from-yellow-400 to-yellow-500 text-white")} kind={Kind.Highlight} />
     case Accent.Sky:
       return <Card {...props} className={cx(props.className, "from-sky-400 to-sky-500 text-white")} kind={Kind.Highlight} />
     case Accent.Indigo:
       return <Card {...props} className={cx(props.className, "from-indigo-400 to-indigo-500 text-white")} kind={Kind.Highlight} />
+    case Accent.Purple:
+      return <Card {...props} className={cx(props.className, "from-purple-400 to-purple-500 text-white")} kind={Kind.Highlight} />
     default:
       return <Card {...props} kind={Kind.Highlight} />
   }
@@ -31,10 +37,16 @@ export const HighlightCard = (props: ComonProps) => {
 
 export const BasicCard = (props: ComonProps) => {
   switch (props.accent) {
+    case Accent.Green:
+      return <Card {...props} className={cx(props.className, "from-white to-green-50 text-green-700")} kind={Kind.Basic} />
+    case Accent.Green:
+      return <Card {...props} className={cx(props.className, "from-white to-yellow-50 text-yellow-700")} kind={Kind.Basic} />
     case Accent.Sky:
       return <Card {...props} className={cx(props.className, "from-white to-sky-50 text-sky-700")} kind={Kind.Basic} />
     case Accent.Indigo:
       return <Card {...props} className={cx(props.className, "from-white to-indigo-50 text-indigo-700")} kind={Kind.Basic} />
+    case Accent.Purple:
+      return <Card {...props} className={cx(props.className, "from-white to-purple-50 text-purple-700")} kind={Kind.Basic} />
     default:
       return <Card {...props} kind={Kind.Basic} />
   }
