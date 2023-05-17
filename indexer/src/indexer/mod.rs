@@ -22,19 +22,30 @@ pub struct Indexer;
 impl Indexer {
     pub fn spawn_services<E: EthSpec>(
         self,
+        dry: bool,
         base_dir: String,
+        execution_node_url: String,
         executor: TaskExecutor,
         beacon_context: Arc<BeaconContext<E>>,
         _: Sender<()>,
         shutdown_trigger: Receiver<()>,
     ) {
-        self.spawn_indexer(executor, base_dir, beacon_context, shutdown_trigger);
+        self.spawn_indexer(
+            executor,
+            dry,
+            base_dir,
+            execution_node_url,
+            beacon_context,
+            shutdown_trigger,
+        );
     }
 
     fn spawn_indexer<E: EthSpec>(
         &self,
         executor: TaskExecutor,
+        dry: bool,
         base_dir: String,
+        execution_node_url: String,
         beacon_context: Arc<BeaconContext<E>>,
         mut shutdown_trigger: Receiver<()>,
     ) {
