@@ -17,12 +17,7 @@ impl<E: EthSpec> BeaconContext<E> {
     pub fn build(spec: ChainSpec) -> Result<Self, String> {
         let eth2_network_config = Eth2NetworkConfig::constant(DEFAULT_HARDCODED_NETWORK)?
             .ok_or("Failed to build Eth2 network config")?;
-        let genesis_state_bytes = eth2_network_config
-            .genesis_state_bytes
-            .as_ref()
-            .ok_or("Genesis tate bytes are required")?;
-        let genesis_state = BeaconState::from_ssz_bytes(genesis_state_bytes, &spec)
-            .map_err(|_| "Failed to decode SSZ")?;
+        let genesis_state = eth2_network_config.beacon_state()?;
         let slot_clock = SystemTimeSlotClock::new(
             spec.genesis_slot,
             Duration::from_secs(genesis_state.genesis_time()),
