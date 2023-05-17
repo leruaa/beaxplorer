@@ -5,10 +5,7 @@ use lighthouse_types::MainnetEthSpec;
 
 use tokio::{
     signal,
-    sync::{
-        mpsc::{self},
-        watch,
-    },
+    sync::{mpsc, watch},
 };
 use tracing::warn;
 use types::{
@@ -30,7 +27,12 @@ use crate::{
     indexer::Indexer,
 };
 
-pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
+pub fn start_indexer(
+    reset: bool,
+    dry: bool,
+    base_dir: String,
+    execution_node_url: String,
+) -> Result<(), String> {
     let (environment, _) = build_environment(EnvironmentBuilder::mainnet())?;
     let context = environment.core_context();
     let beacon_context = BeaconContext::<MainnetEthSpec>::build(context.eth2_config.spec)?;
@@ -50,7 +52,9 @@ pub fn start_indexer(reset: bool, base_dir: String) -> Result<(), String> {
         let indexer = Indexer::default();
 
         indexer.spawn_services(
+            dry,
             base_dir,
+            execution_node_url,
             executor,
             Arc::new(beacon_context),
             shutdown_handle,

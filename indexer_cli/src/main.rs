@@ -6,11 +6,8 @@ use dotenv::dotenv;
 use indexer::launcher;
 use span_duration::SpanDurationLayer;
 use tracing_subscriber::{
-    filter::{filter_fn, LevelFilter},
-    fmt::format::FmtSpan,
-    prelude::__tracing_subscriber_SubscriberExt,
-    util::SubscriberInitExt,
-    EnvFilter, Layer,
+    filter::LevelFilter, util::SubscriberInitExt,
+    EnvFilter, Layer, prelude::__tracing_subscriber_SubscriberExt,
 };
 
 use crate::cli::Cli;
@@ -38,7 +35,9 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::BuildDatabase { reset } => launcher::start_indexer(reset, cli.base_dir).unwrap(),
+        Commands::BuildDatabase { reset, dry } => {
+            launcher::start_indexer(reset, dry, cli.base_dir, cli.execution_node_url).unwrap()
+        }
         Commands::UpdateIndexes => launcher::update_indexes(cli.base_dir).unwrap(),
     }
 }
