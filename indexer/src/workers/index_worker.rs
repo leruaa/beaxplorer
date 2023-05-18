@@ -5,52 +5,71 @@ use std::{
 };
 
 use itertools::Itertools;
-use lighthouse_network::{NetworkEvent, PeerId, Response};
+use lighthouse_network::{NetworkEvent as ConsensusNetworkEvent, PeerId, Response};
 use lighthouse_types::{EthSpec, SignedBeaconBlock, Slot};
 use parking_lot::RwLock;
 use task_executor::TaskExecutor;
-use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
+use tokio::{
+    select,
+    sync::mpsc::{self, UnboundedReceiver, UnboundedSender},
+};
 use tracing::{debug, error, info};
 use types::block_root::{BlockRootModel, BlockRootModelWithId};
 
 use crate::{
     db::Stores,
-    network::{NetworkCommand, RequestId},
+    network::{ConsensusNetworkCommand, ExecutionNetworkCommand, ExecutionNetworkEvent, RequestId},
     types::block_state::BlockState,
     work::Work,
 };
 
 pub fn spawn_index_worker<E: EthSpec>(
-    network_event_recv: UnboundedReceiver<NetworkEvent<RequestId, E>>,
-    network_command_send: UnboundedSender<NetworkCommand>,
+    execution_event_recv: UnboundedReceiver<ExecutionNetworkEvent>,
+    execution_command_send: UnboundedSender<ExecutionNetworkCommand>,
+    consensus_event_recv: UnboundedReceiver<ConsensusNetworkEvent<RequestId, E>>,
+    consensus_command_send: UnboundedSender<ConsensusNetworkCommand>,
     stores: Arc<Stores<E>>,
     executor: &TaskExecutor,
 ) -> UnboundedReceiver<Work<E>> {
     let (work_send, work_recv) = mpsc::unbounded_channel();
 
-    IndexWorker::new(network_event_recv, network_command_send, work_send, stores).spawn(executor);
+    IndexWorker::new(
+        execution_event_recv,
+        execution_command_send,
+        consensus_event_recv,
+        consensus_command_send,
+        work_send,
+        stores,
+    )
+    .spawn(executor);
 
     work_recv
 }
 
 struct IndexWorker<E: EthSpec> {
-    network_event_recv: UnboundedReceiver<NetworkEvent<RequestId, E>>,
-    network_command_send: UnboundedSender<NetworkCommand>,
+    execution_event_recv: UnboundedReceiver<ExecutionNetworkEvent>,
+    execution_command_send: UnboundedSender<ExecutionNetworkCommand>,
+    consensus_event_recv: UnboundedReceiver<ConsensusNetworkEvent<RequestId, E>>,
+    consensus_command_send: UnboundedSender<ConsensusNetworkCommand>,
     work_send: UnboundedSender<Work<E>>,
     block_range_requests: RwLock<BlockRangeRequests<E>>,
-    stores: Arc<Stores<E>>
+    stores: Arc<Stores<E>>,
 }
 
 impl<E: EthSpec> IndexWorker<E> {
     pub fn new(
-        network_event_recv: UnboundedReceiver<NetworkEvent<RequestId, E>>,
-        network_command_send: UnboundedSender<NetworkCommand>,
+        execution_event_recv: UnboundedReceiver<ExecutionNetworkEvent>,
+        execution_command_send: UnboundedSender<ExecutionNetworkCommand>,
+        consensus_event_recv: UnboundedReceiver<ConsensusNetworkEvent<RequestId, E>>,
+        consensus_command_send: UnboundedSender<ConsensusNetworkCommand>,
         work_send: UnboundedSender<Work<E>>,
-        stores: Arc<Stores<E>>
+        stores: Arc<Stores<E>>,
     ) -> Self {
         Self {
-            network_event_recv,
-            network_command_send,
+            execution_event_recv,
+            execution_command_send,
+            consensus_event_recv,
+            consensus_command_send,
             work_send,
             block_range_requests: RwLock::new(BlockRangeRequests::default()),
             stores,
@@ -61,9 +80,9 @@ impl<E: EthSpec> IndexWorker<E> {
         executor.spawn(
             async move {
                 loop {
-                    match self.network_event_recv.recv().await {
-                        Some(event) => {
-                            if let Err(err) = self.handle_next_event(event) {
+                    select! {
+                        Some(event) = self.consensus_event_recv.recv() => {
+                            if let Err(err) = self.handle_consensus_event(event) {
                                 match err {
                                     IndexError::SendMessage => {
                                         info!("Shutting down index worker");
@@ -73,10 +92,16 @@ impl<E: EthSpec> IndexWorker<E> {
                                 }
                             }
                         },
-                        None => {
+                        Some(event) = self.execution_event_recv.recv() => {
+                            if let Err(_) = self.handle_execution_event(event) {
+                                error!("Execution event processing error")
+                            }
+                        },
+
+                        else => {
                             info!("Shutting down index worker");
                             return;
-                        },
+                        }
                     }
                 }
             },
@@ -84,29 +109,34 @@ impl<E: EthSpec> IndexWorker<E> {
         );
     }
 
-    fn handle_next_event(&self, event: NetworkEvent<RequestId, E>) -> Result<(), IndexError> {
+    fn handle_consensus_event(
+        &self,
+        event: ConsensusNetworkEvent<RequestId, E>,
+    ) -> Result<(), IndexError> {
         match event {
-            NetworkEvent::PeerConnectedOutgoing(peer_id) => {
+            ConsensusNetworkEvent::PeerConnectedOutgoing(peer_id) => {
                 if !self.block_range_requests.read().is_requesting() {
                     self.send_range_request(Some(peer_id))?;
                 }
-    
-                self.stores.block_by_root_requests_mut()
+
+                self.stores
+                    .block_by_root_requests_mut()
                     .pending_iter_mut()
                     .try_for_each(|(root, req)| {
                         if req.insert_peer(&peer_id) {
-                            self
-                                .network_command_send
-                                .send(NetworkCommand::SendBlockByRootRequest { peer_id: Some(peer_id), root: *root })
+                            self.consensus_command_send
+                                .send(ConsensusNetworkCommand::SendBlockByRootRequest {
+                                    peer_id: Some(peer_id),
+                                    root: *root,
+                                })
                                 .map_err(|_| IndexError::SendMessage)
-                        }
-                        else {
+                        } else {
                             Ok(())
                         }
                     })?;
             }
-    
-            NetworkEvent::PeerDisconnected(peer_id) => {
+
+            ConsensusNetworkEvent::PeerDisconnected(peer_id) => {
                 let mut block_range_requests = self.block_range_requests.write();
                 if block_range_requests.request_terminated(&peer_id) {
                     debug!(to = %peer_id, "Range request cancelled");
@@ -114,7 +144,7 @@ impl<E: EthSpec> IndexWorker<E> {
                         self.send_range_request(None)?;
                     }
                 }
-    
+
                 self.stores
                     .block_by_root_requests_mut()
                     .pending_iter_mut()
@@ -122,26 +152,26 @@ impl<E: EthSpec> IndexWorker<E> {
                         req.remove_peer(&peer_id);
                     });
             }
-    
-            NetworkEvent::RPCFailed {
+
+            ConsensusNetworkEvent::RPCFailed {
                 id: RequestId::Range,
                 ..
             } => {
                 self.send_range_request(None)?;
             }
-    
-            NetworkEvent::RPCFailed {
+
+            ConsensusNetworkEvent::RPCFailed {
                 id: RequestId::Block(root),
                 peer_id,
-            } => {   
+            } => {
                 self.stores
                     .block_by_root_requests_mut()
                     .update_attempt(&root, |attempt| {
                         attempt.remove_peer(&peer_id);
                     });
             }
-    
-            NetworkEvent::ResponseReceived {
+
+            ConsensusNetworkEvent::ResponseReceived {
                 id: RequestId::Range,
                 response: Response::BlocksByRange(block),
                 peer_id,
@@ -158,28 +188,30 @@ impl<E: EthSpec> IndexWorker<E> {
                                 slot: block.slot().as_u64(),
                             },
                         });
-    
+
                     let block = block_range_requests.next_or(block);
-    
+
                     if Some(block.slot()) > self.stores.indexing_state().latest_slot() {
-                        new_blocks(block.clone(), &self.stores).try_for_each(|block| {
-                            match self.stores.indexing_state_mut().process_block(block) {
-                                Ok((block, epoch)) => {
+                        new_blocks(block.clone(), &self.stores).try_for_each(|block| match self
+                            .stores
+                            .indexing_state_mut()
+                            .process_block(block)
+                        {
+                            Ok((block, epoch)) => {
+                                self.work_send
+                                    .send(Work::PersistBlock(block))
+                                    .map_err(|_| IndexError::SendMessage)?;
+
+                                if let Some(epoch) = epoch {
                                     self.work_send
-                                        .send(Work::PersistBlock(block))
+                                        .send(Work::PersistEpoch(epoch))
                                         .map_err(|_| IndexError::SendMessage)?;
-    
-                                    if let Some(epoch) = epoch {
-                                        self.work_send
-                                            .send(Work::PersistEpoch(epoch))
-                                            .map_err(|_| IndexError::SendMessage)?;
-                                    }
-                                    Ok(())
-                                },
-                                Err(err) => Err(IndexError::BlockProcessing(err)),
+                                }
+                                Ok(())
                             }
+                            Err(err) => Err(IndexError::BlockProcessing(err)),
                         })?;
-    
+
                         block
                             .message()
                             .body()
@@ -196,24 +228,24 @@ impl<E: EthSpec> IndexWorker<E> {
                             .try_for_each(|(slot, root)| {
                                 info!(%slot, %root, "Unknown root while processing block {}", block.slot());
                                 self.stores.block_by_root_requests_mut().add(slot, root);
-    
+
                                 self
-                                    .network_command_send
-                                    .send(NetworkCommand::SendBlockByRootRequest { peer_id: None, root })
+                                    .consensus_command_send
+                                    .send(ConsensusNetworkCommand::SendBlockByRootRequest { peer_id: None, root })
                                     .map_err(|_| IndexError::SendMessage)
                             })?;
                     }
                 } else if block_range_requests.request_terminated(&peer_id) {
                     // There is no more active range requests
                     debug!("Range request succedeed");
-    
+
                     if !block_range_requests.is_requesting() {
                         self.send_range_request(None)?;
                     }
                 }
             }
-    
-            NetworkEvent::ResponseReceived {
+
+            ConsensusNetworkEvent::ResponseReceived {
                 peer_id,
                 id: RequestId::Block(root),
                 response: Response::BlocksByRoot(block),
@@ -223,54 +255,55 @@ impl<E: EthSpec> IndexWorker<E> {
                 if block_by_root_requests.exists(&root) {
                     if let Some(block) = block {
                         let slot = block.slot();
-    
-                        if block_by_root_requests
-                            .set_request_as_found(root, peer_id)
-                        {
+
+                        if block_by_root_requests.set_request_as_found(root, peer_id) {
                             info!(found_by = %peer_id, %slot, %root, "An orphaned block has been found");
-    
+
                             if let Some(attempt) = block_by_root_requests.get(&root) {
                                 // Persist the found block request
                                 self.work_send
                                     .send(Work::PersistBlockRequest(root, attempt.clone()))
                                     .map_err(|_| IndexError::SendMessage)?;
                             }
-    
+
                             //consensus_network.peer_db_mut().add_good_peer(peer_id);
-    
+
                             // Persist good peers
                             self.work_send
                                 .send(Work::PersistAllGoodPeers)
                                 .map_err(|_| IndexError::SendMessage)?;
                         }
                     } else {
-                        block_by_root_requests
-                            .update_attempt(&root, |attempt| {
-                                attempt.increment_not_found();
-                            });
+                        block_by_root_requests.update_attempt(&root, |attempt| {
+                            attempt.increment_not_found();
+                        });
                     }
                 }
             }
-    
+
             _ => {}
         };
-    
+
         Ok(())
     }
 
-    fn send_range_request(
-        &self,
-        to: Option<PeerId>,
-    ) -> Result<(), IndexError> {
-        let start_slot = self.stores
+    fn handle_execution_event(&self, event: ExecutionNetworkEvent) -> Result<(), IndexError> {
+        todo!()
+    }
+
+    fn send_range_request(&self, to: Option<PeerId>) -> Result<(), IndexError> {
+        let start_slot = self
+            .stores
             .indexing_state()
             .latest_slot()
             .map(|s| s.as_u64() + 1)
             .unwrap_or_default();
-    
-        self
-            .network_command_send
-            .send(NetworkCommand::SendRangeRequest { peer_id: to, start_slot })
+
+        self.consensus_command_send
+            .send(ConsensusNetworkCommand::SendRangeRequest {
+                peer_id: to,
+                start_slot,
+            })
             .map_err(|_| IndexError::SendMessage)
     }
 }
@@ -296,7 +329,6 @@ enum IndexError {
     SendMessage,
     BlockProcessing(String),
 }
-
 
 #[derive(Debug, Default)]
 pub struct BlockRangeRequests<E: EthSpec> {
