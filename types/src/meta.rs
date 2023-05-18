@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -16,9 +18,22 @@ pub struct Meta {
     pub specific: MetaSpecific,
 }
 
+impl Meta {
+    pub fn deposit_default() -> Self {
+        Self {
+            count: 0,
+            specific: MetaSpecific::Deposit(DepositMeta::default()),
+        }
+    }
+
+    pub fn to_path<M: Prefix>(base_path: &str) -> String {
+        format!("{}{}/meta.msg", base_path, M::prefix())
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct DepositMeta {
-    latest_block: Option<u64>,
+    pub latest_block: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
@@ -28,9 +43,25 @@ pub enum MetaSpecific {
     Deposit(DepositMeta),
 }
 
-impl Meta {
-    pub fn to_path<M: Prefix>(base_path: &str) -> String {
-        format!("{}{}/meta.msg", base_path, M::prefix())
+impl<'a> TryFrom<&'a Meta> for &'a DepositMeta {
+    type Error = String;
+
+    fn try_from(value: &'a Meta) -> Result<Self, Self::Error> {
+        match &value.specific {
+            MetaSpecific::Empty => Err("Invalid meta type".to_string()),
+            MetaSpecific::Deposit(d) => Ok(d),
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a mut Meta> for &'a mut DepositMeta {
+    type Error = String;
+
+    fn try_from(value: &'a mut Meta) -> Result<Self, Self::Error> {
+        match &mut value.specific {
+            MetaSpecific::Empty => Err("Invalid meta type".to_string()),
+            MetaSpecific::Deposit(d) => Ok(d),
+        }
     }
 }
 
