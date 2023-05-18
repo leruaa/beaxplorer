@@ -10,7 +10,7 @@ use types::{block_request::BlockRequestModelWithId, good_peer::GoodPeerModelWith
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
     db::Stores,
-    network::spawn_consensus_network,
+    network::{spawn_consensus_network, spawn_execution_network, ExecutionNetworkCommand},
     workers::{spawn_index_worker, spawn_persist_block_worker},
 };
 
@@ -62,17 +62,33 @@ impl Indexer {
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
                 let stores = Arc::new(Stores::new(base_dir.clone(), beacon_context.clone(), block_requests.collect()));
 
-                let (network_command_send, network_event_recv) = spawn_consensus_network(beacon_context, good_peers, &executor)
+                let (execution_command_send, execution_event_recv) = spawn_execution_network(
+                execution_node_url.parse().unwrap(), beacon_context.clone(), &executor)
+                    .unwrap();
+
+                let (consensus_command_send, consensus_event_recv) = spawn_consensus_network(beacon_context.clone(), good_peers, &executor)
                     .await
                     .unwrap();
 
                 let new_block_send = spawn_persist_block_worker(base_dir.clone(), stores.clone(), shutdown_trigger.clone(), &executor);
 
-                let mut work_recv = spawn_index_worker(network_event_recv, network_command_send, stores.clone(), &executor);
+                let latest_deposit_block = *stores.get_latest_deposit_block().get_or_insert(beacon_context
+                    .eth2_network_config
+                    .deposit_contract_deploy_block);
+
+                execution_command_send.send(ExecutionNetworkCommand::RetrieveDeposits(latest_deposit_block..latest_deposit_block + 1000)).unwrap();
+
+                let mut work_recv = spawn_index_worker(
+                    execution_event_recv,
+                    execution_command_send,
+                    consensus_event_recv,
+                    consensus_command_send,
+                    stores.clone(),
+                    &executor);
 
                 loop {
                     tokio::select! {
-                        work = work_recv.recv() => {
+                        work = work_recv.recv(), if !dry => {
                             match work {
                                 Some(work) => works::handle(base_dir.clone(), work, &stores, &new_block_send, &executor),
                                 None => {

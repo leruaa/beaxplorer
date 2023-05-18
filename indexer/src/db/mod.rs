@@ -1,11 +1,15 @@
-use std::sync::Arc;
-
 use lighthouse_types::{BeaconState, ChainSpec, EthSpec};
-use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{
+    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
+use std::convert::TryFrom;
+use std::sync::Arc;
 use types::{
     block_request::BlockRequestModelWithId,
     block_root::BlockRootModel,
     committee::CommitteeModel,
+    deposit::DepositModel,
+    meta::{DepositMeta, Meta},
     utils::{MetaCache, ModelCache},
 };
 
@@ -81,5 +85,15 @@ impl<E: EthSpec> Stores<E> {
 
     pub fn spec(&self) -> MappedRwLockReadGuard<ChainSpec> {
         RwLockReadGuard::map(self.indexing_state(), |indexing_state| &indexing_state.spec)
+    }
+
+    pub fn get_latest_deposit_block(&self) -> MappedRwLockWriteGuard<Option<u64>> {
+        let meta_cache = self.meta_cache().write();
+
+        RwLockWriteGuard::map(meta_cache, |meta_cache| {
+            let meta = meta_cache.get_mut_or::<DepositModel>(Meta::deposit_default());
+            let deposit_meta = <&mut DepositMeta>::try_from(meta).unwrap();
+            &mut deposit_meta.latest_block
+        })
     }
 }
