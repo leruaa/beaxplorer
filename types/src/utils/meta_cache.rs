@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, hash_map::Entry};
 
 use crate::{
     meta::Meta,
@@ -20,21 +20,34 @@ impl MetaCache {
         }
     }
 
-    pub fn get_mut<M>(&mut self) -> Result<&mut Meta, String>
+    pub fn get_mut<M>(&mut self) -> Option<&mut Meta>
     where
         M: Prefix,
     {
         let full_path = Meta::to_path::<M>(&self.base_path);
-        if !self.cache.contains_key(&full_path) {
-            self.cache.insert(
-                full_path.clone(),
-                Meta::deserialize_from_file(&full_path).unwrap_or_default(),
-            );
+
+        match self.cache.entry(full_path.clone()) {
+            Entry::Occupied(e) => Some(e.into_mut()),
+            Entry::Vacant(e) => {
+                if let Ok(meta) = Meta::deserialize_from_file(&full_path) {
+                    Some(e.insert(meta))
+                }
+                else {
+                    None
+                }
+            },
         }
+    }
+
+    pub fn get_mut_or<M>(&mut self, default: Meta) -> &mut Meta
+    where
+        M: Prefix,
+    {
+        let full_path = Meta::to_path::<M>(&self.base_path);
 
         self.cache
-            .get_mut(&full_path)
-            .ok_or(String::from("Should not happen"))
+            .entry(full_path.clone())
+            .or_insert(Meta::deserialize_from_file(&full_path).unwrap_or(default))
     }
 
     pub fn count<M>(&self) -> usize
@@ -45,11 +58,18 @@ impl MetaCache {
         self.cache.get(&full_path).map_or(0, |m| m.count)
     }
 
-    pub fn get<M>(&mut self) -> Result<&Meta, String>
+    pub fn get<M>(&mut self) -> Option<&Meta>
     where
         M: Prefix,
     {
         self.get_mut::<M>().map(|m| &*m)
+    }
+
+    pub fn get_or<M>(&mut self, default: Meta) -> &Meta
+    where
+        M: Prefix,
+    {
+        self.get_mut_or::<M>(default)
     }
 
     pub fn update_and_save<M, F>(&mut self, f: F) -> Result<(), String>
@@ -58,7 +78,7 @@ impl MetaCache {
         F: FnOnce(&mut Meta),
     {
         let base_path = self.base_path.clone();
-        let meta = self.get_mut::<M>()?;
+        let meta = self.get_mut::<M>().ok_or("Unable to retrieve meta")?;
 
         f(meta);
 
