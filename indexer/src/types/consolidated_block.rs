@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use lighthouse_types::{Attestation, DepositData, Epoch, EthSpec, OwnedBeaconCommittee, Slot};
+use lighthouse_types::{
+    Attestation, DepositData as LighthouseDepositData, Epoch, EthSpec, OwnedBeaconCommittee, Slot,
+};
 use shared::utils::clock::Clock;
 use store::SignedBeaconBlock;
 use types::{
@@ -8,7 +10,7 @@ use types::{
     block::{BlockExtendedModelWithId, BlockModel, BlockModelWithId},
     block_root::{BlockRootModel, BlockRootModelWithId},
     committee::{CommitteeModel, CommitteeModelsWithId},
-    deposit::DepositModel,
+    deposit::{ConsensusLayerDepositModel, DepositData},
 };
 
 use super::block_state::BlockState;
@@ -20,7 +22,7 @@ pub struct ConsolidatedBlock<E: EthSpec> {
     slot: Slot,
     proposer_index: u64,
     committees: Vec<OwnedBeaconCommittee>,
-    pub deposits: Vec<DepositData>,
+    pub deposits: Vec<LighthouseDepositData>,
 }
 
 impl<E: EthSpec> ConsolidatedBlock<E> {
@@ -28,7 +30,7 @@ impl<E: EthSpec> ConsolidatedBlock<E> {
         block: BlockState<E>,
         proposer_index: u64,
         committees: Vec<OwnedBeaconCommittee>,
-        deposits: Vec<DepositData>,
+        deposits: Vec<LighthouseDepositData>,
     ) -> Self {
         let slot = block.slot();
 
@@ -166,17 +168,14 @@ impl<E: EthSpec> From<&ConsolidatedBlock<E>> for CommitteeModelsWithId {
     }
 }
 
-impl<E: EthSpec> From<&ConsolidatedBlock<E>> for Vec<DepositModel> {
+impl<E: EthSpec> From<&ConsolidatedBlock<E>> for Vec<ConsensusLayerDepositModel> {
     fn from(value: &ConsolidatedBlock<E>) -> Self {
         value
             .deposits
             .iter()
-            .map(|d| DepositModel {
+            .map(|d: &LighthouseDepositData| ConsensusLayerDepositModel {
                 slot: value.slot.as_u64(),
-                public_key: d.pubkey.to_string(),
-                withdrawal_credentials: d.withdrawal_credentials.as_bytes().to_vec(),
-                amount: d.amount,
-                signature: d.signature.to_string(),
+                deposit_data: DepositData::from(d),
             })
             .collect()
     }

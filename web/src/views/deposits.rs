@@ -1,6 +1,6 @@
 use serde::Serialize;
 use tsify::Tsify;
-use types::deposit::DepositModel;
+use types::deposit::ExecutionLayerDepositModel;
 use wasm_bindgen::JsValue;
 
 use crate::to_js;
@@ -8,19 +8,19 @@ use crate::to_js;
 #[derive(Serialize, Tsify, Debug, Clone)]
 #[tsify(into_wasm_abi)]
 #[serde(rename_all = "camelCase")]
-pub struct DepositView {
+pub struct ExecutionLayerDepositView {
     #[serde(flatten)]
-    pub model: DepositModel,
+    pub model: ExecutionLayerDepositModel,
 }
 
-impl From<DepositModel> for DepositView {
-    fn from(model: DepositModel) -> Self {
-        DepositView { model }
+impl From<ExecutionLayerDepositModel> for ExecutionLayerDepositView {
+    fn from(model: ExecutionLayerDepositModel) -> Self {
+        ExecutionLayerDepositView { model }
     }
 }
 
-impl From<DepositView> for JsValue {
-    fn from(val: DepositView) -> Self {
+impl From<ExecutionLayerDepositView> for JsValue {
+    fn from(val: ExecutionLayerDepositView) -> Self {
         to_js(&val).unwrap()
     }
 }

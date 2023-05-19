@@ -1,7 +1,7 @@
 use lighthouse_types::EthSpec;
-use parking_lot::RwLock;
+use parking_lot::RwLockWriteGuard;
 use types::{
-    deposit::{DepositModel, DepositModelWithId},
+    deposit::{ConsensusLayerDepositModel, ConsensusLayerDepositModelWithId},
     persistable::ResolvablePersistable,
     utils::MetaCache,
 };
@@ -9,20 +9,19 @@ use types::{
 use super::consolidated_block::ConsolidatedBlock;
 
 pub struct ConsolidatedDeposits<'a> {
-    deposits: Vec<DepositModel>,
-    meta_cache: &'a RwLock<MetaCache>,
+    deposits: Vec<ConsensusLayerDepositModel>,
+    meta_cache: RwLockWriteGuard<'a, MetaCache>,
 }
 
 impl<'a> ConsolidatedDeposits<'a> {
-    pub fn save(self, base_path: &str) -> Result<(), String> {
-        let mut meta_cache = self.meta_cache.write();
-        let init_count = meta_cache.count::<DepositModel>();
+    pub fn save(mut self, base_path: &str) -> Result<(), String> {
+        let init_count = self.meta_cache.count::<ConsensusLayerDepositModel>();
 
         let saved_count = self
             .deposits
             .into_iter()
             .enumerate()
-            .map(|(i, d)| DepositModelWithId {
+            .map(|(i, d)| ConsensusLayerDepositModelWithId {
                 id: (init_count + i) as u64,
                 model: d,
             })
@@ -35,12 +34,14 @@ impl<'a> ConsolidatedDeposits<'a> {
 
         match saved_count {
             Ok(count) => {
-                meta_cache.update_and_save::<DepositModel, _>(|m| m.count += count)?;
+                self.meta_cache
+                    .update_and_save::<ConsensusLayerDepositModel, _>(|m| m.count += count)?;
 
                 Ok(())
             }
             Err((err, count)) => {
-                meta_cache.update_and_save::<DepositModel, _>(|m| m.count += count)?;
+                self.meta_cache
+                    .update_and_save::<ConsensusLayerDepositModel, _>(|m| m.count += count)?;
 
                 Err(err)
             }
@@ -48,11 +49,11 @@ impl<'a> ConsolidatedDeposits<'a> {
     }
 }
 
-impl<'a, E: EthSpec> From<(&ConsolidatedBlock<E>, &'a RwLock<MetaCache>)>
+impl<'a, E: EthSpec> From<(&ConsolidatedBlock<E>, RwLockWriteGuard<'a, MetaCache>)>
     for ConsolidatedDeposits<'a>
 {
-    fn from((block, meta_cache): (&ConsolidatedBlock<E>, &'a RwLock<MetaCache>)) -> Self {
-        let deposits = Vec::<DepositModel>::from(block);
+    fn from((block, meta_cache): (&ConsolidatedBlock<E>, RwLockWriteGuard<'a, MetaCache>)) -> Self {
+        let deposits = Vec::<ConsensusLayerDepositModel>::from(block);
 
         Self {
             deposits,
