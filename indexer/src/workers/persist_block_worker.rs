@@ -87,7 +87,7 @@ fn persist_block<E: EthSpec>(
         .save(base_dir)
         .unwrap();
 
-    ConsolidatedDeposits::from((&block, stores.meta_cache()))
+    ConsolidatedDeposits::from((&block, stores.meta_cache_mut()))
         .save(base_dir)
         .unwrap();
 
@@ -146,8 +146,7 @@ fn persist_block<E: EthSpec>(
     votes_cache.persist_dirty();
 
     stores
-        .meta_cache()
-        .write()
+        .meta_cache_mut()
         .update_and_save::<BlockModel, _>(|m| m.count = block.slot().as_usize() + 1)?;
 
     Ok(())

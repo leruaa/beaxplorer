@@ -34,8 +34,7 @@ fn persist_epoch<E: EthSpec>(base_dir: &str, epoch: ConsolidatedEpoch<E>, stores
         .unwrap();
 
     stores
-        .meta_cache()
-        .write()
+        .meta_cache_mut()
         .update_and_save::<EpochModel, _>(|m| m.count = epoch.number() + 1)
         .unwrap();
 }

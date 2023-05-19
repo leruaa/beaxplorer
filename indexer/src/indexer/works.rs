@@ -45,8 +45,7 @@ pub fn persist_block_requests<E: EthSpec>(base_dir: &str, stores: &Arc<Stores<E>
     block_requests.save(base_dir).unwrap();
 
     stores
-        .meta_cache()
-        .write()
+        .meta_cache_mut()
         .update_and_save::<BlockRequestModel, _>(|m| m.count = block_requests.len())
         .unwrap();
 }
@@ -57,8 +56,7 @@ pub fn persist_good_peers<E: EthSpec>(base_dir: &str, stores: &Arc<Stores<E>>) {
     good_peers.save(base_dir).unwrap();
 
     stores
-        .meta_cache()
-        .write()
+        .meta_cache_mut()
         .update_and_save::<GoodPeerModel, _>(|m| m.count = good_peers.len())
         .unwrap();
 }

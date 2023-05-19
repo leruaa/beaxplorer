@@ -73,8 +73,12 @@ impl<E: EthSpec> Stores<E> {
         self.committees_cache.as_ref()
     }
 
-    pub fn meta_cache(&self) -> &RwLock<MetaCache> {
-        self.meta_cache.as_ref()
+    pub fn meta_cache(&self) -> RwLockReadGuard<MetaCache> {
+        self.meta_cache.read()
+    }
+
+    pub fn meta_cache_mut(&self) -> RwLockWriteGuard<MetaCache> {
+        self.meta_cache.write()
     }
 
     pub fn beacon_state(&self) -> MappedRwLockReadGuard<BeaconState<E>> {
@@ -88,7 +92,7 @@ impl<E: EthSpec> Stores<E> {
     }
 
     pub fn get_latest_deposit_block(&self) -> MappedRwLockWriteGuard<Option<u64>> {
-        let meta_cache = self.meta_cache().write();
+        let meta_cache = self.meta_cache_mut();
 
         RwLockWriteGuard::map(meta_cache, |meta_cache| {
             let meta = meta_cache.get_mut_or::<DepositModel>(Meta::deposit_default());
