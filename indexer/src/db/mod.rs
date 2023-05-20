@@ -8,7 +8,7 @@ use types::{
     block_request::BlockRequestModelWithId,
     block_root::BlockRootModel,
     committee::CommitteeModel,
-    deposit::DepositModel,
+    deposit::ExecutionLayerDepositModel,
     meta::{DepositMeta, Meta},
     utils::{MetaCache, ModelCache},
 };
@@ -91,13 +91,11 @@ impl<E: EthSpec> Stores<E> {
         RwLockReadGuard::map(self.indexing_state(), |indexing_state| &indexing_state.spec)
     }
 
-    pub fn get_latest_deposit_block(&self) -> MappedRwLockWriteGuard<Option<u64>> {
-        let meta_cache = self.meta_cache_mut();
+    pub fn get_latest_deposit_block(&self) -> Option<u64> {
+        let mut meta_cache = self.meta_cache_mut();
+        let mut meta = meta_cache.get_or::<ExecutionLayerDepositModel>(Meta::deposit_default());
+        let deposit_meta = <&mut DepositMeta>::try_from(&mut meta).ok();
 
-        RwLockWriteGuard::map(meta_cache, |meta_cache| {
-            let meta = meta_cache.get_mut_or::<DepositModel>(Meta::deposit_default());
-            let deposit_meta = <&mut DepositMeta>::try_from(meta).unwrap();
-            &mut deposit_meta.latest_block
-        })
+        deposit_meta.and_then(|m| m.latest_block)
     }
 }

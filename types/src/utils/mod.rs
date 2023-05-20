@@ -15,7 +15,7 @@ mod request_attempts;
 pub use block_by_root_request_state::BlockByRootRequestState;
 pub use field_binary_heap::FieldBinaryHeap;
 #[cfg(feature = "indexing")]
-pub use meta_cache::MetaCache;
+pub use meta_cache::{MetaCache, PersistableMeta};
 #[cfg(feature = "indexing")]
 pub use model_cache::ModelCache;
 pub use orderable::Orderable;

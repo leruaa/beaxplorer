@@ -1,4 +1,7 @@
-use std::collections::{HashMap, hash_map::Entry};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    ops::{Deref, DerefMut}, marker::PhantomData,
+};
 
 use crate::{
     meta::Meta,
@@ -31,23 +34,25 @@ impl MetaCache {
             Entry::Vacant(e) => {
                 if let Ok(meta) = Meta::deserialize_from_file(&full_path) {
                     Some(e.insert(meta))
-                }
-                else {
+                } else {
                     None
                 }
-            },
+            }
         }
     }
 
-    pub fn get_mut_or<M>(&mut self, default: Meta) -> &mut Meta
+    pub fn get_or<M>(&mut self, default: Meta) -> PersistableMeta<M>
     where
         M: Prefix,
     {
         let full_path = Meta::to_path::<M>(&self.base_path);
 
-        self.cache
+        let meta = self
+            .cache
             .entry(full_path.clone())
-            .or_insert(Meta::deserialize_from_file(&full_path).unwrap_or(default))
+            .or_insert(Meta::deserialize_from_file(&full_path).unwrap_or(default));
+
+        PersistableMeta::new(self.base_path.clone(), meta)
     }
 
     pub fn count<M>(&self) -> usize
@@ -65,13 +70,6 @@ impl MetaCache {
         self.get_mut::<M>().map(|m| &*m)
     }
 
-    pub fn get_or<M>(&mut self, default: Meta) -> &Meta
-    where
-        M: Prefix,
-    {
-        self.get_mut_or::<M>(default)
-    }
-
     pub fn update_and_save<M, F>(&mut self, f: F) -> Result<(), String>
     where
         M: Prefix,
@@ -85,5 +83,35 @@ impl MetaCache {
         meta.serialize_to_file(&Meta::to_path::<M>(&base_path))?;
 
         Ok(())
+    }
+}
+
+pub struct PersistableMeta<'a, M: Prefix> {
+    base_path: String,
+    meta: &'a mut Meta,
+    phantom: PhantomData<M>,
+}
+
+impl<'a, M: Prefix> PersistableMeta<'a, M> {
+    pub fn new(base_path: String, meta: &'a mut Meta) -> Self {
+        Self { base_path, meta, phantom: PhantomData::default() }
+    }
+
+    pub fn persist(&self) {
+        self.meta.serialize_to_file(&Meta::to_path::<M>(&self.base_path))?;
+    }
+}
+
+impl<'a, M: Prefix> Deref for PersistableMeta<'a, M> {
+    type Target = Meta;
+
+    fn deref(&self) -> &Self::Target {
+        self.meta
+    }
+}
+
+impl<'a, M: Prefix> DerefMut for PersistableMeta<'a, M> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.meta
     }
 }
