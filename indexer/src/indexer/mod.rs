@@ -1,17 +1,18 @@
 use std::{collections::HashMap, sync::Arc};
 
 use lighthouse_network::{Multiaddr, PeerId};
+use serde::Serialize;
 use store::EthSpec;
 use task_executor::TaskExecutor;
 use tokio::sync::{mpsc::Sender, watch::Receiver};
 use tracing::info;
-use types::{block_request::BlockRequestModelWithId, good_peer::GoodPeerModelWithId};
+use types::{block_request::BlockRequestModelWithId, good_peer::GoodPeerModelWithId, DeserializeOwned};
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
     db::Stores,
     network::{spawn_consensus_network, spawn_execution_network, ExecutionNetworkCommand},
-    workers::{spawn_index_worker, spawn_persist_block_worker},
+    workers::{spawn_index_worker, spawn_persist_block_worker, spawn_persist_validator_worker},
 };
 
 mod works;
@@ -20,14 +21,14 @@ mod works;
 pub struct Indexer;
 
 impl Indexer {
-    pub fn spawn_services<E: EthSpec>(
+    pub fn spawn_services<E: EthSpec + Serialize + DeserializeOwned>(
         self,
         dry: bool,
         base_dir: String,
         execution_node_url: String,
         executor: TaskExecutor,
         beacon_context: Arc<BeaconContext<E>>,
-        _: Sender<()>,
+        shutdown_handle: Sender<()>,
         shutdown_trigger: Receiver<()>,
     ) {
         self.spawn_indexer(
@@ -36,6 +37,7 @@ impl Indexer {
             base_dir,
             execution_node_url,
             beacon_context,
+            shutdown_handle,
             shutdown_trigger,
         );
     }
@@ -47,6 +49,7 @@ impl Indexer {
         base_dir: String,
         execution_node_url: String,
         beacon_context: Arc<BeaconContext<E>>,
+        shutdown_handle: Sender<()>,
         mut shutdown_trigger: Receiver<()>,
     ) {
         info!("Starting indexer");
@@ -60,17 +63,19 @@ impl Indexer {
                     .collect::<HashMap<PeerId, Multiaddr>>();
 
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
-                let stores = Arc::new(Stores::new(base_dir.clone(), beacon_context.genesis_state.clone(), block_requests.collect()));
+                let stores = Arc::new(Stores::new(base_dir.clone(), beacon_context.genesis_state.clone(), beacon_context.eth2_network_config.deposit_contract_deploy_block, block_requests.collect()));
 
                 let (execution_command_send, execution_event_recv) = spawn_execution_network(
                 execution_node_url.parse().unwrap(), beacon_context.clone(), &executor)
-                    .unwrap();
+                        .unwrap();
 
                 let (consensus_command_send, consensus_event_recv) = spawn_consensus_network(beacon_context.clone(), good_peers, &executor)
                     .await
                     .unwrap();
 
                 let new_block_send = spawn_persist_block_worker(base_dir.clone(), stores.clone(), shutdown_trigger.clone(), &executor);
+
+                let validator_event_send = spawn_persist_validator_worker(base_dir.clone(), stores.clone(), &executor, shutdown_handle);
 
                 let latest_deposit_block = *stores.get_latest_deposit_block().get_or_insert(beacon_context
                     .eth2_network_config
@@ -90,7 +95,7 @@ impl Indexer {
                     tokio::select! {
                         work = work_recv.recv(), if !dry => {
                             match work {
-                                Some(work) => works::handle(base_dir.clone(), work, &stores, &new_block_send, &executor),
+                                Some(work) => works::handle(base_dir.clone(), work, &stores, &new_block_send, &validator_event_send, &executor),
                                 None => {
                                     works::persist_indexing_state(&base_dir, &stores);
                                     works::persist_block_requests(&base_dir, &stores);
@@ -102,8 +107,12 @@ impl Indexer {
 
                         _ = shutdown_trigger.changed() => {
                             info!("Shutting down indexer...");
-                            work_recv.close();
-
+                            if dry {
+                                return;
+                            }
+                            else {
+                                work_recv.close();
+                            }
                         }
                     }
                 }

@@ -22,6 +22,7 @@ network = { path = "../lighthouse/beacon_node/network" }
 lighthouse_network = { path = "../lighthouse/beacon_node/lighthouse_network" }
 client = { path = "../lighthouse/beacon_node/client" }
 store = { path = "../lighthouse/beacon_node/store" }
+eth1 = { path = "../lighthouse/beacon_node/eth1" }
 eth2 = { path = "../lighthouse/common/eth2" }
 lighthouse_types = { package = "types", path = "../lighthouse/consensus/types" }
 sensitive_url = { path = "../lighthouse/common/sensitive_url" }

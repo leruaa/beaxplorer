@@ -21,6 +21,7 @@ pub fn build_stores(spec: ChainSpec) -> Arc<Stores<MainnetEthSpec>> {
     Arc::new(Stores::new(
         String::from(""),
         beacon_context.genesis_state.clone(),
+        100_000,
         vec![],
     ))
 }

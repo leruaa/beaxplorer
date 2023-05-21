@@ -14,7 +14,7 @@ use types::{
 
 use crate::{
     db::Stores, types::consolidated_block::ConsolidatedBlock, work::Work,
-    workers::spawn_persist_epoch_worker,
+    workers::{spawn_persist_epoch_worker, ValidatorEvent},
 };
 
 pub fn handle<E: EthSpec + Serialize>(
@@ -22,13 +22,16 @@ pub fn handle<E: EthSpec + Serialize>(
     work: Work<E>,
     stores: &Arc<Stores<E>>,
     new_block_send: &UnboundedSender<ConsolidatedBlock<E>>,
+    validator_event_send: &UnboundedSender<ValidatorEvent>,
     executor: &TaskExecutor,
 ) {
     match work {
         Work::PersistIndexingState() => {
-            persist_indexing_state(&base_dir, &stores);
+            persist_indexing_state(&base_dir, stores);
         },
 
+        Work::PersistDepositFromExecutionLayer(deposit) => {
+            validator_event_send.send(ValidatorEvent::NewDepositFromExecutionLayer(deposit)).unwrap()
         },
 
         Work::PersistBlock(block) => new_block_send.send(block).unwrap(),
@@ -49,7 +52,7 @@ pub fn handle<E: EthSpec + Serialize>(
 
 pub fn persist_indexing_state<E: EthSpec + Serialize>(base_dir: &str, stores: &Arc<Stores<E>>) {
     info!("Persisting indexing state");
-    stores.indexing_state().save(&base_dir).unwrap();
+    stores.indexing_state().save(base_dir).unwrap();
 }
 
 pub fn persist_block_requests<E: EthSpec>(base_dir: &str, stores: &Arc<Stores<E>>) {

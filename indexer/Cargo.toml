@@ -26,6 +26,7 @@ rand = "0.8.5"
 pin-project = "1.0.10"
 parking_lot = "0.12"
 lru = "0.10"
+eth2_ssz = "0.4.0"
 shared = { path = "../shared" }
 types = { path = "../types", features = ["indexing"] }
 indexer_macro = { path = "../indexer_macro" }
@@ -38,6 +39,7 @@ network = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 lighthouse_network = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 client = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 store = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
+eth1 = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 eth2 = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 state_processing = { git = "https://github.com/sigp/lighthouse", branch = "stable" }
 genesis = { git = "https://github.com/sigp/lighthouse", branch = "stable" }

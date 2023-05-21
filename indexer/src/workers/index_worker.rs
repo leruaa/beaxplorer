@@ -1,9 +1,10 @@
 use std::{
     collections::{BTreeMap, HashSet},
-    iter::once,
-    sync::Arc,
+    iter::{once, zip},
+    sync::Arc, ops::Range,
 };
 
+use eth1::DepositLog;
 use itertools::Itertools;
 use lighthouse_network::{NetworkEvent as ConsensusNetworkEvent, PeerId, Response};
 use lighthouse_types::{EthSpec, SignedBeaconBlock, Slot};
@@ -21,7 +22,7 @@ use types::{
 use crate::{
     db::Stores,
     network::{ConsensusNetworkCommand, ExecutionNetworkCommand, ExecutionNetworkEvent, RequestId},
-    types::block_state::BlockState, work::Work,
+    types::{block_state::BlockState, consolidated_execution_layer_deposit::ConsolidatedExecutionLayerDeposit}, work::Work,
 };
 
 pub fn spawn_index_worker<E: EthSpec>(
@@ -289,10 +290,8 @@ impl<E: EthSpec> IndexWorker<E> {
         match event {
             ExecutionNetworkEvent::NewDeposits(range, deposits) => {
                 info!(from = range.start, to = range.end, "Handling deposits");
-
-                self.work_send
-                    .send(Work::PersistDepositsFromExecutionLayer(deposits))
-                    .unwrap();
+                
+                self.process_deposits(deposits, range.start);
 
                 self.execution_command_send
                     .send(ExecutionNetworkCommand::RetrieveDeposits(
@@ -319,6 +318,43 @@ impl<E: EthSpec> IndexWorker<E> {
                 start_slot,
             })
             .map_err(|_| IndexError::SendMessage)
+    }
+
+    fn process_deposits(&self,deposit_logs: Vec<DepositLog>, start: u64) -> Result<(), String> {
+        let mut indexing_state = self.stores.indexing_state_mut();
+    
+        let deposit_logs = match indexing_state.insert_deposits(deposit_logs) {
+            Ok(deposit_logs) => deposit_logs,
+            Err((err, deposit_logs)) => {
+                error!(err);
+                deposit_logs
+            },
+        };
+
+        let deposits = indexing_state.get_deposits(start..start + deposit_logs.len() as u64)?;
+
+        zip(deposit_logs, deposits).try_for_each(|(log, d)| {
+             indexing_state.process_deposit(&d, log.index)
+                .and_then(|validator_index| {
+                    self
+                        .work_send
+                        .send(
+                        Work::PersistDepositFromExecutionLayer(
+                                ConsolidatedExecutionLayerDeposit::new(
+                                    log.index,
+                                    log.block_number,
+                                    d.data,
+                                    log.signature_is_valid,
+                                    d.proof,
+                                    validator_index
+                                )
+                            )
+                        )
+                        .map_err(|err| format!("Failed to send work message: {:?}", err))
+                })
+        });
+ 
+        todo!()
     }
 }
 
