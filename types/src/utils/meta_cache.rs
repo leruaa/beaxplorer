@@ -97,8 +97,8 @@ impl<'a, M: Prefix> PersistableMeta<'a, M> {
         Self { base_path, meta, phantom: PhantomData::default() }
     }
 
-    pub fn persist(&self) {
-        self.meta.serialize_to_file(&Meta::to_path::<M>(&self.base_path))?;
+    pub fn persist(&self) -> Result<(), String> {
+        self.meta.serialize_to_file(&Meta::to_path::<M>(&self.base_path))
     }
 }
 

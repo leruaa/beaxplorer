@@ -19,7 +19,7 @@ pub enum NetworkCommand {
 
 #[derive(Debug, Clone)]
 pub enum NetworkEvent {
-    NewDeposits(Vec<DepositLog>),
+    NewDeposits(Range<u64>, Vec<DepositLog>),
 }
 
 pub struct ExecutionNetwork {
@@ -74,7 +74,7 @@ impl ExecutionNetwork {
                                         "Deposit logs query succeeded"
                                     );
 
-                                    self.event_send.send(NetworkEvent::NewDeposits(logs)).unwrap();
+                                    self.event_send.send(NetworkEvent::NewDeposits(range, logs)).unwrap();
                                 }
                                 Err(err) => {
                                     error!(err)

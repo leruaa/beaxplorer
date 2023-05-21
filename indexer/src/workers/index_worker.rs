@@ -14,13 +14,14 @@ use tokio::{
     sync::mpsc::{self, UnboundedReceiver, UnboundedSender},
 };
 use tracing::{debug, error, info};
-use types::block_root::{BlockRootModel, BlockRootModelWithId};
+use types::{
+    block_root::{BlockRootModel, BlockRootModelWithId},
+};
 
 use crate::{
     db::Stores,
     network::{ConsensusNetworkCommand, ExecutionNetworkCommand, ExecutionNetworkEvent, RequestId},
-    types::block_state::BlockState,
-    work::Work,
+    types::block_state::BlockState, work::Work,
 };
 
 pub fn spawn_index_worker<E: EthSpec>(
@@ -84,16 +85,13 @@ impl<E: EthSpec> IndexWorker<E> {
                         Some(event) = self.consensus_event_recv.recv() => {
                             if let Err(err) = self.handle_consensus_event(event) {
                                 match err {
-                                    IndexError::SendMessage => {
-                                        info!("Shutting down index worker");
-                                        return;
-                                    },
+                                    IndexError::SendMessage=>{info!("Shutting down index worker");return;},
                                     IndexError::BlockProcessing(err) => error!("{err}"),
                                 }
                             }
                         },
                         Some(event) = self.execution_event_recv.recv() => {
-                            if let Err(_) = self.handle_execution_event(event) {
+                            if self.handle_execution_event(event).is_err() {
                                 error!("Execution event processing error")
                             }
                         },
@@ -287,8 +285,24 @@ impl<E: EthSpec> IndexWorker<E> {
         Ok(())
     }
 
-    fn handle_execution_event(&self, event: ExecutionNetworkEvent) -> Result<(), IndexError> {
-        todo!()
+    fn handle_execution_event(&mut self, event: ExecutionNetworkEvent) -> Result<(), IndexError> {
+        match event {
+            ExecutionNetworkEvent::NewDeposits(range, deposits) => {
+                info!(from = range.start, to = range.end, "Handling deposits");
+
+                self.work_send
+                    .send(Work::PersistDepositsFromExecutionLayer(deposits))
+                    .unwrap();
+
+                self.execution_command_send
+                    .send(ExecutionNetworkCommand::RetrieveDeposits(
+                        range.end..range.end + 1000,
+                    ))
+                    .unwrap();
+            }
+        }
+
+        Ok(())
     }
 
     fn send_range_request(&self, to: Option<PeerId>) -> Result<(), IndexError> {

@@ -9,7 +9,7 @@ pub struct Cli {
     #[clap(long, default_value = "../web/public/data")]
     pub base_dir: String,
 
-    #[clap(long)]
+    #[clap(long, env)]
     pub execution_node_url: String,
 }
 
