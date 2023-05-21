@@ -10,10 +10,8 @@ use types::{
     committee::CommitteeModel,
     deposit::ExecutionLayerDepositModel,
     meta::{DepositMeta, Meta},
-    utils::{MetaCache, ModelCache},
+    utils::{MetaCache, ModelCache}, DeserializeOwned, path::FromPath,
 };
-
-use crate::beacon_chain::beacon_context::BeaconContext;
 
 use self::indexing_state::IndexingState;
 
@@ -32,14 +30,15 @@ pub struct Stores<E: EthSpec> {
     meta_cache: Arc<RwLock<MetaCache>>,
 }
 
-impl<E: EthSpec> Stores<E> {
+impl<E: EthSpec + DeserializeOwned> Stores<E> {
     pub fn new(
         base_dir: String,
-        beacon_context: Arc<BeaconContext<E>>,
+        genesis_state: BeaconState<E>,
         block_requests: Vec<BlockRequestModelWithId>,
     ) -> Self {
+        let indexing_state = IndexingState::from_path( &base_dir, &()).unwrap_or_else(|_| IndexingState::new(genesis_state));
         Self {
-            indexing_state: RwLock::new(IndexingState::new(beacon_context)),
+            indexing_state: RwLock::new(indexing_state),
             block_by_root_requests: RwLock::new(BlockByRootRequests::from_block_requests(
                 block_requests,
             )),
@@ -48,7 +47,9 @@ impl<E: EthSpec> Stores<E> {
             meta_cache: Arc::new(RwLock::new(MetaCache::new(base_dir))),
         }
     }
+}
 
+impl<E: EthSpec> Stores<E> {
     pub fn indexing_state(&self) -> RwLockReadGuard<IndexingState<E>> {
         self.indexing_state.read()
     }
@@ -84,6 +85,12 @@ impl<E: EthSpec> Stores<E> {
     pub fn beacon_state(&self) -> MappedRwLockReadGuard<BeaconState<E>> {
         RwLockReadGuard::map(self.indexing_state(), |indexing_state| {
             &indexing_state.beacon_state
+        })
+    }
+
+    pub fn beacon_state_mut(&self) -> MappedRwLockWriteGuard<BeaconState<E>> {
+        RwLockWriteGuard::map(self.indexing_state_mut(), |indexing_state| {
+            &mut indexing_state.beacon_state
         })
     }
 

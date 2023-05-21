@@ -40,7 +40,7 @@ impl Indexer {
         );
     }
 
-    fn spawn_indexer<E: EthSpec>(
+    fn spawn_indexer<E: EthSpec + Serialize + DeserializeOwned>(
         &self,
         executor: TaskExecutor,
         dry: bool,
@@ -60,7 +60,7 @@ impl Indexer {
                     .collect::<HashMap<PeerId, Multiaddr>>();
 
                 let block_requests = BlockRequestModelWithId::iter(&base_dir).unwrap();
-                let stores = Arc::new(Stores::new(base_dir.clone(), beacon_context.clone(), block_requests.collect()));
+                let stores = Arc::new(Stores::new(base_dir.clone(), beacon_context.genesis_state.clone(), block_requests.collect()));
 
                 let (execution_command_send, execution_event_recv) = spawn_execution_network(
                 execution_node_url.parse().unwrap(), beacon_context.clone(), &executor)
@@ -92,6 +92,7 @@ impl Indexer {
                             match work {
                                 Some(work) => works::handle(base_dir.clone(), work, &stores, &new_block_send, &executor),
                                 None => {
+                                    works::persist_indexing_state(&base_dir, &stores);
                                     works::persist_block_requests(&base_dir, &stores);
                                     works::persist_good_peers(&base_dir, &stores);
                                     return

@@ -3,6 +3,7 @@ use std::{fmt::Display, marker::PhantomData, ops::Div};
 use eth2::lighthouse::GlobalValidatorInclusionData;
 
 use lighthouse_types::{Epoch, EthSpec};
+use serde::{Serialize, Deserialize};
 use shared::utils::clock::Clock;
 use state_processing::per_epoch_processing::EpochProcessingSummary;
 
@@ -111,7 +112,7 @@ impl<E: EthSpec> From<&ConsolidatedEpoch<E>> for EpochExtendedModelWithId {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AggregatedEpochData {
     pub proposed_blocks_count: usize,
     pub missed_blocks_count: usize,

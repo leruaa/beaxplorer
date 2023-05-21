@@ -1,13 +1,15 @@
 use std::sync::Arc;
 
 use lighthouse_types::EthSpec;
+use serde::Serialize;
 use task_executor::TaskExecutor;
 use tokio::sync::mpsc::UnboundedSender;
 
+use tracing::info;
 use types::{
     block_request::{BlockRequestModel, BlockRequestModelWithId},
     good_peer::{GoodPeerModel, GoodPeerModelWithId},
-    persistable::ResolvablePersistable,
+    persistable::{ResolvablePersistable},
 };
 
 use crate::{
@@ -15,7 +17,7 @@ use crate::{
     workers::spawn_persist_epoch_worker,
 };
 
-pub fn handle<E: EthSpec>(
+pub fn handle<E: EthSpec + Serialize>(
     base_dir: String,
     work: Work<E>,
     stores: &Arc<Stores<E>>,
@@ -23,6 +25,12 @@ pub fn handle<E: EthSpec>(
     executor: &TaskExecutor,
 ) {
     match work {
+        Work::PersistIndexingState() => {
+            persist_indexing_state(&base_dir, &stores);
+        },
+
+        },
+
         Work::PersistBlock(block) => new_block_send.send(block).unwrap(),
 
         Work::PersistEpoch(epoch) => spawn_persist_epoch_worker(base_dir, epoch, stores, executor),
@@ -37,6 +45,11 @@ pub fn handle<E: EthSpec>(
 
         Work::PersistAllGoodPeers => persist_good_peers(&base_dir, stores),
     }
+}
+
+pub fn persist_indexing_state<E: EthSpec + Serialize>(base_dir: &str, stores: &Arc<Stores<E>>) {
+    info!("Persisting indexing state");
+    stores.indexing_state().save(&base_dir).unwrap();
 }
 
 pub fn persist_block_requests<E: EthSpec>(base_dir: &str, stores: &Arc<Stores<E>>) {

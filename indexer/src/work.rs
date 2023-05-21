@@ -5,6 +5,7 @@ use crate::types::{consolidated_block::ConsolidatedBlock, consolidated_epoch::Co
 
 #[derive(Debug)]
 pub enum Work<E: EthSpec> {
+    PersistIndexingState(),
     PersistBlock(ConsolidatedBlock<E>),
     PersistEpoch(ConsolidatedEpoch<E>),
     PersistBlockRequest(Hash256, RequestAttempts),

@@ -1,16 +1,12 @@
-use std::sync::Arc;
-
-use genesis::{bls_withdrawal_credentials, generate_deterministic_keypairs};
-use lighthouse_types::{
-    BeaconState, ChainSpec, DepositData, EthSpec, RelativeEpoch, Signature, Slot, Validator,
-};
+use lighthouse_types::{BeaconState, ChainSpec, EthSpec, RelativeEpoch, Slot};
+use serde::{Deserialize, Deserializer, Serialize};
 use state_processing::{
     per_block_processing, per_epoch_processing, per_slot_processing, BlockSignatureStrategy,
     ConsensusContext, VerifyBlockRoot,
 };
+use types::{persistable::{MsgPackSerializable, ResolvablePersistable}, path::ToPath};
 
 use crate::{
-    beacon_chain::beacon_context::BeaconContext,
     types::{
         block_state::BlockState,
         consolidated_block::ConsolidatedBlock,
@@ -18,21 +14,23 @@ use crate::{
     },
 };
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct IndexingState<E: EthSpec> {
     is_genesis: bool,
     aggregated_epoch_data: AggregatedEpochData,
     pub(super) beacon_state: BeaconState<E>,
+    #[serde(skip_serializing)]
+    #[serde(deserialize_with = "spec::<_, E>")]
     pub(super) spec: ChainSpec,
 }
 
 impl<E: EthSpec> IndexingState<E> {
-    pub fn new(beacon_context: Arc<BeaconContext<E>>) -> Self {
+    pub fn new(genesis_state: BeaconState<E>) -> Self {
         Self {
             is_genesis: true,
             aggregated_epoch_data: AggregatedEpochData::default(),
-            beacon_state: beacon_context.genesis_state.clone(),
-            spec: beacon_context.spec.clone(),
+            beacon_state: genesis_state,
+            spec: E::default_spec(),
         }
     }
 
@@ -114,19 +112,13 @@ impl<E: EthSpec> IndexingState<E> {
                 .collect()
         };
 
-        let deposits = if slot == 0 {
-            get_genesis_deposits(beacon_state.validators().to_vec(), &self.spec)
-        } else {
-            vec![]
-        };
-
         let consolidated_block = ConsolidatedBlock::new(
             block,
             consensus_context
                 .get_proposer_index(&beacon_state, &self.spec)
                 .map_err(|err| format!("Error while processing proposer: {err:?}"))?,
             committees,
-            deposits,
+            vec![],
         );
 
         self.beacon_state = beacon_state;
@@ -136,28 +128,26 @@ impl<E: EthSpec> IndexingState<E> {
     }
 }
 
-fn get_genesis_deposits(validators: Vec<Validator>, spec: &ChainSpec) -> Vec<DepositData> {
-    let keypairs = generate_deterministic_keypairs(validators.len());
-    let withdrawal_credentials = keypairs
-        .iter()
-        .map(|keypair| bls_withdrawal_credentials(&keypair.pk, spec));
 
-    keypairs
-        .iter()
-        .zip(withdrawal_credentials)
-        .map(|(keypair, withdrawal_credentials)| {
-            let mut data = DepositData {
-                withdrawal_credentials,
-                pubkey: keypair.pk.clone().into(),
-                amount: 32,
-                signature: Signature::empty().into(),
-            };
+impl<E: EthSpec + Serialize> MsgPackSerializable for IndexingState<E> {}
 
-            data.signature = data.create_signature(&keypair.sk, spec);
+impl <E: EthSpec + Serialize> ResolvablePersistable for IndexingState<E> {
+    fn save(&self, base_path: &str) -> Result<(), String> {
+        let full_path = Self::to_path(base_path, &());
+        self.serialize_to_file(&full_path)
+    }
+}
 
-            data
-        })
-        .collect()
+impl<E: EthSpec> ToPath for IndexingState<E> {
+    type Id = ();
+
+    fn to_path(base_dir: &str, id: &Self::Id) -> String {
+        format!("{}/indexing_state.msg", base_dir)
+    }
+}
+
+fn spec<'de, D, E: EthSpec>(deserializer: D) -> Result<ChainSpec, D::Error> where D: Deserializer<'de> {
+    Ok(E::default_spec())
 }
 
 #[cfg(test)]
@@ -183,7 +173,7 @@ mod tests {
         let mut harness = BeaconChainHarness::new();
         let beacon_context =
             BeaconContext::<MainnetEthSpec>::new(harness.state(), harness.spec()).unwrap();
-        let mut indexing_state = IndexingState::new(Arc::new(beacon_context));
+        let mut indexing_state = IndexingState::new(beacon_context.genesis_state);
 
         let at_0 = Arc::new(harness.make_block(0).await);
         let at_1 = Arc::new(harness.make_block(1).await);
