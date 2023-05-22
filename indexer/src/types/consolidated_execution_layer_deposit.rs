@@ -9,7 +9,7 @@ pub struct ConsolidatedExecutionLayerDeposit {
     deposit_data: DepositData,
     is_signature_valid: bool,
     proof: FixedVector<Hash256, U33>,
-    validator_index: Option<u64>
+    validator_index: u64
 }
 
 impl ConsolidatedExecutionLayerDeposit {
@@ -18,7 +18,7 @@ impl ConsolidatedExecutionLayerDeposit {
         deposit_data: DepositData,
         is_signature_valid: bool,
         proof: FixedVector<Hash256, U33>,
-        validator_index: Option<u64>,
+        validator_index: u64,
     ) -> Self {
         Self {
             index,

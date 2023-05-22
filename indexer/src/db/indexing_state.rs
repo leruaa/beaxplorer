@@ -160,16 +160,16 @@ impl<E: EthSpec> IndexingState<E> {
         Ok(deposits)
     }
 
-    pub fn process_deposit(&mut self, deposit: &Deposit, index: u64) -> Result<Option<u64>, String> {
+    pub fn process_deposit(&mut self, deposit: &Deposit, index: u64) -> Result<u64, String> {
         if index > self.beacon_state.eth1_deposit_index() {
             process_deposit(&mut self.beacon_state, deposit, &self.spec, true)
                 .map_err(|err| format!("Failed to process deposit '{}': {:?}", index, err))?;
         }
         
         let validator_index = get_existing_validator_index(&mut self.beacon_state, &deposit.data.pubkey)
-            .map_err(|err| format!("Failed to find deposit validator: {:?}", err))?;
+            .map_err(|err| format!("Failed to find validator for deposit '{}': {:?}", index, err))?;
 
-        Ok(validator_index)
+        validator_index.ok_or(format!("Failed to find validator for deposit '{}'", index))
     }
 }
 
