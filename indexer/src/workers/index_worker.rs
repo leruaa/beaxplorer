@@ -1,7 +1,7 @@
 use std::{
     collections::{BTreeMap, HashSet},
     iter::{once, zip},
-    sync::Arc, ops::Range,
+    sync::Arc,
 };
 
 use eth1::DepositLog;
@@ -291,11 +291,17 @@ impl<E: EthSpec> IndexWorker<E> {
             ExecutionNetworkEvent::NewDeposits(range, deposits) => {
                 info!(from = range.start, to = range.end, "Handling deposits");
                 
-                self.process_deposits(deposits, range.start);
+                let next_start = match self.process_deposits(deposits, range.start) {
+                    Ok(processed_deposits) => range.start + processed_deposits,
+                    Err((err, processed_deposits)) => {
+                        error!(err);
+                        range.start + processed_deposits
+                    },
+                };
 
                 self.execution_command_send
                     .send(ExecutionNetworkCommand::RetrieveDeposits(
-                        range.end..range.end + 1000,
+                        next_start..next_start + 1000,
                     ))
                     .unwrap();
             }
@@ -320,7 +326,7 @@ impl<E: EthSpec> IndexWorker<E> {
             .map_err(|_| IndexError::SendMessage)
     }
 
-    fn process_deposits(&self,deposit_logs: Vec<DepositLog>, start: u64) -> Result<(), String> {
+    fn process_deposits(&self,deposit_logs: Vec<DepositLog>, start: u64) -> Result<u64, (String, u64)> {
         let mut indexing_state = self.stores.indexing_state_mut();
     
         let deposit_logs = match indexing_state.insert_deposits(deposit_logs) {
@@ -331,9 +337,11 @@ impl<E: EthSpec> IndexWorker<E> {
             },
         };
 
-        let deposits = indexing_state.get_deposits(start..start + deposit_logs.len() as u64)?;
+        let deposits = indexing_state.get_deposits(start..start + deposit_logs.len() as u64)
+            .map_err(|err| (err, 0))?;
 
-        zip(deposit_logs, deposits).try_for_each(|(log, d)| {
+        zip(deposit_logs, deposits)
+            .try_fold(0_u64,|acc, (log, d)| {
              indexing_state.process_deposit(&d, log.index)
                 .and_then(|validator_index| {
                     self
@@ -352,9 +360,9 @@ impl<E: EthSpec> IndexWorker<E> {
                         )
                         .map_err(|err| format!("Failed to send work message: {:?}", err))
                 })
-        });
- 
-        todo!()
+                .map(|_| acc + 1)
+                .map_err(|err| (err, acc))
+        })
     }
 }
 
