@@ -34,8 +34,8 @@ where
         self.cache.peek(id)
     }
 
-    pub fn contains(&self, id: P::Id) -> bool {
-        self.cache.contains(&id)
+    pub fn contains(&self, id: &P::Id) -> bool {
+        self.cache.contains(id)
     }
 }
 

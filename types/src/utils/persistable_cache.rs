@@ -35,7 +35,7 @@ where
         self.cache.put(value);
     }
 
-    pub fn contains(&self, id: P::Id) -> bool {
+    pub fn contains(&self, id: &P::Id) -> bool {
         self.cache.contains(id)
     }
 }

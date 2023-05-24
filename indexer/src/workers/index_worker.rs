@@ -222,7 +222,7 @@ impl<E: EthSpec> IndexWorker<E> {
                                 !self.stores
                                     .block_roots_cache()
                                     .write()
-                                    .contains(format!("{r:?}"))
+                                    .contains(&format!("{r:?}"))
                             })
                             .try_for_each(|(slot, root)| {
                                 info!(%slot, %root, "Unknown root while processing block {}", block.slot());
