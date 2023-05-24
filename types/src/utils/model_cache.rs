@@ -153,6 +153,13 @@ where
             Entry::Vacant(v) => v.insert(default()),
         }
     }
+
+    pub fn update_or_insert(self, model: P) -> &'a mut ModelWithId<P::Id, P> {
+        match self {
+            Entry::Occupied(e) => e.update(model),
+            Entry::Vacant(e) => e.insert(model),
+        }
+    }
 }
 
 pub struct OccupiedEntry<'a, P>
@@ -178,6 +185,11 @@ where
             cache,
             key,
         }
+    }
+
+    pub fn update(self, model: P) -> &'a mut ModelWithId<P::Id, P> {
+        self.cache.put(ModelWithId { id: self.key.clone(), model });
+        self.cache.get_mut(self.key).expect("Should not happen")
     }
 
     pub fn get_mut(&mut self) -> &mut ModelWithId<P::Id, P> {

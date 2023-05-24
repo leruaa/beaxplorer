@@ -3,8 +3,6 @@ use serde::Deserialize;
 use serde::Serialize;
 #[cfg(feature = "wasm")]
 use tsify::Tsify;
-#[cfg(feature = "wasm")]
-use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
 #[cfg_attr(feature = "wasm", derive(Tsify))]

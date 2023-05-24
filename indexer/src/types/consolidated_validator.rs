@@ -1,57 +1,65 @@
-use eth2::types::{StateId, ValidatorData};
-use types::validator::{ValidatorModel, ValidatorModelWithId};
+use std::marker::PhantomData;
 
-use crate::{beacon_node_client::BeaconNodeClient, errors::IndexerError};
+use eth2::types::ValidatorStatus;
+use lighthouse_types::{Epoch, EthSpec, Validator};
+use types::validator::ValidatorModel;
 
 #[derive(Debug)]
-pub struct ConsolidatedValidator(pub ValidatorData);
+pub struct ConsolidatedValidator<'a, E: EthSpec> {
+    validator: &'a Validator,
+    current_epoch: Epoch,
+    balance: &'a u64,
+    phantom: PhantomData<E>,
+}
 
-impl ConsolidatedValidator {
-    pub async fn from_state(
-        state: StateId,
-        client: BeaconNodeClient,
-    ) -> Result<Vec<Self>, IndexerError> {
-        client
-            .get_validators(state)
-            .await
-            .map(|validators| validators.into_iter().map(ConsolidatedValidator).collect())
+impl<'a, E: EthSpec> ConsolidatedValidator<'a, E> {
+    pub fn new(validator: &'a Validator, current_epoch: Epoch, balance: &'a u64) -> Self {
+        Self {
+            validator,
+            current_epoch,
+            balance,
+            phantom: PhantomData::default(),
+        }
+    }
+
+    pub fn status(&self) -> ValidatorStatus {
+        ValidatorStatus::from_validator(
+            &self.validator,
+            self.current_epoch,
+            E::default_spec().far_future_epoch,
+        )
     }
 }
 
-impl From<&ConsolidatedValidator> for ValidatorModelWithId {
-    fn from(value: &ConsolidatedValidator) -> Self {
-        let model = ValidatorModel {
-            pubkey: value.0.validator.pubkey.as_serialized().to_vec(),
-            pubkey_hex: value.0.validator.pubkey.to_string(),
-            withdrawable_epoch: match value.0.validator.withdrawable_epoch.as_u64() {
-                u64::MAX => None,
-                x => Some(x),
-            },
-            withdrawal_credentials: value.0.validator.withdrawal_credentials.as_bytes().to_vec(),
-            balance: value.0.balance,
-            balance_activation: value.0.validator.activation_epoch.as_u64(),
-            effective_balance: value.0.validator.effective_balance,
-            slashed: value.0.validator.slashed,
-            activation_eligibility_epoch: match value
-                .0
-                .validator
-                .activation_eligibility_epoch
-                .as_u64()
-            {
-                u64::MAX => None,
-                x => Some(x),
-            },
-            activation_epoch: value.0.validator.activation_epoch.as_u64(),
-            exit_epoch: match value.0.validator.exit_epoch.as_u64() {
-                u64::MAX => None,
-                x => Some(x),
-            },
-            status: value.0.status.to_string(),
-        };
+impl<'a, E: EthSpec> From<ConsolidatedValidator<'a, E>> for ValidatorModel {
+    fn from(value: ConsolidatedValidator<E>) -> Self {
+        let far_future_epoch = E::default_spec().far_future_epoch;
 
-        ValidatorModelWithId {
-            id: value.0.index,
-            model,
+        ValidatorModel {
+            pubkey: value.validator.pubkey.to_string(),
+            withdrawal_credentials: format!("{:?}", value.validator.withdrawal_credentials),
+            balance: *value.balance,
+            effective_balance: value.validator.effective_balance,
+            slashed: value.validator.slashed,
+            activation_eligibility_epoch: to_epoch_option(
+                value.validator.activation_eligibility_epoch,
+                far_future_epoch,
+            ),
+            activation_epoch: value.validator.activation_epoch.as_u64(),
+            exit_epoch: to_epoch_option(value.validator.exit_epoch, far_future_epoch),
+            withdrawable_epoch: to_epoch_option(
+                value.validator.withdrawable_epoch,
+                far_future_epoch,
+            ),
+            status: value.status().to_string(),
         }
+    }
+}
+
+fn to_epoch_option(epoch: Epoch, far_future_epoch: Epoch) -> Option<u64> {
+    if epoch == far_future_epoch {
+        None
+    } else {
+        Some(epoch.as_u64())
     }
 }

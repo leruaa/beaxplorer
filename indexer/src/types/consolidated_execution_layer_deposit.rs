@@ -4,12 +4,12 @@ use types::deposit::{ExecutionLayerDepositModelWithId, ExecutionLayerDepositMode
 
 #[derive(Debug, Clone)]
 pub struct ConsolidatedExecutionLayerDeposit {
-    index: u64,
-    block_number: u64,
-    deposit_data: DepositData,
-    is_signature_valid: bool,
-    proof: FixedVector<Hash256, U33>,
-    validator_index: u64
+    pub index: u64,
+    pub block_number: u64,
+    pub deposit_data: DepositData,
+    pub is_signature_valid: bool,
+    pub proof: FixedVector<Hash256, U33>,
+    pub validator_index: u64
 }
 
 impl ConsolidatedExecutionLayerDeposit {

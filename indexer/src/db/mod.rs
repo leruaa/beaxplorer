@@ -10,7 +10,7 @@ use types::{
     committee::CommitteeModel,
     deposit::ExecutionLayerDepositModel,
     meta::{DepositMeta, Meta},
-    utils::{MetaCache, ModelCache}, DeserializeOwned, path::FromPath,
+    utils::{MetaCache, ModelCache}, DeserializeOwned, path::FromPath, validator::{ValidatorModel, ValidatorExtendedModel},
 };
 
 use self::indexing_state::IndexingState;
@@ -27,6 +27,8 @@ pub struct Stores<E: EthSpec> {
     block_by_root_requests: RwLock<BlockByRootRequests>,
     block_roots_cache: Arc<RwLock<ModelCache<BlockRootModel>>>,
     committees_cache: Arc<RwLock<ModelCache<Vec<CommitteeModel>>>>,
+    validators_cache: Arc<RwLock<ModelCache<ValidatorModel>>>,
+    validators_extended_cache: Arc<RwLock<ModelCache<ValidatorExtendedModel>>>,
     meta_cache: Arc<RwLock<MetaCache>>,
 }
 
@@ -45,6 +47,8 @@ impl<E: EthSpec + DeserializeOwned> Stores<E> {
             )),
             block_roots_cache: Arc::new(RwLock::new(ModelCache::new(base_dir.clone()))),
             committees_cache: Arc::new(RwLock::new(ModelCache::new(base_dir.clone()))),
+            validators_cache: Arc::new(RwLock::new(ModelCache::new(base_dir.clone()))),
+            validators_extended_cache: Arc::new(RwLock::new(ModelCache::new(base_dir.clone()))),
             meta_cache: Arc::new(RwLock::new(MetaCache::new(base_dir))),
         }
     }
@@ -73,6 +77,14 @@ impl<E: EthSpec> Stores<E> {
 
     pub fn committees_cache(&self) -> &RwLock<ModelCache<Vec<CommitteeModel>>> {
         self.committees_cache.as_ref()
+    }
+
+    pub fn validators_cache(&self) -> &RwLock<ModelCache<ValidatorModel>> {
+        self.validators_cache.as_ref()
+    }
+
+    pub fn validators_extended_cache(&self) -> &RwLock<ModelCache<ValidatorExtendedModel>> {
+        self.validators_extended_cache.as_ref()
     }
 
     pub fn meta_cache(&self) -> RwLockReadGuard<MetaCache> {
