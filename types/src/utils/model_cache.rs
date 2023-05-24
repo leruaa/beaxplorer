@@ -67,6 +67,15 @@ where
         self.cache
             .get_mut(&id)
     }
+    
+    pub fn entry(&mut self, id: P::Id) -> Entry<'_, P> {
+        if self.contains(&id) {
+            Entry::Occupied(OccupiedEntry::new(self, id))
+        }
+        else {
+            Entry::Vacant(VacantEntry::new(self, id))
+        }
+    }
 }
 
 impl<P> ModelCache<P>
@@ -102,5 +111,113 @@ where
         }
 
         Ok(())
+    }
+}
+
+pub enum Entry<'a, P>
+where
+    P: FromPath,
+    P::Id: Hash + Eq + Clone
+{
+    Occupied(OccupiedEntry<'a, P>),
+    Vacant(VacantEntry<'a, P>),
+}
+
+impl<'a, P> Entry<'a, P>
+where
+    P: FromPath,
+    P::Id: Hash + Eq + Clone
+{
+    pub fn and_modify<F>(self, f: F) -> Self
+    where F: FnOnce(&mut ModelWithId<P::Id, P>)
+    {
+        match self {
+            Entry::Occupied(mut e) => {
+                f(e.get_mut());
+                Entry::Occupied(e)
+            },
+            Entry::Vacant(e) =>Entry::Vacant(e),
+        }
+    }
+
+    pub fn or_insert(self, model: P) -> &'a mut ModelWithId<P::Id, P> {
+        match self {
+            Entry::Occupied(e) => e.into_mut(),
+            Entry::Vacant(e) => e.insert(model),
+        }
+    }
+
+    pub fn or_insert_with<F: FnOnce() -> P>(self, default: F) -> &'a mut ModelWithId<P::Id, P> {
+        match self {
+            Entry::Occupied(o) => o.into_mut(),
+            Entry::Vacant(v) => v.insert(default()),
+        }
+    }
+}
+
+pub struct OccupiedEntry<'a, P>
+where
+    P: FromPath,
+    P::Id: Hash + Eq + Clone
+{
+    cache: &'a mut ModelCache<P>,
+    key: P::Id,
+}
+
+
+impl<'a, P> OccupiedEntry<'a, P>
+where
+    P: FromPath,
+    P::Id: Hash + Eq + Clone
+{
+    pub fn new(
+        cache: &'a mut ModelCache<P>,
+        key: P::Id,
+    ) -> Self {
+        Self {
+            cache,
+            key,
+        }
+    }
+
+    pub fn get_mut(&mut self) -> &mut ModelWithId<P::Id, P> {
+        self.cache.get_mut(self.key.clone()).expect("Should not happen")
+    }
+
+    pub fn into_mut(self) -> &'a mut ModelWithId<P::Id, P> {
+        self.cache.get_mut(self.key).expect("Should not happen")
+    }
+}
+
+pub struct VacantEntry<'a, P>
+where
+    P: FromPath,
+    P::Id: Hash + Eq
+{
+    cache: &'a mut ModelCache<P>,
+    key: P::Id,
+}
+
+impl<'a, P> VacantEntry<'a, P>
+where
+    P: FromPath,
+    P::Id: Hash + Eq +
+{
+    pub fn new(cache: &'a mut ModelCache<P>, key: P::Id) -> Self {
+        Self {
+            cache,
+            key,
+        }
+    }
+}
+
+impl<'a, P> VacantEntry<'a, P>
+where
+    P: FromPath,
+    P::Id: Hash + Eq + Clone
+{
+    pub fn insert(self, model: P) -> &'a mut ModelWithId<P::Id, P> {
+        self.cache.put(ModelWithId { id: self.key.clone(), model });
+        self.cache.get_mut(self.key).expect("Should not happen")
     }
 }
