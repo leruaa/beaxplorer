@@ -92,7 +92,7 @@ fn persist_block<E: EthSpec>(
         .unwrap();
 
     block.attestations().iter().try_for_each(|attestation| {
-        if let Ok(m) =
+        if let Some(m) =
             block_roots_cache.get_mut(format!("{:?}", attestation.data.beacon_block_root))
         {
             let slot = attestation.data.slot.as_u64();
@@ -106,7 +106,8 @@ fn persist_block<E: EthSpec>(
                     committee_index: attestation.data.index,
                     validators: get_attesting_indices::<E>(
                         &committees_cache
-                            .get_mut(slot)?
+                            .get_mut(slot)
+                            .ok_or(format!("The committee at {} can't be found", slot))?
                             .model
                             .get(attestation.data.index as usize)
                             .ok_or(format!(

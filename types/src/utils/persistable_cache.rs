@@ -45,7 +45,7 @@ where
     P: FromPath,
     P::Id: Hash + Eq + Clone,
 {
-    pub fn get_mut(&mut self, id: P::Id) -> Result<&mut ModelWithId<P::Id, P>, String> {
+    pub fn get_mut(&mut self, id: P::Id) -> Option<&mut ModelWithId<P::Id, P>> {
         self.dirty.insert(id.clone());
         self.cache.get_mut(id)
     }

@@ -48,20 +48,24 @@ where
         self.cache.put(value.id.clone(), value);
     }
 
-    pub fn get_mut(&mut self, id: P::Id) -> Result<&mut ModelWithId<P::Id, P>, String> {
+    pub fn get_mut(&mut self, id: P::Id) -> Option<&mut ModelWithId<P::Id, P>> {
         let base_dir = self.base_path.clone();
 
         if !self.cache.contains(&id) {
-            let model = ModelWithId {
-                id: id.clone(),
-                model: P::from_path(&base_dir, &id)?,
-            };
-            self.cache.put(id.clone(), model);
+            if let Ok(model) = P::from_path(&base_dir, &id) {
+
+                self.cache.put(
+                    id.clone(),
+                    ModelWithId {
+                        id: id.clone(),
+                        model,
+                    }
+                );
+            }
         }
 
         self.cache
             .get_mut(&id)
-            .ok_or(String::from("Should never happen"))
     }
 }
 
@@ -90,11 +94,12 @@ where
         F: FnOnce(&mut ModelWithId<P::Id, P>),
     {
         let base_path = self.base_path.clone();
-        let model_with_id = self.get_mut(id)?;
+        
+        if let Some(model_with_id) = self.get_mut(id) {
+            f(model_with_id);
 
-        f(model_with_id);
-
-        model_with_id.save(&base_path)?;
+            model_with_id.save(&base_path)?;
+        }
 
         Ok(())
     }
