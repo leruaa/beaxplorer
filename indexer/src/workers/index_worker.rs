@@ -15,14 +15,16 @@ use tokio::{
     sync::mpsc::{self, UnboundedReceiver, UnboundedSender},
 };
 use tracing::{debug, error, info};
-use types::{
-    block_root::{BlockRootModel, BlockRootModelWithId},
-};
+use types::block_root::{BlockRootModel, BlockRootModelWithId};
 
 use crate::{
     db::Stores,
     network::{ConsensusNetworkCommand, ExecutionNetworkCommand, ExecutionNetworkEvent, RequestId},
-    types::{block_state::BlockState, consolidated_execution_layer_deposit::ConsolidatedExecutionLayerDeposit}, work::Work,
+    types::{
+        block_state::BlockState,
+        consolidated_execution_layer_deposit::ConsolidatedExecutionLayerDeposit,
+    },
+    work::Work,
 };
 
 pub fn spawn_index_worker<E: EthSpec>(
@@ -290,13 +292,13 @@ impl<E: EthSpec> IndexWorker<E> {
         match event {
             ExecutionNetworkEvent::NewDeposits(range, deposits) => {
                 info!(from = range.start, to = range.end, "Handling deposits");
-                
+
                 let next_start = match self.process_deposits(deposits, range.start) {
                     Ok(processed_deposits) => range.start + processed_deposits,
                     Err((err, processed_deposits)) => {
                         error!(err);
                         range.start + processed_deposits
-                    },
+                    }
                 };
 
                 self.execution_command_send
@@ -326,38 +328,40 @@ impl<E: EthSpec> IndexWorker<E> {
             .map_err(|_| IndexError::SendMessage)
     }
 
-    fn process_deposits(&self,deposit_logs: Vec<DepositLog>, start: u64) -> Result<u64, (String, u64)> {
+    fn process_deposits(
+        &self,
+        deposit_logs: Vec<DepositLog>,
+        start: u64,
+    ) -> Result<u64, (String, u64)> {
         let mut indexing_state = self.stores.indexing_state_mut();
-    
+
         let deposit_logs = match indexing_state.insert_deposits(deposit_logs) {
             Ok(deposit_logs) => deposit_logs,
             Err((err, deposit_logs)) => {
                 error!(err);
                 deposit_logs
-            },
+            }
         };
 
-        let deposits = indexing_state.get_deposits(start..start + deposit_logs.len() as u64)
+        let deposits = indexing_state
+            .get_deposits(start..start + deposit_logs.len() as u64)
             .map_err(|err| (err, 0))?;
 
-        zip(deposit_logs, deposits)
-            .try_fold(0_u64,|acc, (log, d)| {
-             indexing_state.process_deposit(&d, log.index)
+        zip(deposit_logs, deposits).try_fold(0_u64, |acc, (log, d)| {
+            indexing_state
+                .process_deposit(&d, log.index)
                 .and_then(|validator_index| {
-                    self
-                        .work_send
-                        .send(
-                        Work::PersistDepositFromExecutionLayer(
-                                ConsolidatedExecutionLayerDeposit::new(
-                                    log.index,
-                                    log.block_number,
-                                    d.data,
-                                    log.signature_is_valid,
-                                    d.proof,
-                                    validator_index
-                                )
-                            )
-                        )
+                    self.work_send
+                        .send(Work::PersistDepositFromExecutionLayer(
+                            ConsolidatedExecutionLayerDeposit::new(
+                                log.index,
+                                log.block_number,
+                                d.data,
+                                log.signature_is_valid,
+                                d.proof,
+                                validator_index,
+                            ),
+                        ))
                         .map_err(|err| format!("Failed to send work message: {:?}", err))
                 })
                 .map(|_| acc + 1)

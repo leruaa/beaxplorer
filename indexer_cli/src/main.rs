@@ -6,8 +6,8 @@ use dotenv::dotenv;
 use indexer::launcher;
 use span_duration::SpanDurationLayer;
 use tracing_subscriber::{
-    filter::LevelFilter, util::SubscriberInitExt,
-    EnvFilter, Layer, prelude::__tracing_subscriber_SubscriberExt,
+    filter::LevelFilter, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
+    EnvFilter, Layer,
 };
 
 use crate::cli::Cli;

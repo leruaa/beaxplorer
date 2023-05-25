@@ -53,26 +53,23 @@ where
 
         if !self.cache.contains(&id) {
             if let Ok(model) = P::from_path(&base_dir, &id) {
-
                 self.cache.put(
                     id.clone(),
                     ModelWithId {
                         id: id.clone(),
                         model,
-                    }
+                    },
                 );
             }
         }
 
-        self.cache
-            .get_mut(&id)
+        self.cache.get_mut(&id)
     }
-    
+
     pub fn entry(&mut self, id: P::Id) -> Entry<'_, P> {
         if self.contains(&id) {
             Entry::Occupied(OccupiedEntry::new(self, id))
-        }
-        else {
+        } else {
             Entry::Vacant(VacantEntry::new(self, id))
         }
     }
@@ -103,7 +100,7 @@ where
         F: FnOnce(&mut ModelWithId<P::Id, P>),
     {
         let base_path = self.base_path.clone();
-        
+
         if let Some(model_with_id) = self.get_mut(id) {
             f(model_with_id);
 
@@ -117,7 +114,7 @@ where
 pub enum Entry<'a, P>
 where
     P: FromPath,
-    P::Id: Hash + Eq + Clone
+    P::Id: Hash + Eq + Clone,
 {
     Occupied(OccupiedEntry<'a, P>),
     Vacant(VacantEntry<'a, P>),
@@ -126,17 +123,18 @@ where
 impl<'a, P> Entry<'a, P>
 where
     P: FromPath,
-    P::Id: Hash + Eq + Clone
+    P::Id: Hash + Eq + Clone,
 {
     pub fn and_modify<F>(self, f: F) -> Self
-    where F: FnOnce(&mut ModelWithId<P::Id, P>)
+    where
+        F: FnOnce(&mut ModelWithId<P::Id, P>),
     {
         match self {
             Entry::Occupied(mut e) => {
                 f(e.get_mut());
                 Entry::Occupied(e)
-            },
-            Entry::Vacant(e) =>Entry::Vacant(e),
+            }
+            Entry::Vacant(e) => Entry::Vacant(e),
         }
     }
 
@@ -165,35 +163,33 @@ where
 pub struct OccupiedEntry<'a, P>
 where
     P: FromPath,
-    P::Id: Hash + Eq + Clone
+    P::Id: Hash + Eq + Clone,
 {
     cache: &'a mut ModelCache<P>,
     key: P::Id,
 }
 
-
 impl<'a, P> OccupiedEntry<'a, P>
 where
     P: FromPath,
-    P::Id: Hash + Eq + Clone
+    P::Id: Hash + Eq + Clone,
 {
-    pub fn new(
-        cache: &'a mut ModelCache<P>,
-        key: P::Id,
-    ) -> Self {
-        Self {
-            cache,
-            key,
-        }
+    pub fn new(cache: &'a mut ModelCache<P>, key: P::Id) -> Self {
+        Self { cache, key }
     }
 
     pub fn update(self, model: P) -> &'a mut ModelWithId<P::Id, P> {
-        self.cache.put(ModelWithId { id: self.key.clone(), model });
+        self.cache.put(ModelWithId {
+            id: self.key.clone(),
+            model,
+        });
         self.cache.get_mut(self.key).expect("Should not happen")
     }
 
     pub fn get_mut(&mut self) -> &mut ModelWithId<P::Id, P> {
-        self.cache.get_mut(self.key.clone()).expect("Should not happen")
+        self.cache
+            .get_mut(self.key.clone())
+            .expect("Should not happen")
     }
 
     pub fn into_mut(self) -> &'a mut ModelWithId<P::Id, P> {
@@ -204,7 +200,7 @@ where
 pub struct VacantEntry<'a, P>
 where
     P: FromPath,
-    P::Id: Hash + Eq
+    P::Id: Hash + Eq,
 {
     cache: &'a mut ModelCache<P>,
     key: P::Id,
@@ -213,23 +209,23 @@ where
 impl<'a, P> VacantEntry<'a, P>
 where
     P: FromPath,
-    P::Id: Hash + Eq +
+    P::Id: Hash + Eq,
 {
     pub fn new(cache: &'a mut ModelCache<P>, key: P::Id) -> Self {
-        Self {
-            cache,
-            key,
-        }
+        Self { cache, key }
     }
 }
 
 impl<'a, P> VacantEntry<'a, P>
 where
     P: FromPath,
-    P::Id: Hash + Eq + Clone
+    P::Id: Hash + Eq + Clone,
 {
     pub fn insert(self, model: P) -> &'a mut ModelWithId<P::Id, P> {
-        self.cache.put(ModelWithId { id: self.key.clone(), model });
+        self.cache.put(ModelWithId {
+            id: self.key.clone(),
+            model,
+        });
         self.cache.get_mut(self.key).expect("Should not happen")
     }
 }

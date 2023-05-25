@@ -13,7 +13,10 @@ use crate::views::meta::DepositMetaView;
 use crate::{deserialize, DeserializeError};
 
 #[wasm_bindgen(js_name = "getExecutionLayerDeposit")]
-pub async fn get_execution_layer_deposit(app: &App, id: u64) -> Result<ExecutionLayerDepositView, JsValue> {
+pub async fn get_execution_layer_deposit(
+    app: &App,
+    id: u64,
+) -> Result<ExecutionLayerDepositView, JsValue> {
     let deposit_url = ExecutionLayerDepositModelWithId::to_path(&app.base_url(), &id);
     let deposit = fetch::<ExecutionLayerDepositModel>(deposit_url).await?;
 

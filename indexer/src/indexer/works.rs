@@ -9,11 +9,13 @@ use tracing::info;
 use types::{
     block_request::{BlockRequestModel, BlockRequestModelWithId},
     good_peer::{GoodPeerModel, GoodPeerModelWithId},
-    persistable::{ResolvablePersistable},
+    persistable::ResolvablePersistable,
 };
 
 use crate::{
-    db::Stores, types::consolidated_block::ConsolidatedBlock, work::Work,
+    db::Stores,
+    types::consolidated_block::ConsolidatedBlock,
+    work::Work,
     workers::{spawn_persist_epoch_worker, ValidatorEvent},
 };
 
@@ -28,11 +30,11 @@ pub fn handle<E: EthSpec + Serialize>(
     match work {
         Work::PersistIndexingState() => {
             persist_indexing_state(&base_dir, stores);
-        },
+        }
 
-        Work::PersistDepositFromExecutionLayer(deposit) => {
-            validator_event_send.send(ValidatorEvent::NewDepositFromExecutionLayer(deposit)).unwrap()
-        },
+        Work::PersistDepositFromExecutionLayer(deposit) => validator_event_send
+            .send(ValidatorEvent::NewDepositFromExecutionLayer(deposit))
+            .unwrap(),
 
         Work::PersistBlock(block) => new_block_send.send(block).unwrap(),
 

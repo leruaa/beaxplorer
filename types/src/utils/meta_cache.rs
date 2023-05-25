@@ -1,6 +1,7 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
-    ops::{Deref, DerefMut}, marker::PhantomData,
+    marker::PhantomData,
+    ops::{Deref, DerefMut},
 };
 
 use crate::{
@@ -94,11 +95,16 @@ pub struct PersistableMeta<'a, M: Prefix> {
 
 impl<'a, M: Prefix> PersistableMeta<'a, M> {
     pub fn new(base_path: String, meta: &'a mut Meta) -> Self {
-        Self { base_path, meta, phantom: PhantomData::default() }
+        Self {
+            base_path,
+            meta,
+            phantom: PhantomData::default(),
+        }
     }
 
     pub fn persist(&self) -> Result<(), String> {
-        self.meta.serialize_to_file(&Meta::to_path::<M>(&self.base_path))
+        self.meta
+            .serialize_to_file(&Meta::to_path::<M>(&self.base_path))
     }
 }
 

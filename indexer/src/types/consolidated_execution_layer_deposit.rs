@@ -1,6 +1,5 @@
-use lighthouse_types::{FixedVector, DepositData, Hash256, typenum::U33};
-use types::deposit::{ExecutionLayerDepositModelWithId, ExecutionLayerDepositModel};
-
+use lighthouse_types::{typenum::U33, DepositData, FixedVector, Hash256};
+use types::deposit::{ExecutionLayerDepositModel, ExecutionLayerDepositModelWithId};
 
 #[derive(Debug, Clone)]
 pub struct ConsolidatedExecutionLayerDeposit {
@@ -9,11 +8,12 @@ pub struct ConsolidatedExecutionLayerDeposit {
     pub deposit_data: DepositData,
     pub is_signature_valid: bool,
     pub proof: FixedVector<Hash256, U33>,
-    pub validator_index: u64
+    pub validator_index: u64,
 }
 
 impl ConsolidatedExecutionLayerDeposit {
-    pub fn new(index: u64,
+    pub fn new(
+        index: u64,
         block_number: u64,
         deposit_data: DepositData,
         is_signature_valid: bool,

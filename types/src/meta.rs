@@ -3,9 +3,10 @@ use std::convert::TryFrom;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    deposit::ExecutionLayerDepositModel,
     path::Prefix,
     persistable::{MsgPackDeserializable, MsgPackSerializable},
-    utils::PersistableMeta, deposit::ExecutionLayerDepositModel,
+    utils::PersistableMeta,
 };
 
 #[cfg(feature = "wasm")]
@@ -47,7 +48,9 @@ pub enum MetaSpecific {
 impl<'a> TryFrom<&'a PersistableMeta<'a, ExecutionLayerDepositModel>> for &'a DepositMeta {
     type Error = String;
 
-    fn try_from(value: &'a PersistableMeta<'a, ExecutionLayerDepositModel>) -> Result<Self, Self::Error> {
+    fn try_from(
+        value: &'a PersistableMeta<'a, ExecutionLayerDepositModel>,
+    ) -> Result<Self, Self::Error> {
         match &value.specific {
             MetaSpecific::Empty => Err("Invalid meta type".to_string()),
             MetaSpecific::Deposit(d) => Ok(d),
@@ -58,7 +61,9 @@ impl<'a> TryFrom<&'a PersistableMeta<'a, ExecutionLayerDepositModel>> for &'a De
 impl<'a> TryFrom<&'a mut PersistableMeta<'a, ExecutionLayerDepositModel>> for &'a mut DepositMeta {
     type Error = String;
 
-    fn try_from(value: &'a mut PersistableMeta<'a, ExecutionLayerDepositModel>) -> Result<Self, Self::Error> {
+    fn try_from(
+        value: &'a mut PersistableMeta<'a, ExecutionLayerDepositModel>,
+    ) -> Result<Self, Self::Error> {
         match &mut value.specific {
             MetaSpecific::Empty => Err("Invalid meta type".to_string()),
             MetaSpecific::Deposit(d) => Ok(d),

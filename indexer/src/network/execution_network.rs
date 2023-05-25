@@ -61,7 +61,6 @@ impl ExecutionNetwork {
     pub fn spawn(mut self, executor: &TaskExecutor) {
         executor.spawn(
             async move {
-
                 while let Some(command) = self.command_recv.recv().await {
                     match command {
                         NetworkCommand::RetrieveDeposits(range) => {
@@ -74,7 +73,9 @@ impl ExecutionNetwork {
                                         "Deposit logs query succeeded"
                                     );
 
-                                    self.event_send.send(NetworkEvent::NewDeposits(range, logs)).unwrap();
+                                    self.event_send
+                                        .send(NetworkEvent::NewDeposits(range, logs))
+                                        .unwrap();
                                 }
                                 Err(err) => {
                                     error!(err)

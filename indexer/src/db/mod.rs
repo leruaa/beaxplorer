@@ -10,7 +10,10 @@ use types::{
     committee::CommitteeModel,
     deposit::ExecutionLayerDepositModel,
     meta::{DepositMeta, Meta},
-    utils::{MetaCache, ModelCache}, DeserializeOwned, path::FromPath, validator::{ValidatorModel, ValidatorExtendedModel},
+    path::FromPath,
+    utils::{MetaCache, ModelCache},
+    validator::{ValidatorExtendedModel, ValidatorModel},
+    DeserializeOwned,
 };
 
 use self::indexing_state::IndexingState;
@@ -39,7 +42,8 @@ impl<E: EthSpec + DeserializeOwned> Stores<E> {
         deposit_contract_deploy_block: u64,
         block_requests: Vec<BlockRequestModelWithId>,
     ) -> Self {
-        let indexing_state = IndexingState::from_path( &base_dir, &()).unwrap_or_else(|_| IndexingState::new(genesis_state, deposit_contract_deploy_block));
+        let indexing_state = IndexingState::from_path(&base_dir, &())
+            .unwrap_or_else(|_| IndexingState::new(genesis_state, deposit_contract_deploy_block));
         Self {
             indexing_state: RwLock::new(indexing_state),
             block_by_root_requests: RwLock::new(BlockByRootRequests::from_block_requests(

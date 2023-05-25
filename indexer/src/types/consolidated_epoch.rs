@@ -3,7 +3,7 @@ use std::{fmt::Display, marker::PhantomData, ops::Div};
 use eth2::lighthouse::GlobalValidatorInclusionData;
 
 use lighthouse_types::{Epoch, EthSpec};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use shared::utils::clock::Clock;
 use state_processing::per_epoch_processing::EpochProcessingSummary;
 

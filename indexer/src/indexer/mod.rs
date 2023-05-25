@@ -6,7 +6,9 @@ use store::EthSpec;
 use task_executor::TaskExecutor;
 use tokio::sync::{mpsc::Sender, watch::Receiver};
 use tracing::info;
-use types::{block_request::BlockRequestModelWithId, good_peer::GoodPeerModelWithId, DeserializeOwned};
+use types::{
+    block_request::BlockRequestModelWithId, good_peer::GoodPeerModelWithId, DeserializeOwned,
+};
 
 use crate::{
     beacon_chain::beacon_context::BeaconContext,
