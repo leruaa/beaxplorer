@@ -1,5 +1,5 @@
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::{hash_map::Entry as HashMapEntry, HashMap},
     marker::PhantomData,
     ops::{Deref, DerefMut},
 };
@@ -24,6 +24,16 @@ impl MetaCache {
         }
     }
 
+    
+    pub fn insert<M>(&mut self, meta: Meta)
+    where 
+        M: Prefix,
+    {
+        let full_path = Meta::to_path::<M>(&self.base_path);
+
+        self.cache.insert(full_path, meta);
+    }
+
     pub fn get_mut<M>(&mut self) -> Option<&mut Meta>
     where
         M: Prefix,
@@ -31,8 +41,8 @@ impl MetaCache {
         let full_path = Meta::to_path::<M>(&self.base_path);
 
         match self.cache.entry(full_path.clone()) {
-            Entry::Occupied(e) => Some(e.into_mut()),
-            Entry::Vacant(e) => {
+            HashMapEntry::Occupied(e) => Some(e.into_mut()),
+            HashMapEntry::Vacant(e) => {
                 if let Ok(meta) = Meta::deserialize_from_file(&full_path) {
                     Some(e.insert(meta))
                 } else {
@@ -71,19 +81,121 @@ impl MetaCache {
         self.get_mut::<M>().map(|m| &*m)
     }
 
-    pub fn update_and_save<M, F>(&mut self, f: F) -> Result<(), String>
+    pub fn entry<M>(&mut self) -> Entry<'_, M>
+    where M: Prefix {
+        let full_path = Meta::to_path::<M>(&self.base_path);
+
+        if self.cache.contains_key(&full_path) {
+            Entry::Occupied(OccupiedEntry::new(self))
+        } else {
+            Entry::Vacant(VacantEntry::new(self))
+        }
+    }
+}
+
+pub enum Entry<'a, M>
+where M: Prefix
+{
+    Occupied(OccupiedEntry<'a, M>),
+    Vacant(VacantEntry<'a, M>),
+}
+
+impl<'a, M> Entry<'a, M>
+where M: Prefix {
+    pub fn and_modify<F>(self, f: F) -> Self
     where
-        M: Prefix,
         F: FnOnce(&mut Meta),
     {
-        let base_path = self.base_path.clone();
-        let meta = self.get_mut::<M>().ok_or("Unable to retrieve meta")?;
+        match self {
+            Entry::Occupied(mut e) => {
+                f(e.get_mut());
+                Entry::Occupied(e)
+            }
+            Entry::Vacant(e) => Entry::Vacant(e),
+        }
+    }
 
-        f(meta);
+    pub fn or_insert(self, meta: Meta) -> &'a mut Meta {
+        match self {
+            Entry::Occupied(e) => e.into_mut(),
+            Entry::Vacant(e) => e.insert(meta),
+        }
+    }
 
-        meta.serialize_to_file(&Meta::to_path::<M>(&base_path))?;
+    pub fn or_insert_with<F: FnOnce() -> Meta>(self, default: F) -> &'a mut Meta {
+        match self {
+            Entry::Occupied(o) => o.into_mut(),
+            Entry::Vacant(v) => v.insert(default()),
+        }
+    }
 
-        Ok(())
+    pub fn increment_by(self, count: usize) -> &'a mut Meta {
+        let meta = match self {
+            Entry::Occupied(o) => o.into_mut(),
+            Entry::Vacant(v) => v.insert(Meta::default()),
+        };
+
+        meta.count += count;
+
+        meta
+    }
+
+    pub fn increment(self) -> &'a mut Meta {
+        self.increment_by(1)
+    }
+
+    pub fn update_count(self, value: usize) -> &'a mut Meta {
+        let meta = match self {
+            Entry::Occupied(o) => o.into_mut(),
+            Entry::Vacant(v) => v.insert(Meta::default()),
+        };
+
+        meta.count = value;
+
+        meta
+    }
+}
+
+pub struct OccupiedEntry<'a, M>
+where M: Prefix
+{
+    cache: &'a mut MetaCache,
+    phantom: PhantomData<M>
+}
+
+impl<'a, M> OccupiedEntry<'a, M>
+where M: Prefix {
+    pub fn new(cache: &'a mut MetaCache) -> Self {
+        Self { cache, phantom: PhantomData::default() }
+    }
+
+    pub fn get_mut(&mut self) -> &mut Meta {
+        self.cache
+            .get_mut::<M>()
+            .expect("Should not happen")
+    }
+
+    pub fn into_mut(self) -> &'a mut Meta {
+        self.cache.get_mut::<M>().expect("Should not happen")
+    }
+}
+
+pub struct VacantEntry<'a, M>
+where M: Prefix
+{
+    cache: &'a mut MetaCache,
+    phantom: PhantomData<M>
+}
+
+impl<'a, M> VacantEntry<'a, M> 
+where M: Prefix {
+    pub fn new(cache: &'a mut MetaCache) -> Self {
+        Self { cache,  phantom: PhantomData::default() }
+    }
+
+    pub fn insert(self, meta: Meta) -> &'a mut Meta {
+        self.cache.insert::<M>(meta);
+        self.cache.get_mut::<M>().expect("Should not happen")
     }
 }
 
