@@ -18,7 +18,7 @@ use types::{
     epoch::{EpochExtendedModel, EpochModel, EpochModelWithId, PersistIteratorEpochModel},
     good_peer::{GoodPeerModel, GoodPeerModelWithId, PersistIteratorGoodPeerModel},
     path::Dirs,
-    validator::ValidatorModel,
+    validator::{ValidatorModel, ValidatorExtendedModel},
     vote::VoteModel,
 };
 
@@ -92,6 +92,7 @@ fn create_dirs(base_dir: &str) -> Result<(), String> {
     CommitteeModel::create_dirs(base_dir)?;
     VoteModel::create_dirs(base_dir)?;
     ValidatorModel::create_dirs(base_dir)?;
+    ValidatorExtendedModel::create_dirs(base_dir)?;
     ExecutionLayerDepositModel::create_dirs(base_dir)?;
     ConsensusLayerDepositModel::create_dirs(base_dir)?;
     BlockRequestModel::create_dirs(base_dir)?;
@@ -110,6 +111,7 @@ fn remove_dirs(base_dir: &str) -> Result<(), String> {
     CommitteeModel::remove_dirs(base_dir)?;
     VoteModel::remove_dirs(base_dir)?;
     ValidatorModel::remove_dirs(base_dir)?;
+    ValidatorExtendedModel::remove_dirs(base_dir)?;
     ConsensusLayerDepositModel::remove_dirs(base_dir)?;
     BlockRequestModel::remove_dirs(base_dir)?;
 
