@@ -35,13 +35,19 @@ impl<'a> ConsolidatedDeposits<'a> {
         match saved_count {
             Ok(count) => {
                 self.meta_cache
-                    .update_and_save::<ConsensusLayerDepositModel, _>(|m| m.count += count)?;
+                    .entry::<ConsensusLayerDepositModel>()
+                    .increment_by(count)
+                    .save::<ConsensusLayerDepositModel>(base_path)
+                    .unwrap();
 
                 Ok(())
             }
             Err((err, count)) => {
                 self.meta_cache
-                    .update_and_save::<ConsensusLayerDepositModel, _>(|m| m.count += count)?;
+                    .entry::<ConsensusLayerDepositModel>()
+                    .increment_by(count)
+                    .save::<ConsensusLayerDepositModel>(base_path)
+                    .unwrap();
 
                 Err(err)
             }
