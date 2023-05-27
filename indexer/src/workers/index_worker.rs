@@ -291,21 +291,21 @@ impl<E: EthSpec> IndexWorker<E> {
     fn handle_execution_event(&mut self, event: ExecutionNetworkEvent) -> Result<(), IndexError> {
         match event {
             ExecutionNetworkEvent::NewDeposits(range, deposits) => {
-                info!(from = range.start, to = range.end, "Handling deposits");
+                info!(
+                    from_block = range.start,
+                    to_block = range.end,
+                    "Handling deposits"
+                );
 
-                let next_start = match self.process_deposits(deposits, range.start) {
-                    Ok(processed_deposits) => range.start + processed_deposits,
-                    Err((err, processed_deposits)) => {
-                        error!(err);
-                        range.start + processed_deposits
-                    }
-                };
-
-                self.execution_command_send
-                    .send(ExecutionNetworkCommand::RetrieveDeposits(
-                        next_start..next_start + 1000,
-                    ))
-                    .unwrap();
+                if let Err(err) = self.process_deposits(deposits) {
+                    error!("Stopping deposits indexing: {err}");
+                } else {
+                    self.execution_command_send
+                        .send(ExecutionNetworkCommand::RetrieveDeposits(
+                            range.end..range.end + 1000,
+                        ))
+                        .unwrap();
+                }
             }
         }
 
@@ -328,45 +328,45 @@ impl<E: EthSpec> IndexWorker<E> {
             .map_err(|_| IndexError::SendMessage)
     }
 
-    fn process_deposits(
-        &self,
-        deposit_logs: Vec<DepositLog>,
-        start: u64,
-    ) -> Result<u64, (String, u64)> {
+    fn process_deposits(&self, deposit_logs: Vec<DepositLog>) -> Result<(), String> {
         let mut indexing_state = self.stores.indexing_state_mut();
 
-        let deposit_logs = match indexing_state.insert_deposits(deposit_logs) {
-            Ok(deposit_logs) => deposit_logs,
-            Err((err, deposit_logs)) => {
-                error!(err);
-                deposit_logs
-            }
-        };
-
-        let deposits = indexing_state
-            .get_deposits(start..start + deposit_logs.len() as u64)
-            .map_err(|err| (err, 0))?;
-
-        zip(deposit_logs, deposits).try_fold(0_u64, |acc, (log, d)| {
-            indexing_state
-                .process_deposit(&d, log.index)
-                .and_then(|validator_index| {
-                    self.work_send
-                        .send(Work::PersistDepositFromExecutionLayer(
-                            ConsolidatedExecutionLayerDeposit::new(
-                                log.index,
-                                log.block_number,
-                                d.data,
-                                log.signature_is_valid,
-                                d.proof,
-                                validator_index,
-                            ),
-                        ))
-                        .map_err(|err| format!("Failed to send work message: {:?}", err))
-                })
-                .map(|_| acc + 1)
-                .map_err(|err| (err, acc))
-        })
+        indexing_state
+            .insert_deposits(deposit_logs)
+            .and_then(|deposit_logs| {
+                if let (Some(deposit_start_index), Some(deposit_end_index)) = (
+                    deposit_logs.first().map(|d| d.index),
+                    deposit_logs.last().map(|d| d.index),
+                ) {
+                    indexing_state
+                        .get_deposits(deposit_start_index..deposit_end_index)
+                        .and_then(|deposits| {
+                            zip(deposit_logs, deposits).try_for_each(|(log, d)| {
+                                indexing_state.process_deposit(&d, log.index).and_then(
+                                    |validator_index| {
+                                        self.work_send
+                                            .send(Work::PersistDepositFromExecutionLayer(
+                                                ConsolidatedExecutionLayerDeposit::new(
+                                                    log.index,
+                                                    log.block_number,
+                                                    d.data,
+                                                    log.signature_is_valid,
+                                                    d.proof,
+                                                    validator_index,
+                                                ),
+                                            ))
+                                            .map_err(|err| {
+                                                format!("Failed to send work message: {:?}", err)
+                                            })
+                                    },
+                                )
+                            })
+                        })
+                } else {
+                    // No deposits found in this iteration
+                    Ok(())
+                }
+            })
     }
 }
 

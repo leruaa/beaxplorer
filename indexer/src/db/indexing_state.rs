@@ -142,14 +142,18 @@ impl<E: EthSpec> IndexingState<E> {
     pub fn insert_deposits(
         &mut self,
         deposits_logs: Vec<DepositLog>,
-    ) -> Result<Vec<DepositLog>, (String, Vec<DepositLog>)> {
+    ) -> Result<Vec<DepositLog>, String> {
         deposits_logs.into_iter().try_fold(vec![], |mut acc, d| {
-            match self.deposit_cache.insert_log(d.clone()) {
-                Ok(_) => {
-                    acc.push(d);
-                    Ok(acc)
+            if d.index < self.deposit_cache.len() as u64 {
+                Ok(acc)
+            } else {
+                match self.deposit_cache.insert_log(d.clone()) {
+                    Ok(_) => {
+                        acc.push(d);
+                        Ok(acc)
+                    }
+                    Err(err) => Err(format!("Failed to insert log: {:?}", err)),
                 }
-                Err(err) => Err((format!("Failed to insert log: {:?}", err), acc)),
             }
         })
     }
