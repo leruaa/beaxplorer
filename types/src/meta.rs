@@ -31,6 +31,10 @@ impl Meta {
     pub fn to_path<M: Prefix>(base_path: &str) -> String {
         format!("{}{}/meta.msg", base_path, M::prefix())
     }
+
+    pub fn save<M: Prefix>(&self, base_path: &str) -> Result<(), String> {
+        self.serialize_to_file(&Meta::to_path::<M>(base_path))
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
