@@ -79,9 +79,7 @@ impl Indexer {
 
                 let validator_event_send = spawn_persist_validator_worker(base_dir.clone(), stores.clone(), &executor, shutdown_handle);
 
-                let latest_deposit_block = *stores.get_latest_deposit_block().get_or_insert(beacon_context
-                    .eth2_network_config
-                    .deposit_contract_deploy_block);
+                let latest_deposit_block = stores.indexing_state().latest_deposit_block();
 
                 execution_command_send.send(ExecutionNetworkCommand::RetrieveDeposits(latest_deposit_block..latest_deposit_block + 1000)).unwrap();
 

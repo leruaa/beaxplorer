@@ -54,6 +54,10 @@ impl<E: EthSpec> IndexingState<E> {
         }
     }
 
+    pub fn latest_deposit_block(&self) -> u64 {
+        self.deposit_cache.latest_block_number()
+    }
+
     pub fn can_process_slot(&self, slot: Slot) -> bool {
         match self.latest_slot() {
             Some(latest_slot) => slot > latest_slot,

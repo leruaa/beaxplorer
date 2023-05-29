@@ -114,12 +114,4 @@ impl<E: EthSpec> Stores<E> {
     pub fn spec(&self) -> MappedRwLockReadGuard<ChainSpec> {
         RwLockReadGuard::map(self.indexing_state(), |indexing_state| &indexing_state.spec)
     }
-
-    pub fn get_latest_deposit_block(&self) -> Option<u64> {
-        let mut meta_cache = self.meta_cache_mut();
-        let mut meta = meta_cache.get_or::<ExecutionLayerDepositModel>(Meta::deposit_default());
-        let deposit_meta = <&mut DepositMeta>::try_from(&mut meta).ok();
-
-        deposit_meta.and_then(|m| m.latest_block)
-    }
 }
