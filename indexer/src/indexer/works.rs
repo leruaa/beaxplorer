@@ -9,7 +9,7 @@ use tracing::info;
 use types::{
     block_request::{BlockRequestModel, BlockRequestModelWithId},
     good_peer::{GoodPeerModel, GoodPeerModelWithId},
-    persistable::ResolvablePersistable,
+    persistable::ResolvablePersistable, validator::{ValidatorModel, ValidatorExtendedModel},
 };
 
 use crate::{
@@ -80,5 +80,23 @@ pub fn persist_good_peers<E: EthSpec>(base_dir: &str, stores: &Arc<Stores<E>>) {
         .entry::<GoodPeerModel>()
         .update_count(good_peers.len())
         .save::<GoodPeerModel>(base_dir)
+        .unwrap();
+}
+
+pub fn persist_validators<E: EthSpec>(base_dir: &str, stores: &Arc<Stores<E>>) {
+    let validators_count = stores.beacon_state().validators().len();
+
+    stores
+        .meta_cache_mut()
+        .entry::<ValidatorModel>()
+        .update_count(validators_count)
+        .save::<ValidatorModel>(base_dir)
+        .unwrap();
+
+    stores
+        .meta_cache_mut()
+        .entry::<ValidatorExtendedModel>()
+        .update_count(validators_count)
+        .save::<ValidatorExtendedModel>(base_dir)
         .unwrap();
 }

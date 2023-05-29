@@ -100,6 +100,7 @@ impl Indexer {
                                     works::persist_indexing_state(&base_dir, &stores);
                                     works::persist_block_requests(&base_dir, &stores);
                                     works::persist_good_peers(&base_dir, &stores);
+                                    works::persist_validators(&base_dir, &stores);
                                     return
                                 },
                             }
