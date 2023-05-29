@@ -1,14 +1,9 @@
 use std::{
     collections::{hash_map::Entry as HashMapEntry, HashMap},
     marker::PhantomData,
-    ops::{Deref, DerefMut},
 };
 
-use crate::{
-    meta::Meta,
-    path::Prefix,
-    persistable::{MsgPackDeserializable, MsgPackSerializable},
-};
+use crate::{meta::Meta, path::Prefix, persistable::MsgPackDeserializable};
 
 #[derive(Debug)]
 pub struct MetaCache {
@@ -24,9 +19,8 @@ impl MetaCache {
         }
     }
 
-    
     pub fn insert<M>(&mut self, meta: Meta)
-    where 
+    where
         M: Prefix,
     {
         let full_path = Meta::to_path::<M>(&self.base_path);
@@ -52,7 +46,7 @@ impl MetaCache {
         }
     }
 
-    pub fn get_or<M>(&mut self, default: Meta) -> PersistableMeta<M>
+    pub fn get_or<M>(&mut self, default: Meta) -> &Meta
     where
         M: Prefix,
     {
@@ -63,7 +57,7 @@ impl MetaCache {
             .entry(full_path.clone())
             .or_insert(Meta::deserialize_from_file(&full_path).unwrap_or(default));
 
-        PersistableMeta::new(self.base_path.clone(), meta)
+        meta
     }
 
     pub fn count<M>(&self) -> usize
@@ -82,7 +76,9 @@ impl MetaCache {
     }
 
     pub fn entry<M>(&mut self) -> Entry<'_, M>
-    where M: Prefix {
+    where
+        M: Prefix,
+    {
         let full_path = Meta::to_path::<M>(&self.base_path);
 
         if self.cache.contains_key(&full_path) {
@@ -94,14 +90,17 @@ impl MetaCache {
 }
 
 pub enum Entry<'a, M>
-where M: Prefix
+where
+    M: Prefix,
 {
     Occupied(OccupiedEntry<'a, M>),
     Vacant(VacantEntry<'a, M>),
 }
 
 impl<'a, M> Entry<'a, M>
-where M: Prefix {
+where
+    M: Prefix,
+{
     pub fn and_modify<F>(self, f: F) -> Self
     where
         F: FnOnce(&mut Meta),
@@ -157,22 +156,26 @@ where M: Prefix {
 }
 
 pub struct OccupiedEntry<'a, M>
-where M: Prefix
+where
+    M: Prefix,
 {
     cache: &'a mut MetaCache,
-    phantom: PhantomData<M>
+    phantom: PhantomData<M>,
 }
 
 impl<'a, M> OccupiedEntry<'a, M>
-where M: Prefix {
+where
+    M: Prefix,
+{
     pub fn new(cache: &'a mut MetaCache) -> Self {
-        Self { cache, phantom: PhantomData::default() }
+        Self {
+            cache,
+            phantom: PhantomData::default(),
+        }
     }
 
     pub fn get_mut(&mut self) -> &mut Meta {
-        self.cache
-            .get_mut::<M>()
-            .expect("Should not happen")
+        self.cache.get_mut::<M>().expect("Should not happen")
     }
 
     pub fn into_mut(self) -> &'a mut Meta {
@@ -181,55 +184,26 @@ where M: Prefix {
 }
 
 pub struct VacantEntry<'a, M>
-where M: Prefix
+where
+    M: Prefix,
 {
     cache: &'a mut MetaCache,
-    phantom: PhantomData<M>
+    phantom: PhantomData<M>,
 }
 
-impl<'a, M> VacantEntry<'a, M> 
-where M: Prefix {
+impl<'a, M> VacantEntry<'a, M>
+where
+    M: Prefix,
+{
     pub fn new(cache: &'a mut MetaCache) -> Self {
-        Self { cache,  phantom: PhantomData::default() }
+        Self {
+            cache,
+            phantom: PhantomData::default(),
+        }
     }
 
     pub fn insert(self, meta: Meta) -> &'a mut Meta {
         self.cache.insert::<M>(meta);
         self.cache.get_mut::<M>().expect("Should not happen")
-    }
-}
-
-pub struct PersistableMeta<'a, M: Prefix> {
-    base_path: String,
-    meta: &'a mut Meta,
-    phantom: PhantomData<M>,
-}
-
-impl<'a, M: Prefix> PersistableMeta<'a, M> {
-    pub fn new(base_path: String, meta: &'a mut Meta) -> Self {
-        Self {
-            base_path,
-            meta,
-            phantom: PhantomData::default(),
-        }
-    }
-
-    pub fn persist(&self) -> Result<(), String> {
-        self.meta
-            .serialize_to_file(&Meta::to_path::<M>(&self.base_path))
-    }
-}
-
-impl<'a, M: Prefix> Deref for PersistableMeta<'a, M> {
-    type Target = Meta;
-
-    fn deref(&self) -> &Self::Target {
-        self.meta
-    }
-}
-
-impl<'a, M: Prefix> DerefMut for PersistableMeta<'a, M> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.meta
     }
 }
