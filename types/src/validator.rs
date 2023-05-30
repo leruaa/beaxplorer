@@ -6,8 +6,10 @@ use std::collections::HashSet;
 use tsify::Tsify;
 
 #[derive(Persistable, Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(feature = "wasm", derive(Tsify))]
 #[persistable(model = "default")]
 #[persistable(prefix = "/validators")]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 #[serde(rename_all = "camelCase")]
 pub struct ValidatorModel {
     pub pubkey: String,

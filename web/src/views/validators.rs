@@ -27,3 +27,11 @@ impl From<ValidatorView> for JsValue {
         to_js(&val).unwrap()
     }
 }
+
+#[derive(Serialize, Tsify, Debug, Clone)]
+#[tsify(into_wasm_abi)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidatorPaths {
+    pub validator: String,
+    pub validator_extended: String,
+}

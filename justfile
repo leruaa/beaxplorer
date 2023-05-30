@@ -1,5 +1,5 @@
 build-db:
-  cd indexer_cli && cargo run -- build-database --dry
+  cd indexer_cli && cargo run -- build-database --reset
 
 update-indexes:
   cd indexer_cli && cargo run -- update-indexes

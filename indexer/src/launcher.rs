@@ -18,7 +18,7 @@ use types::{
     epoch::{EpochExtendedModel, EpochModel, EpochModelWithId, PersistIteratorEpochModel},
     good_peer::{GoodPeerModel, GoodPeerModelWithId, PersistIteratorGoodPeerModel},
     path::Dirs,
-    validator::{ValidatorModel, ValidatorExtendedModel},
+    validator::{ValidatorExtendedModel, ValidatorModel},
     vote::VoteModel,
 };
 

@@ -149,7 +149,7 @@ fn persist_block<E: EthSpec>(
     stores
         .meta_cache_mut()
         .entry::<BlockModel>()
-        .update_count( block.slot().as_usize() + 1)
+        .update_count(block.slot().as_usize() + 1)
         .save::<BlockModel>(base_dir)
         .unwrap();
 
