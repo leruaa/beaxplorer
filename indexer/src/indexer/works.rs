@@ -9,7 +9,8 @@ use tracing::info;
 use types::{
     block_request::{BlockRequestModel, BlockRequestModelWithId},
     good_peer::{GoodPeerModel, GoodPeerModelWithId},
-    persistable::ResolvablePersistable, validator::{ValidatorModel, ValidatorExtendedModel},
+    persistable::ResolvablePersistable,
+    validator::{ValidatorExtendedModel, ValidatorModel},
 };
 
 use crate::{

@@ -32,27 +32,25 @@ export default (props) => {
   const columns = [
     columnHelper.accessor("pubkey", {
       header: "Public key",
-      cell: props => <><Trim value={props.getValue()} regEx={/^(.{10}).*$/g} groups={"$1"} />&hellip;</>
+      cell: props => <><Trim className="font-mono" value={props.getValue()} regEx={/^(.{10}).*$/g} groups={"$1"} />&hellip;</>
     }),
     columnHelper.accessor("validator_index", {
       header: "Index",
-      cell: props => <a href={`/validator/${props.getValue()}`}><Number value={props.getValue()} /></a>
+      cell: props => <a href={`/validator/${props.getValue()}`}><Number value={props.getValue()} /></a>,
+      meta: { className: "text-right" }
     }),
     columnHelper.accessor("balance", {
       header: "Balance",
       cell: props => <Ethers value={props.getValue()} />
     }),
     columnHelper.accessor("activationEpoch", {
-      header: "Activation",
-      cell: props => <Ethers value={props.getValue()} />
+      header: "Activation"
     }),
     columnHelper.accessor("exitEpoch", {
-      header: "Exit",
-      cell: props => <Ethers value={props.getValue()} />
+      header: "Exit"
     }),
     columnHelper.accessor("withdrawableEpoch", {
-      header: "Exit",
-      cell: props => <Ethers value={props.getValue()} />
+      header: "Withdrawable"
     })
   ];
 

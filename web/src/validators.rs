@@ -1,13 +1,13 @@
 use js_sys::{ArrayBuffer, JsString};
 use types::meta::Meta;
 use types::path::ToPath;
-use types::validator::{ValidatorModel, ValidatorExtendedModel};
+use types::validator::{ValidatorExtendedModel, ValidatorModel};
 use wasm_bindgen::prelude::*;
 
 use crate::app::App;
+use crate::page::{get_paths, RangeInput};
+use crate::views::validators::{ValidatorPaths, ValidatorView};
 use crate::{deserialize, PathArray};
-use crate::page::{RangeInput, get_paths};
-use crate::views::validators::{ValidatorView, ValidatorPaths};
 
 #[wasm_bindgen(js_name = "getValidator")]
 pub fn get_validator(buffer: ArrayBuffer, index: u64) -> Result<ValidatorView, JsValue> {
@@ -31,7 +31,6 @@ pub async fn get_epoch_range_paths(
 ) -> Result<PathArray, JsValue> {
     get_paths::<ValidatorModel>(app, input, total_count).await
 }
-
 
 #[wasm_bindgen(js_name = "getValidatorMetaPath")]
 pub fn get_epoch_meta_path(app: &App) -> JsString {
