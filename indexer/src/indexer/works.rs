@@ -8,6 +8,7 @@ use tokio::sync::mpsc::UnboundedSender;
 use tracing::info;
 use types::{
     block_request::{BlockRequestModel, BlockRequestModelWithId},
+    deposit::ExecutionLayerDepositModel,
     good_peer::{GoodPeerModel, GoodPeerModelWithId},
     persistable::ResolvablePersistable,
     validator::{ValidatorExtendedModel, ValidatorModel},
@@ -85,7 +86,16 @@ pub fn persist_good_peers<E: EthSpec>(base_dir: &str, stores: &Arc<Stores<E>>) {
 }
 
 pub fn persist_validators<E: EthSpec>(base_dir: &str, stores: &Arc<Stores<E>>) {
-    let validators_count = stores.beacon_state().validators().len();
+    let beacon_state = stores.beacon_state();
+    let el_deposits_count = beacon_state.eth1_deposit_index() as usize;
+    let validators_count = beacon_state.validators().len();
+
+    stores
+        .meta_cache_mut()
+        .entry::<ExecutionLayerDepositModel>()
+        .update_count(el_deposits_count)
+        .save::<ExecutionLayerDepositModel>(base_dir)
+        .unwrap();
 
     stores
         .meta_cache_mut()
