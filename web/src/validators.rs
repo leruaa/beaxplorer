@@ -24,7 +24,7 @@ pub fn get_validator_paths(app: &App, index: u64) -> ValidatorPaths {
 }
 
 #[wasm_bindgen(js_name = "getValidatorRangePaths")]
-pub async fn get_epoch_range_paths(
+pub async fn get_validator_range_paths(
     app: &App,
     input: RangeInput,
     total_count: usize,
@@ -33,6 +33,6 @@ pub async fn get_epoch_range_paths(
 }
 
 #[wasm_bindgen(js_name = "getValidatorMetaPath")]
-pub fn get_epoch_meta_path(app: &App) -> JsString {
+pub fn get_validator_meta_path(app: &App) -> JsString {
     Meta::to_path::<ValidatorModel>(&app.base_url()).into()
 }

@@ -12,7 +12,7 @@ use crate::{
     app::App,
     fetcher::fetch,
     sort::{Paginate, SortBy},
-    DeserializeError, PathArray, StringArray,
+    DeserializeError, PathArray,
 };
 
 #[derive(Tsify, Deserialize)]
