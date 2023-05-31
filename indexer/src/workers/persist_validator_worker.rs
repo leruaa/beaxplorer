@@ -77,7 +77,7 @@ pub fn spawn_persist_validator_worker<E: EthSpec>(
                                 .unwrap();
                         } else {
                             error!(
-                                "The validator '{}' can't be found in thje beacon state",
+                                "The validator '{}' can't be found in the beacon state",
                                 validator_index
                             );
                         }

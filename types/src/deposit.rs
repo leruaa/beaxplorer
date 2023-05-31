@@ -6,6 +6,9 @@ use tsify::Tsify;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[cfg_attr(feature = "wasm", derive(Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
+#[serde(rename_all = "camelCase")]
 pub struct DepositData {
     pub public_key: String,
     pub withdrawal_credentials: String,
@@ -33,6 +36,7 @@ impl From<&lighthouse_types::DepositData> for DepositData {
 #[serde(rename_all = "camelCase")]
 pub struct ExecutionLayerDepositModel {
     pub block_number: u64,
+    pub validator_index: u64,
     #[serde(flatten)]
     pub deposit_data: DepositData,
     pub is_signature_valid: bool,

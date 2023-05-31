@@ -187,7 +187,10 @@ impl<E: EthSpec> IndexingState<E> {
                 },
             )?;
 
-        validator_index.ok_or(format!("Failed to find validator for deposit '{}'", index))
+        validator_index.ok_or(format!(
+            "The validator for deposit '{}' doesn't exist",
+            index
+        ))
     }
 }
 

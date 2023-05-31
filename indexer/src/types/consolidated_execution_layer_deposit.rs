@@ -37,6 +37,7 @@ impl From<&ConsolidatedExecutionLayerDeposit> for ExecutionLayerDepositModelWith
             id: value.index,
             model: ExecutionLayerDepositModel {
                 block_number: value.block_number,
+                validator_index: value.validator_index,
                 deposit_data: (&value.deposit_data).into(),
                 is_signature_valid: value.is_signature_valid,
             },
